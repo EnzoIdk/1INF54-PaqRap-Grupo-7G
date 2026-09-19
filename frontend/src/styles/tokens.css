@@ -1,0 +1,22 @@
+/*
+ * Paleta declarada una sola vez. Ningun componente debe escribir un color
+ * literal (STD 5.6).
+ */
+:root {
+  --color-fondo: #0f172a;
+  --color-superficie: #1e293b;
+  --color-texto: #f1f5f9;
+  --color-texto-tenue: #94a3b8;
+  --color-borde: #334155;
+
+  --color-primario: #2563eb;
+  --color-primario-hover: #1d4ed8;
+
+  --color-semaforo-verde: #22c55e;
+  --color-semaforo-ambar: #f59e0b;
+  --color-semaforo-rojo: #ef4444;
+
+  --color-tipo-auto: #38bdf8;
+  --color-tipo-moto: #a78bfa;
+  --color-tipo-bicicleta: #4ade80;
+}

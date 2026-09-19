@@ -1,0 +1,36 @@
+# Backend (Maven / Java)
+backend/target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Frontend (Node / Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Variables de entorno y credenciales
+.env
+.env.*
+!.env.example
+
+# Salidas de simulacion / logs
+*.log
+backend/logs/
+salidas/
+
+# Otros
+.claude

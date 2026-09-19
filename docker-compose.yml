@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:16
+    container_name: paqrap-db
+    environment:
+      POSTGRES_DB: paqrap
+      POSTGRES_USER: paqrap
+      POSTGRES_PASSWORD: paqrap
+    ports:
+      - "5432:5432"
+    volumes:
+      - paqrap-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U paqrap -d paqrap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: paqrap-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/paqrap
+      SPRING_DATASOURCE_USERNAME: paqrap
+      SPRING_DATASOURCE_PASSWORD: paqrap
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: paqrap-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+
+volumes:
+  paqrap-db-data:

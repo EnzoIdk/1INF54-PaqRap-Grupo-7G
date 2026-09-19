@@ -1,0 +1,52 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: paqrap-backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/paqrap
+    username: paqrap
+    password: paqrap
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+# Parametros propios del dominio PaqRap. Ningun numero magico de negocio
+# debe escribirse en el codigo; todo valor configurable se lee desde aqui
+# (STD 2.3).
+paqrap:
+  planificador:
+    algoritmo-activo: IACO
+    semilla-aleatoria: 20220954
+    peso-feromona: 1.0
+    peso-heuristica-costo: 2.0
+    peso-urgencia: 1.5
+    tasa-evaporacion: 0.1
+    recompensa-global: 1.0
+    feromona-inicial: 0.1
+    tamano-poblacion: 100
+    num-generaciones: 200
+    porcentaje-elitismo: 0.1
+    penalidad-plazo: 1000.0
+    penalidad-capacidad: 1000.0
+  flota:
+    velocidad-kmh-auto: 50
+    velocidad-kmh-moto: 40
+    velocidad-kmh-bicicleta: 20
+    capacidad-auto: 200
+    capacidad-moto: 80
+    capacidad-bicicleta: 20
+  almacen:
+    stock-maximo: 1000
+    stock-minimo: 0
+    umbral-ambar-porcentaje: 0.33
+    umbral-rojo-porcentaje: 0.66
+
+logging:
+  level:
+    pe.edu.pucp.paqrap: INFO
