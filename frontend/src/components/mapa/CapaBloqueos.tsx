@@ -1,37 +1,42 @@
 import { memo } from "react";
-import { aCoordenadaPantalla } from "../../utils/coordenadas";
+import type { BloqueoDto } from "../../types/Experimentacion";
+import type { EscalaMapa } from "../../utils/coordenadas";
 
 interface CapaBloqueosProps {
-  bloqueos: Array<{ id: number; nodos: Array<[number, number]> }>;
+  bloqueos: BloqueoDto[];
+  escala: EscalaMapa;
+  /** Minuto de simulacion actual: solo se dibuja lo que esta vigente. */
+  minutoActual: number;
 }
 
 /**
- * Dibuja los tramos bloqueados vigentes como una polilinea sobre el mapa.
+ * Tramos cerrados por la municipalidad: polilinea de 3 px en rojo con trazo
+ * discontinuo, sobre la secuencia de nodos del bloqueo (STD 2.6.3).
+ *
+ * <p>Solo se dibujan los bloqueos vigentes en el minuto que se esta
+ * reproduciendo: un bloqueo que ya termino deja de condicionar la
+ * circulacion y no debe seguir en el mapa.</p>
  */
-const CapaBloqueos = ({ bloqueos }: CapaBloqueosProps) => (
-  <svg
-    viewBox="0 0 100 100"
-    preserveAspectRatio="none"
-    style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
-  >
-    {bloqueos.map((bloqueo) => {
-      const puntos = bloqueo.nodos
-        .map(([x, y]) => {
-          const posicion = aCoordenadaPantalla(x, y);
-          return `${posicion.left},${posicion.top}`;
-        })
-        .join(" ");
-      return (
+const CapaBloqueos = ({ bloqueos, escala, minutoActual }: CapaBloqueosProps) => (
+  <g>
+    {bloqueos
+      .filter((bloqueo) => minutoActual >= bloqueo.inicioMinuto && minutoActual < bloqueo.finMinuto)
+      .map((bloqueo, indice) => (
         <polyline
-          key={bloqueo.id}
-          points={puntos}
+          key={`${bloqueo.inicioMinuto}-${indice}`}
+          points={bloqueo.nodos.map(([x, y]) => `${escala.aX(x)},${escala.aY(y)}`).join(" ")}
+          fill="none"
           stroke="var(--color-semaforo-rojo)"
           strokeWidth={3}
-          fill="none"
-        />
-      );
-    })}
-  </svg>
+          strokeDasharray="6 4"
+          strokeLinecap="round"
+        >
+          <title>
+            {`Tramo bloqueado (${bloqueo.nodos.map(([x, y]) => `${x},${y}`).join(") - (")})`}
+          </title>
+        </polyline>
+      ))}
+  </g>
 );
 
 export default memo(CapaBloqueos);

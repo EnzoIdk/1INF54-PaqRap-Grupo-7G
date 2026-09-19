@@ -1,0 +1,88 @@
+/* Botones del estandar de GUI (STD 2.5.1). */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--alto-control);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radio);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.boton:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
+}
+
+/* Deshabilitado: 40 % de opacidad (STD 2.5.1). */
+.boton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.boton--primario {
+  background-color: var(--color-azul-paqrap);
+  color: #ffffff;
+}
+
+.boton--primario:hover:not(:disabled) {
+  background-color: #14375c;
+}
+
+.boton--accion {
+  background-color: var(--color-azul-accion);
+  color: #ffffff;
+}
+
+.boton--accion:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.boton--secundario {
+  background-color: var(--color-fondo);
+  border-color: var(--color-borde);
+  color: var(--color-texto);
+}
+
+.boton--secundario:hover:not(:disabled) {
+  background-color: var(--color-superficie);
+}
+
+.boton--destructivo {
+  background-color: var(--color-semaforo-rojo);
+  color: #ffffff;
+}
+
+.boton--destructivo:hover:not(:disabled) {
+  background-color: #b91c1c;
+}
+
+.boton--fantasma {
+  background-color: transparent;
+  color: var(--color-texto-secundario);
+}
+
+.boton--fantasma:hover:not(:disabled) {
+  background-color: var(--color-superficie);
+}
+
+/* Solo icono: 36 x 36 px fijos (STD 2.5.1). */
+.boton--solo-icono {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.boton--solo-icono.boton--secundario {
+  border-color: var(--color-borde);
+}

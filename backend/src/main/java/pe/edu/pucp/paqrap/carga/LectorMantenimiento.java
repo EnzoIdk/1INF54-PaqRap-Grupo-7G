@@ -19,14 +19,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Lee el archivo {@code mant_preventivo_m1_m2.txt} con el formato de
- * registro {@code aaaammdd:TTNN} (STD 4.7), donde TT es el tipo de unidad
- * (TA, TB o TM) y NN el correlativo.
+ * Lee archivos de mantenimiento con nombre {@code mant.preventivo.MM.MM.txt}
+ * con el formato de registro {@code aaaammdd:TTNN} (STD 4.7), donde TT es el
+ * tipo de unidad (TA, TB o TM) y NN el correlativo.
  */
 @Component
 public class LectorMantenimiento {
 
     private static final Logger log = LoggerFactory.getLogger(LectorMantenimiento.class);
+
+    private static final Pattern PATRON_NOMBRE_ARCHIVO = Pattern.compile("mant\\.preventivo\\.\\d{2}\\.\\d{2}\\.txt");
 
     private static final Pattern PATRON_MANTENIMIENTO = Pattern.compile("(\\d{8}):((?:TA|TM|TB)\\d{2})");
 
@@ -36,6 +38,8 @@ public class LectorMantenimiento {
     }
 
     public Resultado leer(Path archivo) {
+        validarNombreArchivo(archivo);
+
         List<MantenimientoProgramado> mantenimientos = new ArrayList<>();
         ResultadoCarga resumen = new ResultadoCarga();
 
@@ -50,6 +54,13 @@ public class LectorMantenimiento {
         }
 
         return new Resultado(mantenimientos, resumen);
+    }
+
+    private void validarNombreArchivo(Path archivo) {
+        String nombreArchivo = archivo.getFileName().toString();
+        if (!PATRON_NOMBRE_ARCHIVO.matcher(nombreArchivo).matches()) {
+            throw new CargaArchivoException("Nombre de archivo no válido para mantenimiento: " + nombreArchivo);
+        }
     }
 
     private void procesarLinea(String linea, List<MantenimientoProgramado> mantenimientos, ResultadoCarga resumen) {

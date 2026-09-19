@@ -20,14 +20,16 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Lee el archivo mensual {@code bloqueo_aamm.txt} con el formato de registro
- * {@code ##d##h##m-##d##h##m:x1,y1,x2,y2,...} (STD 4.7). Cada par
- * consecutivo de nodos identifica un tramo bloqueado.
+ * Lee archivos de bloqueos con nombre {@code bloqueo.aaMM.txt} y formato
+ * de registro {@code ##d##h##m-##d##h##m:x1,y1,x2,y2,...} (STD 4.7).
+ * Cada par consecutivo de nodos identifica un tramo bloqueado.
  */
 @Component
 public class LectorBloqueos {
 
     private static final Logger log = LoggerFactory.getLogger(LectorBloqueos.class);
+
+    private static final Pattern PATRON_NOMBRE_ARCHIVO = Pattern.compile("bloqueo\\.\\d{4}\\.txt");
 
     private static final Pattern PATRON_BLOQUEO = Pattern.compile(
             "(\\d{2}d\\d{2}h\\d{2}m)-(\\d{2}d\\d{2}h\\d{2}m):(.+)");
@@ -36,6 +38,8 @@ public class LectorBloqueos {
     }
 
     public Resultado leer(Path archivo) {
+        validarNombreArchivo(archivo);
+
         List<Bloqueo> bloqueos = new ArrayList<>();
         ResultadoCarga resumen = new ResultadoCarga();
 
@@ -50,6 +54,13 @@ public class LectorBloqueos {
         }
 
         return new Resultado(bloqueos, resumen);
+    }
+
+    private void validarNombreArchivo(Path archivo) {
+        String nombreArchivo = archivo.getFileName().toString();
+        if (!PATRON_NOMBRE_ARCHIVO.matcher(nombreArchivo).matches()) {
+            throw new CargaArchivoException("Nombre de archivo no válido para bloqueos: " + nombreArchivo);
+        }
     }
 
     private void procesarLinea(String linea, List<Bloqueo> bloqueos, ResultadoCarga resumen) {

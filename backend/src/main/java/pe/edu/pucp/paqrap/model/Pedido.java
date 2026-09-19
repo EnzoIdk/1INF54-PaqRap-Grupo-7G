@@ -11,6 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
+import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.enums.EstadoPedido;
 
 import java.time.LocalDateTime;
@@ -54,6 +56,15 @@ public class Pedido {
 
     @Column(name = "registrado_en", nullable = false)
     private LocalDateTime registradoEn;
+
+    /**
+     * Codigo correlativo P-#### que identifica al pedido dentro de una
+     * ejecucion de la experimentacion numerica, donde los pedidos se leen de
+     * un archivo de ventas y no llegan a persistirse. No forma parte del
+     * esquema de la base de datos.
+     */
+    @Transient
+    private String codigo;
 
     protected Pedido() {
     }
@@ -101,5 +112,22 @@ public class Pedido {
 
     public LocalDateTime getRegistradoEn() {
         return registradoEn;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    /**
+     * Minuto de simulacion en que vence el plazo comprometido. La hora de
+     * entrega al destinatario no se contabiliza dentro de este plazo, por lo
+     * que el limite se compara contra la hora de llegada al cliente.
+     */
+    public int getMinutoLimiteEntrega() {
+        return minutoSimulacion + plazoHoras * ConstantesPaqrap.MINUTOS_POR_HORA;
     }
 }

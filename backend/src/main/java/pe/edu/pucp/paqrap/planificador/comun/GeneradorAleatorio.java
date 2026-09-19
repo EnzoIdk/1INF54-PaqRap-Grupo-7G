@@ -14,13 +14,29 @@ import java.util.Random;
 @Component
 public class GeneradorAleatorio {
 
+    private final long semillaPorDefecto;
     private final Random random;
 
     public GeneradorAleatorio(ParametrosPlanificador parametrosPlanificador) {
-        this.random = new Random(parametrosPlanificador.semillaAleatoria());
+        this.semillaPorDefecto = parametrosPlanificador.semillaAleatoria();
+        this.random = new Random(semillaPorDefecto);
     }
 
     public Random obtener() {
         return random;
+    }
+
+    public long getSemillaPorDefecto() {
+        return semillaPorDefecto;
+    }
+
+    /**
+     * Genera una fuente independiente para una ejecucion concreta. Cada
+     * ejecucion de la experimentacion numerica parte de su propia semilla,
+     * de forma que repetir la ejecucion con la misma semilla devuelve
+     * exactamente el mismo plan.
+     */
+    public Random crear(long semilla) {
+        return new Random(semilla);
     }
 }

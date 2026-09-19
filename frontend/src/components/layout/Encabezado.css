@@ -1,0 +1,68 @@
+/* Encabezado general y de mapa (STD 2.6.2). */
+
+.encabezado {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 62px;
+  padding: 10px 20px;
+  background-color: var(--color-fondo);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.encabezado__identidad {
+  min-width: 0;
+}
+
+.encabezado__titulo {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.encabezado__contexto {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--color-texto-tenue);
+}
+
+.encabezado__extremo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.encabezado__busqueda {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 260px;
+  height: var(--alto-control);
+  padding: 0 12px;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  color: var(--color-texto-tenue);
+}
+
+.encabezado__busqueda:focus-within {
+  border-color: var(--color-azul-accion);
+  box-shadow: var(--anillo-foco);
+}
+
+.encabezado__busqueda input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--color-texto);
+}
+
+.encabezado__busqueda input::placeholder {
+  color: var(--color-texto-tenue);
+}

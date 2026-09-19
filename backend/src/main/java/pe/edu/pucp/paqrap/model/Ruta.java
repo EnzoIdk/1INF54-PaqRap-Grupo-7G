@@ -1,39 +1,105 @@
 package pe.edu.pucp.paqrap.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * Secuencia ordenada de nodos y pedidos asignados a una unidad de transporte
- * para atender durante un turno.
+ * Secuencia ordenada de paradas que una unidad de transporte atiende en un
+ * turno, partiendo del almacen donde se abastecio.
+ *
+ * <p>Distingue dos niveles de detalle: las {@link ParadaRuta}, que son los
+ * destinos de los pedidos asignados, y la {@code secuenciaNodos}, que es la
+ * polilinea nodo a nodo sobre la reticula que el visualizador recorre para
+ * animar el desplazamiento de la unidad.</p>
  */
 public class Ruta {
 
     private final UnidadTransporte unidadTransporte;
+    private final Almacen almacenOrigen;
+    private final int minutoSalidaAlmacen;
+    private final List<ParadaRuta> paradas = new ArrayList<>();
     private final List<Nodo> secuenciaNodos = new ArrayList<>();
-    private final List<Pedido> pedidosAsignados = new ArrayList<>();
+    private final List<Integer> minutosPorNodo = new ArrayList<>();
+    private double distanciaKm;
 
-    public Ruta(UnidadTransporte unidadTransporte) {
+    public Ruta(UnidadTransporte unidadTransporte, Almacen almacenOrigen, int minutoSalidaAlmacen) {
         this.unidadTransporte = unidadTransporte;
+        this.almacenOrigen = almacenOrigen;
+        this.minutoSalidaAlmacen = minutoSalidaAlmacen;
+    }
+
+    public void agregarParada(ParadaRuta parada) {
+        paradas.add(parada);
+        distanciaKm += parada.getDistanciaKmDesdeAnterior();
+    }
+
+    /**
+     * Fija el recorrido de la unidad: la polilinea nodo a nodo y el minuto de
+     * simulacion en que la unidad pasa por cada uno de esos nodos. Ambas
+     * listas tienen el mismo tamano, de modo que el visualizador puede
+     * interpolar la posicion de la unidad en cualquier instante.
+     */
+    public void definirRecorrido(List<Nodo> nodos, List<Integer> minutos) {
+        if (nodos.size() != minutos.size()) {
+            throw new IllegalArgumentException(
+                    "El recorrido necesita un minuto por nodo: " + nodos.size() + " nodos y " + minutos.size() + " minutos");
+        }
+        secuenciaNodos.clear();
+        secuenciaNodos.addAll(nodos);
+        minutosPorNodo.clear();
+        minutosPorNodo.addAll(minutos);
     }
 
     public UnidadTransporte getUnidadTransporte() {
         return unidadTransporte;
     }
 
+    public Almacen getAlmacenOrigen() {
+        return almacenOrigen;
+    }
+
+    public List<ParadaRuta> getParadas() {
+        return Collections.unmodifiableList(paradas);
+    }
+
     public List<Nodo> getSecuenciaNodos() {
-        return secuenciaNodos;
+        return Collections.unmodifiableList(secuenciaNodos);
+    }
+
+    /** Minuto de simulacion en que la unidad alcanza cada nodo del recorrido. */
+    public List<Integer> getMinutosPorNodo() {
+        return Collections.unmodifiableList(minutosPorNodo);
     }
 
     public List<Pedido> getPedidosAsignados() {
-        return pedidosAsignados;
+        return paradas.stream().map(ParadaRuta::getPedido).toList();
     }
 
-    public int calcularDistanciaKm() {
-        int distanciaKm = 0;
-        for (int i = 1; i < secuenciaNodos.size(); i++) {
-            distanciaKm += secuenciaNodos.get(i - 1).distanciaKmHasta(secuenciaNodos.get(i));
-        }
+    public double getDistanciaKm() {
         return distanciaKm;
+    }
+
+    /** Paquetes del producto P que la unidad lleva a bordo al salir del almacen. */
+    public int getCargaTotal() {
+        return paradas.stream().mapToInt(parada -> parada.getPedido().getCantidadProducto()).sum();
+    }
+
+    public boolean estaVacia() {
+        return paradas.isEmpty();
+    }
+
+    /** Minuto de simulacion en que la unidad sale del almacen de origen. */
+    public int getMinutoSalidaAlmacen() {
+        return minutoSalidaAlmacen;
+    }
+
+    /** Minuto de simulacion en que la unidad termina su ultima entrega. */
+    public int getMinutoFin() {
+        return paradas.isEmpty() ? minutoSalidaAlmacen : paradas.get(paradas.size() - 1).getMinutoSalida();
+    }
+
+    public long contarParadasFueraDePlazo() {
+        return paradas.stream().filter(parada -> !parada.cumplePlazo()).count();
     }
 }

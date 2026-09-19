@@ -1,5 +1,11 @@
 @import "./tokens.css";
 
+/*
+ * Estilos base y clases compartidas por los componentes del visualizador
+ * (STD 2.3 a 2.6). Las reglas de un componente concreto viven junto a el;
+ * aqui solo esta lo que se reutiliza en todas las pantallas.
+ */
+
 * {
   box-sizing: border-box;
 }
@@ -12,11 +18,115 @@ body,
 }
 
 body {
-  background-color: var(--color-fondo);
+  background-color: var(--color-superficie);
   color: var(--color-texto);
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--fuente-base);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--color-texto);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* --- Cifras comparables entre si: monoespaciadas (STD 2.5.4) --- */
+.cifra {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Tarjeta: contenedor basico del contenido (STD 2.1) --- */
+.tarjeta {
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.tarjeta__encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tarjeta__titulo {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tarjeta__contexto {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--color-texto-tenue);
+}
+
+.tarjeta__cuerpo {
+  padding: 16px;
+}
+
+/* --- Etiqueta de seccion (STD 2.5.4) --- */
+.rotulo {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+}
+
+.texto-secundario {
+  color: var(--color-texto-secundario);
+}
+
+.texto-tenue {
+  color: var(--color-texto-tenue);
+}
+
+/* --- Barra de desplazamiento discreta en los paneles --- */
+.desplazable {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-borde) transparent;
+}
+
+.desplazable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.desplazable::-webkit-scrollbar-thumb {
+  background-color: var(--color-borde);
+  border-radius: 4px;
+}
+
+/* --- Estado vacio: nunca una lista en blanco (STD 2.5.4) --- */
+.estado-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--color-texto-tenue);
+}
+
+.estado-vacio__titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-texto-secundario);
 }

@@ -1,51 +1,145 @@
 import { memo } from "react";
-import { aCoordenadaPantalla } from "../../utils/coordenadas";
-import type { UnidadTransporteEstado, TipoUnidad } from "../../types/EstadoUnidad";
+import { Bike, Car, Motorbike, TriangleAlert } from "lucide-react";
+import type { PosicionUnidad } from "../../hooks/usePosicionesFlota";
+import type { TipoUnidad } from "../../types/Experimentacion";
+import { COLOR_TIPO_UNIDAD, ETIQUETA_TIPO_UNIDAD } from "../../utils/constants";
+import { formatearTiempoSimulado } from "../../utils/formatters";
+import type { EscalaMapa } from "../../utils/coordenadas";
 
-const COLOR_POR_TIPO: Record<TipoUnidad, string> = {
-  AUTO: "var(--color-tipo-auto)",
-  MOTO: "var(--color-tipo-moto)",
-  BICICLETA: "var(--color-tipo-bicicleta)",
-};
+const ICONO_POR_TIPO = {
+  AUTO: Car,
+  MOTO: Motorbike,
+  BICICLETA: Bike,
+} as const;
 
-const ICONO_POR_TIPO: Record<TipoUnidad, string> = {
-  AUTO: "■",
-  MOTO: "▲",
-  BICICLETA: "●",
-};
+const LADO_ICONO = 18;
 
 interface CapaUnidadesProps {
-  unidades: UnidadTransporteEstado[];
+  unidades: PosicionUnidad[];
+  escala: EscalaMapa;
+  /** Codigos de las unidades averiadas en este instante. */
+  unidadesAveriadas: string[];
+  /** Codigos de las unidades inmovilizadas por mantenimiento preventivo. */
+  unidadesEnMantenimiento: string[];
+  unidadEnfocada: string | null;
+  onEnfocar: (codigoUnidad: string | null) => void;
+  minutoActual: number;
 }
 
 /**
- * Dibuja las unidades de transporte sobre el mapa, distinguidas por forma,
- * icono y color segun su tipo, y rotuladas con su codigo TTNN (STD 5.6).
+ * Unidades de transporte sobre el mapa, animadas segun la ruta que el
+ * algoritmo encontro (STD 2.6.4).
+ *
+ * <ul>
+ *   <li>Operativa en ruta: icono a color pleno.</li>
+ *   <li>En el almacen: icono al 55 % de opacidad.</li>
+ *   <li>Averiada: anillo rojo pulsante con icono de advertencia.</li>
+ * </ul>
  */
-const CapaUnidades = ({ unidades }: CapaUnidadesProps) => (
-  <>
+const CapaUnidades = ({
+  unidades,
+  escala,
+  unidadesAveriadas,
+  unidadesEnMantenimiento,
+  unidadEnfocada,
+  onEnfocar,
+  minutoActual,
+}: CapaUnidadesProps) => (
+  <g>
+    <defs>
+      {/* Trama diagonal de una unidad en mantenimiento (STD 2.6.4). */}
+      <pattern id="trama-mantenimiento" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="var(--color-superficie)" />
+        <line x1="0" y1="0" x2="0" y2="4" stroke="var(--color-texto-tenue)" strokeWidth="1.6" />
+      </pattern>
+    </defs>
     {unidades.map((unidad) => {
-      const posicion = aCoordenadaPantalla(unidad.posX, unidad.posY);
+      const Icono = ICONO_POR_TIPO[unidad.tipoUnidad as TipoUnidad];
+      const cx = escala.aX(unidad.x);
+      const cy = escala.aY(unidad.y);
+      const averiada = unidadesAveriadas.includes(unidad.codigoUnidad);
+      const enMantenimiento = !averiada && unidadesEnMantenimiento.includes(unidad.codigoUnidad);
+      const enfocada = unidadEnfocada === unidad.codigoUnidad;
+      const atenuada = unidadEnfocada !== null && !enfocada;
+
+      const opacidad = atenuada ? 0.2 : unidad.enAlmacen || unidad.finalizada ? 0.55 : 1;
+
       return (
-        <div
-          key={unidad.codigo}
-          title={`${unidad.codigo} - ${unidad.estado}`}
-          style={{
-            position: "absolute",
-            left: `${posicion.left}%`,
-            top: `${posicion.top}%`,
-            color: COLOR_POR_TIPO[unidad.tipoUnidad],
-            transform: "translate(-50%, -50%)",
-            fontSize: 14,
-            textAlign: "center",
-          }}
+        <g
+          key={unidad.codigoUnidad}
+          className="mapa__unidad"
+          opacity={opacidad}
+          onClick={() => onEnfocar(enfocada ? null : unidad.codigoUnidad)}
         >
-          <div>{ICONO_POR_TIPO[unidad.tipoUnidad]}</div>
-          <div style={{ fontSize: 10 }}>{unidad.codigo}</div>
-        </div>
+          {enfocada && <circle cx={cx} cy={cy} r={16} fill="var(--color-azul-suave)" opacity={0.85} />}
+
+          {enMantenimiento && (
+            <circle cx={cx} cy={cy} r={9} fill="url(#trama-mantenimiento)" stroke="var(--color-texto-tenue)" strokeWidth={1.2} />
+          )}
+
+          {averiada && (
+            <>
+              <circle
+                cx={cx}
+                cy={cy}
+                r={9}
+                fill="var(--color-rojo-suave)"
+                stroke="var(--color-semaforo-rojo)"
+                strokeWidth={1.5}
+                className="mapa__anillo-averia"
+              />
+              <TriangleAlert
+                x={cx + 4}
+                y={cy - 14}
+                width={11}
+                height={11}
+                color="var(--color-semaforo-rojo)"
+                strokeWidth={2.5}
+              />
+            </>
+          )}
+
+          <Icono
+            x={cx - LADO_ICONO / 2}
+            y={cy - LADO_ICONO / 2}
+            width={LADO_ICONO}
+            height={LADO_ICONO}
+            color={enMantenimiento ? "var(--color-texto-tenue)" : COLOR_TIPO_UNIDAD[unidad.tipoUnidad]}
+            strokeWidth={2}
+          />
+
+          {(enfocada || unidad.entregando) && (
+            <text x={cx} y={cy + 20} className="mapa__etiqueta-unidad">
+              {unidad.codigoUnidad}
+            </text>
+          )}
+
+          <title>
+            {`${unidad.codigoUnidad} · ${ETIQUETA_TIPO_UNIDAD[unidad.tipoUnidad]}\n` +
+              `Entregas ${unidad.entregasHechas}/${unidad.entregasTotales} · ` +
+              `${unidad.cargaRestante}/${unidad.cargaTotal} paquetes a bordo\n` +
+              `${describirSituacion(unidad, averiada, enMantenimiento)} · ${formatearTiempoSimulado(minutoActual)}`}
+          </title>
+        </g>
       );
     })}
-  </>
+  </g>
 );
+
+function describirSituacion(unidad: PosicionUnidad, averiada: boolean, enMantenimiento: boolean): string {
+  if (averiada) {
+    return "Averiada";
+  }
+  if (enMantenimiento) {
+    return "En mantenimiento preventivo";
+  }
+  if (unidad.enAlmacen) {
+    return "En el almacén";
+  }
+  if (unidad.finalizada) {
+    return "Ruta completada";
+  }
+  return unidad.entregando ? "Entregando al cliente" : "En ruta";
+}
 
 export default memo(CapaUnidades);

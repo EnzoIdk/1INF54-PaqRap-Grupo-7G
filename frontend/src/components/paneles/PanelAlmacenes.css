@@ -1,0 +1,29 @@
+/* Panel de inventario de los almacenes (STD 2.6.5). */
+
+.panel-almacenes__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 14px 16px;
+  list-style: none;
+}
+
+.panel-almacenes__cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.panel-almacenes__codigo {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.panel-almacenes__central {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--color-texto-tenue);
+}

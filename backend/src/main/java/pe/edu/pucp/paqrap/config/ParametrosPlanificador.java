@@ -16,9 +16,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @param tasaEvaporacion ritmo de evaporacion de la feromona por iteracion (I-ACO)
  * @param recompensaGlobal factor de refuerzo depositado sobre las rutas economicas (I-ACO)
  * @param feromonaInicial valor basal de la matriz de feromonas (I-ACO)
+ * @param numIteraciones iteraciones de la colonia por ejecucion (I-ACO)
+ * @param numHormigas agentes que construyen una solucion en cada iteracion (I-ACO)
  * @param tamanoPoblacion numero de individuos por generacion (AGA-ES-TW)
  * @param numGeneraciones cantidad maxima de generaciones por ejecucion (AGA-ES-TW)
+ * @param tamanoTorneo individuos que compiten en cada seleccion por torneo (AGA-ES-TW)
  * @param porcentajeElitismo fraccion de individuos que pasa intacta a la siguiente generacion (AGA-ES-TW)
+ * @param probCruceBase probabilidad de cruce antes del ajuste adaptativo (AGA-ES-TW)
+ * @param probMutacionBase probabilidad de mutacion antes del ajuste adaptativo (AGA-ES-TW)
  * @param penalidadPlazo castigo aplicado al incumplir el plazo comprometido (AGA-ES-TW)
  * @param penalidadCapacidad castigo aplicado al exceder la capacidad de la unidad (AGA-ES-TW)
  */
@@ -32,9 +37,14 @@ public record ParametrosPlanificador(
         double tasaEvaporacion,
         double recompensaGlobal,
         double feromonaInicial,
+        int numIteraciones,
+        int numHormigas,
         int tamanoPoblacion,
         int numGeneraciones,
+        int tamanoTorneo,
         double porcentajeElitismo,
+        double probCruceBase,
+        double probMutacionBase,
         double penalidadPlazo,
         double penalidadCapacidad) {
 }

@@ -1,0 +1,46 @@
+/* Disposicion general: barra lateral permanente y area de contenido. */
+
+.aplicacion {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+.aplicacion__contenido {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-superficie);
+  overflow: hidden;
+}
+
+.aplicacion__cargando {
+  padding: 24px;
+  color: var(--color-texto-tenue);
+}
+
+@media (max-width: 860px) {
+  .aplicacion {
+    flex-direction: column;
+    height: auto;
+    min-height: 100%;
+  }
+
+  .navside {
+    width: 100%;
+    flex: 0 0 auto;
+    padding: 12px 14px;
+  }
+
+  .navside__modulos {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .navside__usuario,
+  .navside__separador:last-of-type {
+    display: none;
+  }
+}

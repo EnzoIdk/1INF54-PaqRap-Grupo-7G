@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import pe.edu.pucp.paqrap.enums.TipoAlmacen;
 
 /**
@@ -41,6 +42,14 @@ public class Almacen {
     @Column(name = "stock_actual", nullable = false)
     private int stockActual;
 
+    /**
+     * Nombre con el que el visualizador identifica al almacen
+     * (ALM-CENTRAL, ALM-NOROESTE, ALM-ESTE). No forma parte del esquema de
+     * la base de datos.
+     */
+    @Transient
+    private String codigo;
+
     protected Almacen() {
     }
 
@@ -48,6 +57,11 @@ public class Almacen {
         this.tipoAlmacen = tipoAlmacen;
         this.ubicacion = ubicacion;
         this.stockActual = stockActual;
+    }
+
+    public Almacen(String codigo, TipoAlmacen tipoAlmacen, Nodo ubicacion, int stockActual) {
+        this(tipoAlmacen, ubicacion, stockActual);
+        this.codigo = codigo;
     }
 
     public Long getId() {
@@ -68,5 +82,17 @@ public class Almacen {
 
     public void setStockActual(int stockActual) {
         this.stockActual = stockActual;
+    }
+
+    public String getCodigo() {
+        return codigo;
+    }
+
+    public void setCodigo(String codigo) {
+        this.codigo = codigo;
+    }
+
+    public boolean esCentral() {
+        return tipoAlmacen == TipoAlmacen.CENTRAL;
     }
 }

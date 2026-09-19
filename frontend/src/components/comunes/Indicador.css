@@ -1,0 +1,31 @@
+/* Cifra destacada de un tablero. */
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.indicador__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.indicador__icono {
+  display: inline-flex;
+  color: var(--color-texto-tenue);
+}
+
+.indicador__valor {
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.indicador__detalle {
+  font-size: 11px;
+  color: var(--color-texto-tenue);
+}

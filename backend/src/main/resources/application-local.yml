@@ -1,0 +1,28 @@
+# Perfil de trabajo local para la experimentacion numerica.
+#
+# Levanta el backend sin PostgreSQL: el esquema se genera en una base H2 en
+# memoria y Flyway queda desactivado, porque las migraciones de
+# db/migration estan escritas para PostgreSQL. Los archivos de datos
+# (ventas, bloqueos y mantenimiento) se siguen leyendo desde
+# src/main/resources/datos, de modo que la experimentacion numerica y el
+# visualizador funcionan sin depender del contenedor de base de datos.
+#
+#   mvn spring-boot:run -Dspring-boot.run.profiles=local
+#
+# El perfil por defecto (PostgreSQL + Flyway) no se modifica.
+spring:
+  datasource:
+    url: jdbc:h2:mem:paqrap;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driver-class-name: org.h2.Driver
+    username: paqrap
+    password: paqrap
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+  flyway:
+    enabled: false
+
+logging:
+  level:
+    pe.edu.pucp.paqrap: INFO

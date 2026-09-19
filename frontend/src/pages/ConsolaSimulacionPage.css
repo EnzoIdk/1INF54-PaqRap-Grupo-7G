@@ -1,0 +1,122 @@
+/* Consola de Simulacion. */
+
+.consola {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.consola__cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+}
+
+.consola__error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background-color: var(--color-rojo-suave);
+  border-left: 4px solid var(--color-semaforo-rojo);
+  border-radius: 6px;
+  color: var(--color-texto);
+  font-size: 12.5px;
+}
+
+.consola__error svg {
+  color: var(--color-semaforo-rojo);
+  flex: 0 0 auto;
+}
+
+.consola__rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.consola__averia-nueva {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(200px, 2fr) minmax(110px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .consola__averia-nueva {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.consola__sin-averias {
+  margin: 14px 0 0;
+  font-size: 12px;
+}
+
+.consola__averias {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.consola__averias li {
+  display: grid;
+  grid-template-columns: 16px 60px 1fr auto 36px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background-color: var(--color-rojo-suave);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.consola__averias svg {
+  color: var(--color-semaforo-rojo);
+}
+
+.consola__indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.consola__subtitulo {
+  display: block;
+  margin: 20px 0 10px;
+}
+
+.consola__cargas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.consola__cargas li {
+  display: grid;
+  grid-template-columns: 16px 210px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  background-color: var(--color-superficie);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.consola__cargas svg {
+  color: var(--color-texto-tenue);
+}
+
+.consola__archivo {
+  font-family: var(--fuente-mono);
+  font-weight: 600;
+}

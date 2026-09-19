@@ -1,22 +1,74 @@
 /*
- * Paleta declarada una sola vez. Ningun componente debe escribir un color
- * literal (STD 5.6).
+ * Paleta y escalas del documento "STD - Estandares de Interfaz Grafica de
+ * Usuario" (secciones 2.1 a 2.5). Se declaran una sola vez: ningun
+ * componente debe escribir un color literal (STD 5.6).
  */
 :root {
-  --color-fondo: #0f172a;
-  --color-superficie: #1e293b;
-  --color-texto: #f1f5f9;
-  --color-texto-tenue: #94a3b8;
-  --color-borde: #334155;
+  /* --- Colores de marca (STD 2.1) --- */
+  --color-azul-paqrap: #0e2a47;
+  --color-azul-accion: #2563eb;
+  --color-cian-apoyo: #0891b2;
 
-  --color-primario: #2563eb;
-  --color-primario-hover: #1d4ed8;
+  /* --- Neutros (STD 2.1) --- */
+  --color-texto: #111827;
+  --color-texto-secundario: #4b5563;
+  --color-texto-tenue: #9ca3af;
+  --color-borde: #e5e7eb;
+  --color-superficie: #f3f4f6;
+  --color-fondo: #ffffff;
+  --color-fila-par: #fafafb;
 
-  --color-semaforo-verde: #22c55e;
+  /* --- Semaforo de almacenes (STD 2.2) --- */
+  --color-semaforo-verde: #16a34a;
   --color-semaforo-ambar: #f59e0b;
-  --color-semaforo-rojo: #ef4444;
+  --color-semaforo-rojo: #dc2626;
 
-  --color-tipo-auto: #38bdf8;
-  --color-tipo-moto: #a78bfa;
-  --color-tipo-bicicleta: #4ade80;
+  /* Fondos suaves de los mismos colores, para badges y alertas */
+  --color-verde-suave: #dcfce7;
+  --color-ambar-suave: #fef3c7;
+  --color-rojo-suave: #fee2e2;
+  --color-azul-suave: #dbeafe;
+  --color-morado-suave: #ede9fe;
+  --color-gris-suave: #eef2f6;
+
+  /* --- Estados del pedido (STD 2.1) --- */
+  --color-estado-pendiente: #64748b;
+  --color-estado-asignado: #2563eb;
+  --color-estado-en-ruta: #7c3aed;
+  --color-estado-entregado: #16a34a;
+  --color-estado-reasignado: #f59e0b;
+  --color-estado-incumplido: #dc2626;
+
+  /* --- Tipos de unidad (STD 2.1) --- */
+  --color-tipo-auto: #1d4ed8;
+  --color-tipo-moto: #0891b2;
+  --color-tipo-bicicleta: #059669;
+
+  /* --- Mapa (STD 2.6.3) --- */
+  --color-reticula-menor: #eff2f6;
+  --color-reticula-mayor: #e3e8ef;
+  --color-ruta-recorrida: #9ca3af;
+
+  /* --- Tipografia (STD 2.3) --- */
+  --fuente-base:
+    "Roboto",
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  --fuente-mono:
+    "Roboto Mono",
+    ui-monospace,
+    "SFMono-Regular",
+    "Consolas",
+    monospace;
+
+  /* --- Forma y espaciado (STD 2.5) --- */
+  --radio: 8px;
+  --radio-badge: 10px;
+  --alto-control: 38px;
+  --alto-fila: 36px;
+  --sombra-tarjeta: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --sombra-flotante: 0 8px 24px rgba(17, 24, 39, 0.12);
+  --anillo-foco: 0 0 0 2px rgba(37, 99, 235, 0.4);
 }

@@ -1,0 +1,84 @@
+/* Mapa de la ciudad (STD 2.6.3). */
+
+.mapa {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background-color: var(--color-fondo);
+}
+
+.mapa__lienzo {
+  display: block;
+}
+
+.mapa__rotulo-eje {
+  fill: var(--color-texto-tenue);
+  font-family: var(--fuente-mono);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.mapa__rotulo-eje--y {
+  text-anchor: end;
+}
+
+.mapa__rotulo-eje--titulo {
+  font-family: var(--fuente-base);
+  font-size: 10px;
+}
+
+.mapa__etiqueta-unidad {
+  fill: var(--color-texto);
+  font-family: var(--fuente-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.mapa__unidad {
+  cursor: pointer;
+}
+
+/* Anillo rojo pulsante de una unidad averiada (STD 2.6.4). */
+.mapa__anillo-averia {
+  animation: pulso-averia 1.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes pulso-averia {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.22);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa__anillo-averia {
+    animation: none;
+  }
+}
+
+.mapa__vacio {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.92);
+  color: var(--color-texto-tenue);
+  text-align: center;
+}

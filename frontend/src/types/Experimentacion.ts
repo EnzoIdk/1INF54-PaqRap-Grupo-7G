@@ -1,0 +1,170 @@
+/** Espejo de `pe.edu.pucp.paqrap.dto.ExperimentacionResponse` (STD 5.1). */
+
+export type TipoUnidad = "AUTO" | "MOTO" | "BICICLETA";
+export type TipoAlmacen = "CENTRAL" | "INTERMEDIO";
+export type TipoAveria = "TIPO_1" | "TIPO_2" | "TIPO_3";
+export type AlgoritmoSolicitado = "IACO" | "AGAESTW" | "AMBOS";
+
+/** Nodo de la reticula, como par [x, y]. */
+export type NodoMapa = [number, number];
+
+export interface ConjuntoDatos {
+  archivoVentas: string;
+  archivoBloqueos: string | null;
+  archivoMantenimiento: string | null;
+  anio: number;
+  mes: number;
+}
+
+export interface CargaDto {
+  archivo: string;
+  leidos: number;
+  aceptados: number;
+  rechazados: number;
+  detalleRechazos: string[];
+}
+
+export interface AlmacenDto {
+  codigo: string;
+  tipo: TipoAlmacen;
+  posX: number;
+  posY: number;
+  stockActual: number;
+  stockMaximo: number;
+}
+
+export interface BloqueoDto {
+  inicioMinuto: number;
+  finMinuto: number;
+  nodos: NodoMapa[];
+}
+
+export interface UnidadDto {
+  codigo: string;
+  tipoUnidad: TipoUnidad;
+  estado: string;
+  capacidad: number;
+  velocidadKmh: number;
+  costoKm: number;
+  posX: number;
+  posY: number;
+}
+
+export interface EscenarioDto {
+  archivoVentas: string;
+  archivoBloqueos: string | null;
+  archivoMantenimiento: string | null;
+  anio: number;
+  mes: number;
+  dia: number;
+  minutoInicio: number;
+  minutoFin: number;
+  pedidosDelTurno: number;
+  pedidosDelMes: number;
+  bloqueosVigentes: number;
+  bloqueosDelMes: number;
+  semilla: number;
+  cargas: CargaDto[];
+  almacenes: AlmacenDto[];
+  bloqueos: BloqueoDto[];
+  flota: UnidadDto[];
+  unidadesEnMantenimiento: string[];
+}
+
+export interface ParadaDto {
+  codigoPedido: string;
+  clienteId: string;
+  posX: number;
+  posY: number;
+  cantidadProducto: number;
+  plazoHoras: number;
+  minutoRegistro: number;
+  minutoLimite: number;
+  minutoLlegada: number;
+  minutoSalida: number;
+  cumplePlazo: boolean;
+  holguraMinutos: number;
+}
+
+export interface PedidoPendienteDto {
+  codigoPedido: string;
+  clienteId: string;
+  posX: number;
+  posY: number;
+  cantidadProducto: number;
+  plazoHoras: number;
+  minutoRegistro: number;
+  minutoLimite: number;
+}
+
+export interface RutaDto {
+  codigoUnidad: string;
+  tipoUnidad: TipoUnidad;
+  almacenOrigen: string;
+  cargaTotal: number;
+  capacidad: number;
+  distanciaKm: number;
+  costoSoles: number;
+  minutoSalida: number;
+  minutoFin: number;
+  /** Nodos por los que pasa la unidad, en orden. */
+  recorrido: NodoMapa[];
+  /** Minuto de simulacion de cada nodo del recorrido; mismo tamaño que `recorrido`. */
+  minutosPorNodo: number[];
+  paradas: ParadaDto[];
+}
+
+export interface MetricasDto {
+  pedidosDelTurno: number;
+  pedidosAtendidos: number;
+  pedidosSinAtender: number;
+  entregasFueraDePlazo: number;
+  unidadesEnRuta: number;
+  unidadesDisponibles: number;
+  distanciaTotalKm: number;
+  costoOperativoTotal: number;
+  multas: number;
+  fitness: number;
+  duracionComputoMs: number;
+}
+
+export interface EjecucionDto {
+  algoritmo: string;
+  metricas: MetricasDto;
+  rutas: RutaDto[];
+  pedidosSinAtender: PedidoPendienteDto[];
+  riesgosDeColapso: string[];
+}
+
+export interface ExperimentacionResponse {
+  escenario: EscenarioDto;
+  ejecuciones: EjecucionDto[];
+}
+
+/** Espejo de `pe.edu.pucp.paqrap.experimentacion.ParametrosEjecucion`. */
+export interface ParametrosEjecucion {
+  archivoVentas: string;
+  dia: number;
+  horaInicio: number;
+  ventanaHoras: number;
+  maximoPedidos: number;
+  algoritmo: AlgoritmoSolicitado;
+  semilla?: number | null;
+  cantidadAutos?: number | null;
+  cantidadMotos?: number | null;
+  cantidadBicicletas?: number | null;
+  averias?: AveriaSolicitada[];
+}
+
+export interface AveriaSolicitada {
+  codigoUnidad: string;
+  tipo: TipoAveria;
+  minutoSimulacion: number;
+}
+
+/** Espejo de `ExperimentacionController.ParametrosVigentes`. */
+export interface ParametrosVigentes {
+  planificador: Record<string, number | string>;
+  flota: Record<string, number>;
+  almacen: Record<string, number>;
+}

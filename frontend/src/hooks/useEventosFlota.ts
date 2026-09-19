@@ -1,17 +1,21 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import { WEBSOCKET_URL } from "../utils/constants";
-import { useSimulacionStore } from "../store/simulacionStore";
 import type { UnidadTransporteEstado } from "../types/EstadoUnidad";
 import type { TipoEscenario } from "../services/simulacionService";
 
 /**
  * Se suscribe al canal `/topic/{escenario}/unidades` para recibir el estado
- * de la flota en tiempo real durante una simulacion (STD 4.2).
+ * de la flota que publica {@code MotorSimulacion} (STD 4.2).
+ *
+ * <p>Alimenta los escenarios que corren en el servidor -día a día, 5D y
+ * colapso-, donde el backend hace avanzar el reloj. La experimentación
+ * numérica no pasa por aquí: el plan llega completo por HTTP y el reloj lo
+ * lleva el visualizador, de modo que el supervisor puede pausarlo y
+ * adelantarlo.</p>
  */
-export function useEventosFlota(tipoEscenario: TipoEscenario): void {
-  const setUnidadesFlota = useSimulacionStore((state) => state.setUnidadesFlota);
-  const clienteRef = useRef<Client | null>(null);
+export function useEventosFlota(tipoEscenario: TipoEscenario): UnidadTransporteEstado[] {
+  const [unidades, setUnidades] = useState<UnidadTransporteEstado[]>([]);
 
   useEffect(() => {
     const cliente = new Client({
@@ -21,16 +25,15 @@ export function useEventosFlota(tipoEscenario: TipoEscenario): void {
 
     cliente.onConnect = () => {
       cliente.subscribe(`/topic/${tipoEscenario.toLowerCase()}/unidades`, (mensaje) => {
-        const unidades = JSON.parse(mensaje.body) as UnidadTransporteEstado[];
-        setUnidadesFlota(unidades);
+        setUnidades(JSON.parse(mensaje.body) as UnidadTransporteEstado[]);
       });
     };
 
     cliente.activate();
-    clienteRef.current = cliente;
-
     return () => {
       void cliente.deactivate();
     };
-  }, [tipoEscenario, setUnidadesFlota]);
+  }, [tipoEscenario]);
+
+  return unidades;
 }

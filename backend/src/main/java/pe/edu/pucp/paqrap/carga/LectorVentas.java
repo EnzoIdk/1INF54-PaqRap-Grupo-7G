@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
- * Lee el archivo mensual {@code ventas_aaaamm.txt} con el formato de
+ * Lee archivos de ventas con nombre {@code ventas.aaaaMM.txt} y formato de
  * registro {@code ##d##h##m:posX,posY,cIdCliente,qq,hl} (STD 4.7).
  * No procesa ningun otro formato de archivo.
  */
@@ -29,6 +29,8 @@ import java.util.stream.Stream;
 public class LectorVentas {
 
     private static final Logger log = LoggerFactory.getLogger(LectorVentas.class);
+
+    private static final Pattern PATRON_NOMBRE_ARCHIVO = Pattern.compile("ventas\\.\\d{6}\\.txt");
 
     private static final Pattern PATRON_VENTA = Pattern.compile(
             "(\\d{2}d\\d{2}h\\d{2}m):(\\d{2}),(\\d{2}),(c\\d+),(\\d{2}),(\\d{2})");
@@ -41,6 +43,8 @@ public class LectorVentas {
     }
 
     public Resultado leer(Path archivo) {
+        validarNombreArchivo(archivo);
+
         List<Pedido> pedidos = new ArrayList<>();
         ResultadoCarga resumen = new ResultadoCarga();
 
@@ -55,6 +59,13 @@ public class LectorVentas {
         }
 
         return new Resultado(pedidos, resumen);
+    }
+
+    private void validarNombreArchivo(Path archivo) {
+        String nombreArchivo = archivo.getFileName().toString();
+        if (!PATRON_NOMBRE_ARCHIVO.matcher(nombreArchivo).matches()) {
+            throw new CargaArchivoException("Nombre de archivo no válido para ventas: " + nombreArchivo);
+        }
     }
 
     private String normalizar(String linea) {

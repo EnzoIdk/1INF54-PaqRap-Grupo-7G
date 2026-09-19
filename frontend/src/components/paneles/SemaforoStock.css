@@ -1,0 +1,38 @@
+/* Semaforo de stock de los almacenes intermedios (STD 2.2). */
+
+.semaforo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.semaforo__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.semaforo__punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.semaforo__cifra {
+  font-weight: 600;
+}
+
+.semaforo__barra {
+  height: 6px;
+  background-color: var(--color-borde);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.semaforo__relleno {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+}

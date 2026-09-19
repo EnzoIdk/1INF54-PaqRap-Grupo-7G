@@ -1,0 +1,57 @@
+/* Leyenda del mapa (STD 2.6.3). */
+
+.leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 218px;
+  flex: 0 0 218px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.leyenda__seccion ul {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leyenda__seccion li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--color-texto-secundario);
+}
+
+.leyenda__cuadro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.leyenda__cuadro--central {
+  width: 16px;
+  height: 16px;
+  background-color: var(--color-azul-paqrap);
+}
+
+.leyenda__cuadro--intermedio {
+  width: 13px;
+  height: 13px;
+  margin: 0 1.5px;
+  background-color: var(--color-azul-accion);
+}
+
+.leyenda__punto {
+  width: 9px;
+  height: 9px;
+  margin: 0 3.5px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}

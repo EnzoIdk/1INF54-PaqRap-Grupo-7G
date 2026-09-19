@@ -1,0 +1,72 @@
+/* Barra de avance del turno. */
+
+.linea-tiempo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background-color: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.linea-tiempo__extremo {
+  font-size: 11px;
+  color: var(--color-texto-tenue);
+  white-space: nowrap;
+}
+
+.linea-tiempo__pista {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  background-color: var(--color-borde);
+  border-radius: 3px;
+}
+
+.linea-tiempo__avance {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background-color: var(--color-azul-accion);
+  border-radius: 3px;
+}
+
+.linea-tiempo__pista input[type="range"] {
+  position: absolute;
+  inset: -7px 0;
+  width: 100%;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.linea-tiempo__pista input[type="range"]:disabled {
+  cursor: not-allowed;
+}
+
+.linea-tiempo__pista input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background-color: var(--color-fondo);
+  border: 2px solid var(--color-azul-accion);
+  border-radius: 50%;
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.linea-tiempo__pista input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background-color: var(--color-fondo);
+  border: 2px solid var(--color-azul-accion);
+  border-radius: 50%;
+}
+
+.linea-tiempo__pista input[type="range"]:focus-visible {
+  outline: none;
+}
+
+.linea-tiempo__pista input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--anillo-foco);
+}

@@ -1,0 +1,93 @@
+/* Tablas del estandar de GUI (STD 2.5.4). */
+
+.tabla {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tabla__contenedor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tabla table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* Encabezado fijo al desplazar la tabla. */
+.tabla thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 16px;
+  height: 34px;
+  background-color: var(--color-superficie);
+  border-bottom: 1px solid var(--color-borde);
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+  white-space: nowrap;
+}
+
+.tabla tbody td {
+  height: var(--alto-fila);
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 12px;
+  color: var(--color-texto);
+  white-space: nowrap;
+}
+
+/* Alternancia de fondo en las filas pares; sin bordes verticales. */
+.tabla tbody tr:nth-child(even) {
+  background-color: var(--color-fila-par);
+}
+
+.tabla__fila--seleccionable {
+  cursor: pointer;
+}
+
+.tabla__fila--seleccionable:hover {
+  background-color: var(--color-azul-suave);
+}
+
+.tabla__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  font-size: 11px;
+  color: var(--color-texto-tenue);
+}
+
+.tabla__paginacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cuenta regresiva del plazo (STD 2.5.4). */
+.plazo--holgada {
+  color: var(--color-texto-secundario);
+}
+
+.plazo--proxima {
+  color: var(--color-semaforo-ambar);
+}
+
+.plazo--critica,
+.plazo--vencido {
+  color: var(--color-semaforo-rojo);
+  font-weight: 700;
+}
+
+.plazo--cumplido {
+  color: var(--color-semaforo-verde);
+}

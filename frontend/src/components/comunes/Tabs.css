@@ -1,0 +1,37 @@
+/* Pestañas del estandar de GUI (STD 2.5.5). */
+
+.tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  background-color: var(--color-superficie);
+  border-radius: var(--radio);
+}
+
+.tabs__opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 14px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tabs__opcion--activa {
+  background-color: var(--color-fondo);
+  border-color: var(--color-borde);
+  box-shadow: var(--sombra-tarjeta);
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.tabs__detalle {
+  font-size: 11px;
+  color: var(--color-texto-tenue);
+}

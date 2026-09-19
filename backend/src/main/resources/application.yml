@@ -23,29 +23,52 @@ paqrap:
   planificador:
     algoritmo-activo: IACO
     semilla-aleatoria: 20220954
+    # I-ACO
     peso-feromona: 1.0
     peso-heuristica-costo: 2.0
     peso-urgencia: 1.5
-    tasa-evaporacion: 0.1
-    recompensa-global: 1.0
+    tasa-evaporacion: 0.2
+    recompensa-global: 100.0
     feromona-inicial: 0.1
-    tamano-poblacion: 100
-    num-generaciones: 200
-    porcentaje-elitismo: 0.1
-    penalidad-plazo: 1000.0
-    penalidad-capacidad: 1000.0
+    num-iteraciones: 40
+    num-hormigas: 15
+    # AGA-ES-TW
+    tamano-poblacion: 60
+    num-generaciones: 120
+    tamano-torneo: 3
+    porcentaje-elitismo: 0.10
+    prob-cruce-base: 0.85
+    prob-mutacion-base: 0.15
+    penalidad-plazo: 10000.0
+    penalidad-capacidad: 5000.0
   flota:
-    velocidad-kmh-auto: 50
-    velocidad-kmh-moto: 40
-    velocidad-kmh-bicicleta: 20
-    capacidad-auto: 200
-    capacidad-moto: 80
-    capacidad-bicicleta: 20
+    # Velocidades promedio del enunciado, modificables en ejecucion.
+    velocidad-kmh-auto: 40
+    velocidad-kmh-moto: 25
+    velocidad-kmh-bicicleta: 12
+    # Capacidad en paquetes del producto P.
+    capacidad-auto: 24
+    capacidad-moto: 8
+    capacidad-bicicleta: 4
+    # Costo total por kilometro recorrido, en soles.
+    costo-km-auto: 8.00
+    costo-km-moto: 6.00
+    costo-km-bicicleta: 3.00
+    # Tamano de la flota: configurable antes de iniciar una ejecucion.
+    cantidad-autos: 10
+    cantidad-motos: 15
+    cantidad-bicicletas: 12
   almacen:
     stock-maximo: 1000
     stock-minimo: 0
     umbral-ambar-porcentaje: 0.33
     umbral-rojo-porcentaje: 0.66
+    central-x: 25
+    central-y: 15
+    noroeste-x: 12
+    noroeste-y: 38
+    este-x: 55
+    este-y: 27
 
 logging:
   level:

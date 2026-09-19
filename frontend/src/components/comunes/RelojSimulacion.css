@@ -1,0 +1,43 @@
+/* Reloj dual del encabezado de mapa (STD 2.6.2). */
+
+.reloj {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.reloj__bloque {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: var(--alto-control);
+  padding: 0 14px;
+  background-color: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+}
+
+.reloj__bloque--real {
+  background-color: var(--color-fondo);
+}
+
+.reloj__icono {
+  color: var(--color-texto-secundario);
+}
+
+.reloj__rotulo {
+  display: block;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+
+.reloj__valor {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-texto);
+  line-height: 1.2;
+  white-space: nowrap;
+}
