@@ -4,9 +4,9 @@
 # backend y PostgreSQL solo son alcanzables desde la red interna de Docker.
 #
 # SITE_ADDRESS (deploy/.env) decide el modo:
-#   :80                                     HTTP en el puerto 80, sin TLS (valor inicial)
-#   1inf54-983-7g.inf.pucp.edu.pe           HTTPS automatico con Let's Encrypt y
-#                                           redireccion de HTTP a HTTPS
+#   :80                HTTP en el puerto 80, sin TLS (valor inicial)
+#   <nombre-dominio>   HTTPS automatico con Let's Encrypt y redireccion de
+#                      HTTP a HTTPS (el nombre debe resolver a este servidor)
 {$SITE_ADDRESS::80} {
 	encode zstd gzip
 

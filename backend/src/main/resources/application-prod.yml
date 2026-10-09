@@ -1,4 +1,4 @@
-# Perfil de despliegue en la maquina virtual del curso (2 vCPU, 2 GB de RAM).
+# Perfil de despliegue en servidor (dimensionado para 2 vCPU y 2 GB de RAM).
 #
 # Se activa con SPRING_PROFILES_ACTIVE=prod desde deploy/docker-compose.prod.yml.
 # Las credenciales de la base de datos no viven aqui: llegan como variables de

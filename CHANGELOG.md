@@ -5,7 +5,8 @@ Registro de las versiones entregadas del proyecto PaqRap, conforme a la sección
 ## [Unreleased]
 
 ### Added
-- Despliegue en la máquina virtual del grupo (`deploy/`): Docker Compose de producción con
+- Despliegue en servidor (`deploy/`), válido para la VM de la PUCP y para una instancia EC2 de
+  AWS Academy: Docker Compose de producción con
   PostgreSQL persistente, backend con perfil `prod` y proxy inverso Caddy como único punto
   de entrada (80/443, HTTPS opcional con Let's Encrypt), scripts de preparación de la VM,
   despliegue/rollback y respaldo de la base de datos, e imagen de producción del

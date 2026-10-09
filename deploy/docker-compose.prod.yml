@@ -1,11 +1,12 @@
-# Orquestacion de produccion para la maquina virtual del curso.
+# Orquestacion de produccion para un servidor Linux de 2 vCPU y 2 GB de RAM
+# (la VM de la PUCP o una instancia EC2 de AWS Academy).
 #
 #   docker compose -f deploy/docker-compose.prod.yml up -d --build
 #
 # (en la practica se usa deploy/scripts/desplegar.sh). Lee deploy/.env.
 #
 # Solo `web` publica puertos (80 y 443). `backend` y `db` quedan en la red
-# interna: nadie fuera de la VM puede hablarles directamente.
+# interna: nadie fuera del servidor puede hablarles directamente.
 name: paqrap
 
 x-logging: &logging
