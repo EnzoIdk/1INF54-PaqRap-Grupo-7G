@@ -20,6 +20,7 @@ Las convenciones de nomenclatura, estructura de paquetes, manejo de errores, ver
 ├── backend/            # Componente planificador (Java 21 + Spring Boot 3)
 ├── frontend/           # Componente visualizador (TypeScript + React + Vite)
 ├── docker-compose.yml  # Orquestación local (PostgreSQL, backend, frontend)
+├── deploy/             # Despliegue en la máquina virtual (Docker Compose + Caddy)
 └── CHANGELOG.md
 ```
 
@@ -101,6 +102,19 @@ curl -X POST http://localhost:8080/api/experimentacion/ejecutar \
   -H "Content-Type: application/json" \
   -d '{"archivoVentas":"ventas.202602.txt","dia":3,"horaInicio":0,"ventanaHoras":24,"maximoPedidos":120,"algoritmo":"AMBOS"}'
 ```
+
+## Despliegue
+
+La aplicación se publica en la máquina virtual del grupo con Docker Compose y un proxy
+inverso (Caddy) que es el único servicio expuesto, en los puertos 80 y 443. PostgreSQL
+conserva sus datos en un volumen y cada actualización se aplica con un solo comando:
+
+```bash
+bash deploy/scripts/desplegar.sh
+```
+
+La guía completa —preparación de la VM, HTTPS, respaldos, migraciones y qué tener en
+cuenta con 2 GB de RAM— está en [`deploy/README.md`](deploy/README.md).
 
 ## Archivos de datos del cliente
 

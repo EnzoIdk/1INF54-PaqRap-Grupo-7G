@@ -1,0 +1,13 @@
+# Imagen de produccion del visualizador: compila el bundle estatico de Vite y
+# lo sirve con Caddy, que ademas hace de proxy inverso hacia el backend
+# (ver deploy/Caddyfile). El Dockerfile de esta carpeta, con el servidor de
+# desarrollo de Vite, queda solo para el trabajo local.
+FROM node:20-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM caddy:2-alpine
+COPY --from=build /app/dist /srv

@@ -1,0 +1,55 @@
+# Proxy inverso y servidor del visualizador.
+#
+# Es el unico servicio que publica puertos hacia el exterior (80 y 443). El
+# backend y PostgreSQL solo son alcanzables desde la red interna de Docker.
+#
+# SITE_ADDRESS (deploy/.env) decide el modo:
+#   :80                                     HTTP en el puerto 80, sin TLS (valor inicial)
+#   1inf54-983-7g.inf.pucp.edu.pe           HTTPS automatico con Let's Encrypt y
+#                                           redireccion de HTTP a HTTPS
+{$SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	log {
+		output stdout
+	}
+
+	# API REST del backend. Todo lo que no sea /api ni el WebSocket llega al
+	# visualizador, de modo que /actuator y demas rutas internas no se exponen.
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	# STOMP sobre WebSocket (con el respaldo SockJS). flush_interval -1 evita
+	# que el proxy retenga los mensajes del respaldo por streaming HTTP.
+	handle /ws-paqrap* {
+		reverse_proxy backend:8080 {
+			flush_interval -1
+		}
+	}
+
+	# Los archivos de /assets llevan el hash en el nombre: pueden cachearse
+	# para siempre porque una version nueva cambia el nombre.
+	handle /assets/* {
+		root * /srv
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	# Visualizador (SPA con BrowserRouter): cualquier ruta desconocida, como
+	# /pedidos o /analytics al recargar la pagina, devuelve index.html. Sin
+	# cache, para que un despliegue nuevo se vea de inmediato.
+	handle {
+		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

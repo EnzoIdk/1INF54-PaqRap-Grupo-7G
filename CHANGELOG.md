@@ -5,6 +5,14 @@ Registro de las versiones entregadas del proyecto PaqRap, conforme a la sección
 ## [Unreleased]
 
 ### Added
+- Despliegue en la máquina virtual del grupo (`deploy/`): Docker Compose de producción con
+  PostgreSQL persistente, backend con perfil `prod` y proxy inverso Caddy como único punto
+  de entrada (80/443, HTTPS opcional con Let's Encrypt), scripts de preparación de la VM,
+  despliegue/rollback y respaldo de la base de datos, e imagen de producción del
+  visualizador (`frontend/Dockerfile.prod`).
+- `spring-boot-starter-actuator` (solo `/actuator/health`) para el healthcheck del backend.
+- `.dockerignore` en backend y frontend, y `.gitattributes` para conservar finales de línea LF
+  en scripts y Dockerfiles.
 - Estructura inicial de carpetas del backend (Spring Boot 3 / Java 21) y del frontend (React + TypeScript + Vite).
 - Interfaz `Planificador` y esqueleto de los paquetes `planificador.iaco` y `planificador.agaestw`.
 - Configuracion base de Docker Compose para PostgreSQL 16.

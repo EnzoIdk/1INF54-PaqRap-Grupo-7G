@@ -1,0 +1,7 @@
+# Los archivos que se ejecutan en Linux (VM, contenedores) deben conservar
+# finales de linea LF aunque se editen en Windows; con CRLF fallan.
+*.sh          text eol=lf
+Dockerfile*   text eol=lf
+Caddyfile     text eol=lf
+*.yml         text eol=lf
+.env.example  text eol=lf

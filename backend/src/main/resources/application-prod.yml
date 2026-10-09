@@ -1,0 +1,41 @@
+# Perfil de despliegue en la maquina virtual del curso (2 vCPU, 2 GB de RAM).
+#
+# Se activa con SPRING_PROFILES_ACTIVE=prod desde deploy/docker-compose.prod.yml.
+# Las credenciales de la base de datos no viven aqui: llegan como variables de
+# entorno SPRING_DATASOURCE_* desde deploy/.env, que no se versiona. Se hereda
+# de application.yml el resto de la configuracion (PostgreSQL + Flyway).
+server:
+  # El backend queda detras del proxy inverso; sin esto Spring ignora los
+  # encabezados X-Forwarded-* y construye mal las URL absolutas y el esquema.
+  forward-headers-strategy: framework
+  # Al detener el contenedor termina primero las peticiones en curso.
+  shutdown: graceful
+  tomcat:
+    threads:
+      # Cada corrida de experimentacion ocupa un nucleo; con 2 vCPU no tiene
+      # sentido admitir decenas de corridas simultaneas.
+      max: 20
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+  datasource:
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+# Solo se expone el estado de salud, y unicamente dentro de la red de Docker:
+# el proxy inverso solo reenvia /api y /ws-paqrap hacia el exterior.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    root: WARN
+    pe.edu.pucp.paqrap: INFO
