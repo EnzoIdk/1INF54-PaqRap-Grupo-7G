@@ -36,6 +36,79 @@
   min-width: 280px;
 }
 
+.centro-control__alerta-colapso {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.25));
+  border: 1.5px solid #ef4444;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: pulso-colapso 2s infinite ease-in-out;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+}
+
+@keyframes pulso-colapso {
+
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+  }
+
+  50% {
+    box-shadow: 0 4px 22px rgba(239, 68, 68, 0.5);
+    border-color: #f87171;
+  }
+}
+
+.alerta-colapso__cabecera {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.alerta-colapso__icono {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.alerta-colapso__titular {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alerta-colapso__titular h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff0000;
+  letter-spacing: 0.5px;
+}
+
+.alerta-colapso__fecha {
+  font-size: 12px;
+  color: #ff0000;
+}
+
+.alerta-colapso__fecha strong {
+  color: #000000;
+}
+
+.alerta-colapso__motivo {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #000000;
+  padding-left: 30px;
+}
+
+.alerta-colapso__motivo strong {
+  color: #ff0000;
+}
+
 .centro-control__lienzo {
   flex: 1;
   min-height: 0;

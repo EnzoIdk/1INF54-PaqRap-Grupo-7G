@@ -11,6 +11,7 @@ import { COLOR_TIPO_UNIDAD, ETIQUETA_TIPO_UNIDAD } from "../utils/constants";
 import {
   formatearKm,
   formatearMilisegundos,
+  formatearMotivoColapso,
   formatearSoles,
   formatearTiempoSimulado,
 } from "../utils/formatters";
@@ -33,9 +34,12 @@ const AnalyticsPage = () => {
   const navegar = useNavigate();
   const escenario = useSimulacionStore((estado) => estado.escenario);
   const ejecuciones = useSimulacionStore((estado) => estado.ejecuciones);
+  const modoSimulacion = useSimulacionStore((estado) => estado.modoSimulacion);
 
   const comparativa = useMemo(() => construirComparativa(ejecuciones), [ejecuciones]);
   const mejor = useMemo(() => elegirMejor(ejecuciones), [ejecuciones]);
+
+  const esCincoDias = escenario ? escenario.minutoFin - escenario.minutoInicio > 1440 : false;
 
   const columnasRutas: ColumnaTabla<RutaDto>[] = [
     {
@@ -58,6 +62,11 @@ const AnalyticsPage = () => {
     { encabezado: "Paradas", cifra: true, renderizar: (ruta) => String(ruta.paradas.length) },
     { encabezado: "Distancia", cifra: true, renderizar: (ruta) => formatearKm(ruta.distanciaKm) },
     { encabezado: "Costo", cifra: true, renderizar: (ruta) => formatearSoles(ruta.costoSoles) },
+    {
+      encabezado: "Salida",
+      cifra: true,
+      renderizar: (ruta) => formatearTiempoSimulado(ruta.minutoSalida),
+    },
     {
       encabezado: "Termina",
       cifra: true,
@@ -84,7 +93,13 @@ const AnalyticsPage = () => {
     <div className="analytics">
       <Encabezado
         titulo="Analytics"
-        contexto={`${escenario.archivoVentas} · día ${escenario.dia} · ${escenario.pedidosDelTurno} pedidos · semilla ${escenario.semilla}`}
+        contexto={
+          modoSimulacion === "COLAPSO"
+            ? `${escenario.archivoVentas} · Simulación hasta el colapso (desde día ${escenario.dia}) · ${escenario.pedidosDelTurno} pedidos · semilla ${escenario.semilla}`
+            : esCincoDias
+              ? `${escenario.archivoVentas} · 5 días (días ${escenario.dia}–${escenario.dia + 4}) · ${escenario.pedidosDelTurno} pedidos · semilla ${escenario.semilla}`
+              : `${escenario.archivoVentas} · día ${escenario.dia} · ${escenario.pedidosDelTurno} pedidos · semilla ${escenario.semilla}`
+        }
         acciones={
           <Boton variante="secundario" onClick={() => navegar("/simulacion")}>
             Nueva ejecución
@@ -105,6 +120,43 @@ const AnalyticsPage = () => {
               . Un solo turno no decide la elección: repita la comparación sobre varios meses y semillas.
             </span>
           </div>
+        )}
+
+        {(modoSimulacion === "COLAPSO" || ejecuciones.some((e) => e.colapsoOcurrido)) && (
+          <section className="tarjeta">
+            <header className="tarjeta__encabezado">
+              <div>
+                <h2 className="tarjeta__titulo">Diagnóstico y Resistencia al Colapso</h2>
+                <p className="tarjeta__contexto">
+                  Evaluación de la duración de operación y causas de ruptura del servicio bajo carga continua
+                </p>
+              </div>
+            </header>
+            <div className="analytics__colapso-grid">
+              {ejecuciones.map((ej) => (
+                <div key={ej.algoritmo} className="analytics__colapso-item">
+                  <div className="colapso-item__header">
+                    <span className="rotulo">{ej.algoritmo}</span>
+                    <span className={`badge-colapso ${ej.colapsoOcurrido ? "colapsado" : "estable"}`}>
+                      {ej.colapsoOcurrido ? "COLAPSO DETECTADO" : "OPERACIÓN ESTABLE"}
+                    </span>
+                  </div>
+                  <div className="colapso-item__detalle">
+                    <div className="colapso-dato">
+                      <span className="texto-tenue">Momento del colapso:</span>
+                      <strong>{ej.fechaHoraColapso ?? "No colapsó"}</strong>
+                    </div>
+                    {ej.motivoColapso && (
+                      <div className="colapso-motivo">
+                        <span className="texto-tenue">Causa identificada:</span>
+                        <p>{formatearMotivoColapso(ej.motivoColapso)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         <div className="analytics__indicadores">
@@ -221,7 +273,7 @@ const AnalyticsPage = () => {
             <Tabla
               columnas={columnasRutas}
               filas={ejecucion.rutas}
-              obtenerLlave={(ruta) => ruta.codigoUnidad}
+              obtenerLlave={(ruta) => `${ruta.codigoUnidad}-${ruta.minutoSalida}`}
               nombrePlural="rutas"
               mensajeVacio="Este algoritmo no asignó carga a ninguna unidad"
             />
@@ -260,7 +312,7 @@ function construirComparativa(ejecuciones: EjecucionDto[]): FilaComparativa[] {
   const computo = ejecuciones.map((ejecucion) => ejecucion.metricas.duracionComputoMs);
   const fitness = ejecuciones.map((ejecucion) => ejecucion.metricas.fitness);
 
-  return [
+  const filas: FilaComparativa[] = [
     {
       indicador: "Costo operativo",
       descripcion: "Gasto de la operación; menor es mejor",
@@ -304,6 +356,22 @@ function construirComparativa(ejecuciones: EjecucionDto[]): FilaComparativa[] {
       ganador: mayorGana(fitness),
     },
   ];
+
+  if (ejecuciones.some((e) => e.colapsoOcurrido)) {
+    const minutosColapso = ejecuciones.map((e) =>
+      e.colapsoOcurrido && e.minutoColapso != null ? e.minutoColapso : 9999999,
+    );
+    filas.unshift({
+      indicador: "Punto de colapso",
+      descripcion: "Momento de ruptura del servicio; mayor resistencia es mejor",
+      valores: ejecuciones.map((e) =>
+        e.colapsoOcurrido ? e.fechaHoraColapso ?? `Minuto ${e.minutoColapso}` : "Operación estable",
+      ),
+      ganador: mayorGana(minutosColapso),
+    });
+  }
+
+  return filas;
 }
 
 function indiceDe(valores: number[], objetivo: number): number {

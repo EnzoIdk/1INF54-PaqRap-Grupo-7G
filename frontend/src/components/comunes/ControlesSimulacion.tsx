@@ -1,12 +1,17 @@
 import { Pause, Play, RotateCcw } from "lucide-react";
 import Boton from "./Boton";
-import { VELOCIDADES_REPRODUCCION } from "../../utils/constants";
+import {
+  VELOCIDADES_REPRODUCCION,
+  formatearEtiquetaVelocidad,
+} from "../../utils/constants";
+import { useSimulacionStore } from "../../store/simulacionStore";
 import "./ControlesSimulacion.css";
 
 interface ControlesSimulacionProps {
   reproduciendo: boolean;
   habilitado: boolean;
   minutosPorSegundo: number;
+  modoSimulacion?: "1D" | "5D" | "COLAPSO";
   onAlternar: () => void;
   onReiniciar: () => void;
   onDetener: () => void;
@@ -23,27 +28,32 @@ const ControlesSimulacion = ({
   reproduciendo,
   habilitado,
   minutosPorSegundo,
+  modoSimulacion,
   onAlternar,
   onReiniciar,
   onDetener,
   onCambiarVelocidad,
-}: ControlesSimulacionProps) => (
-  <div className="controles">
-    <label className="controles__velocidad">
-      <span className="controles__rotulo">Velocidad</span>
-      <select
-        value={minutosPorSegundo}
-        disabled={!habilitado}
-        onChange={(evento) => onCambiarVelocidad(Number(evento.target.value))}
-        aria-label="Minutos simulados por segundo real"
-      >
-        {VELOCIDADES_REPRODUCCION.map((velocidad) => (
-          <option key={velocidad.etiqueta} value={velocidad.minutosPorSegundo}>
-            {velocidad.etiqueta} · {velocidad.minutosPorSegundo} min/s
-          </option>
-        ))}
-      </select>
-    </label>
+}: ControlesSimulacionProps) => {
+  const modoStore = useSimulacionStore((estado) => estado.modoSimulacion);
+  const modoActivo = modoSimulacion ?? modoStore;
+
+  return (
+    <div className="controles">
+      <label className="controles__velocidad">
+        <span className="controles__rotulo">Velocidad</span>
+        <select
+          value={minutosPorSegundo}
+          disabled={!habilitado}
+          onChange={(evento) => onCambiarVelocidad(Number(evento.target.value))}
+          aria-label="Minutos simulados por segundo real"
+        >
+          {VELOCIDADES_REPRODUCCION.map((velocidad) => (
+            <option key={velocidad.minutosPorSegundo} value={velocidad.minutosPorSegundo}>
+              {formatearEtiquetaVelocidad(velocidad, modoActivo)}
+            </option>
+          ))}
+        </select>
+      </label>
 
     <Boton
       variante="secundario"
@@ -69,6 +79,7 @@ const ControlesSimulacion = ({
       Detener
     </Boton>
   </div>
-);
+  );
+};
 
 export default ControlesSimulacion;

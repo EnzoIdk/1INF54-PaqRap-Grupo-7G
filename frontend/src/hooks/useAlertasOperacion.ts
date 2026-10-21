@@ -2,7 +2,12 @@ import { useMemo } from "react";
 import type { AveriaSolicitada, EjecucionDto, EscenarioDto } from "../types/Experimentacion";
 import type { EstadoPedidoEnMapa } from "./usePosicionesFlota";
 import { MINUTOS_POR_HORA } from "../utils/constants";
-import { formatearMilisegundos, formatearSoles, formatearTiempoSimulado } from "../utils/formatters";
+import {
+  formatearMilisegundos,
+  formatearMotivoColapso,
+  formatearSoles,
+  formatearTiempoSimulado,
+} from "../utils/formatters";
 
 export type GravedadAlerta = "roja" | "ambar" | "informativa";
 
@@ -49,6 +54,21 @@ export function useAlertasOperacion({
 
     const alertas: AlertaOperacion[] = [];
 
+    // --- Colapso logístico---
+    const colapsoOcurrido = ejecucion.colapsoOcurrido || escenario.colapsoOcurrido;
+    const minutoColapso = ejecucion.minutoColapso ?? escenario.minutoColapso;
+    const fechaHoraColapso = ejecucion.fechaHoraColapso ?? escenario.fechaHoraColapso;
+    const motivoColapso = ejecucion.motivoColapso ?? escenario.motivoColapso;
+
+    if (colapsoOcurrido && minutoColapso !== null && minutoColapso !== undefined && minutoActual >= minutoColapso) {
+      alertas.push({
+        id: "colapso-logistico-critico",
+        gravedad: "roja",
+        titulo: `🚨 COLAPSO LOGÍSTICO ALCANZADO (${fechaHoraColapso ?? formatearTiempoSimulado(minutoColapso)})`,
+        detalle: formatearMotivoColapso(motivoColapso) || "El sistema y la flota no fueron capaces de asegurar la entrega de pedidos dentro del plazo comprometido.",
+      });
+    }
+
     // --- Averias vigentes ---
     averias
       .filter((averia) => averia.minutoSimulacion <= minutoActual)
@@ -76,9 +96,8 @@ export function useAlertasOperacion({
           id: `riesgo-${pedido.codigoPedido}`,
           gravedad: "roja",
           titulo: "Riesgo de incumplimiento",
-          detalle: `${pedido.codigoPedido} vence en ${Math.floor(pedido.minutoLimite - minutoActual)} min${
-            pedido.codigoUnidad ? ` y su unidad ${pedido.codigoUnidad} aún no llega.` : " y no tiene unidad asignada."
-          }`,
+          detalle: `${pedido.codigoPedido} vence en ${Math.floor(pedido.minutoLimite - minutoActual)} min${pedido.codigoUnidad ? ` y su unidad ${pedido.codigoUnidad} aún no llega.` : " y no tiene unidad asignada."
+            }`,
           codigoUnidad: pedido.codigoUnidad ?? undefined,
         });
       });

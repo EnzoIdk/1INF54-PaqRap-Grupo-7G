@@ -69,6 +69,18 @@ export interface EscenarioDto {
   bloqueos: BloqueoDto[];
   flota: UnidadDto[];
   unidadesEnMantenimiento: string[];
+  mantenimientosProgramados?: MantenimientoDto[];
+  colapsoOcurrido?: boolean;
+  minutoColapso?: number | null;
+  fechaHoraColapso?: string | null;
+  motivoColapso?: string | null;
+}
+
+export interface MantenimientoDto {
+  codigoUnidad: string;
+  dia: number;
+  minutoInicio: number;
+  minutoFin: number;
 }
 
 export interface ParadaDto {
@@ -134,6 +146,10 @@ export interface EjecucionDto {
   rutas: RutaDto[];
   pedidosSinAtender: PedidoPendienteDto[];
   riesgosDeColapso: string[];
+  colapsoOcurrido?: boolean;
+  minutoColapso?: number | null;
+  fechaHoraColapso?: string | null;
+  motivoColapso?: string | null;
 }
 
 export interface ExperimentacionResponse {
@@ -160,6 +176,42 @@ export interface AveriaSolicitada {
   codigoUnidad: string;
   tipo: TipoAveria;
   minutoSimulacion: number;
+}
+
+/** Espejo de `pe.edu.pucp.paqrap.experimentacion.ParametrosCincoDias`. */
+export interface ParametrosCincoDias {
+  archivoVentas: string;
+  diaInicio: number;
+  horaInicio: number;
+  maximoPedidosPorTurno?: number | null;
+  algoritmo: AlgoritmoSolicitado;
+  semilla?: number | null;
+  cantidadAutos?: number | null;
+  cantidadMotos?: number | null;
+  cantidadBicicletas?: number | null;
+  averias?: AveriaSolicitada5D[];
+}
+
+export interface AveriaSolicitada5D {
+  codigoUnidad: string;
+  tipo: TipoAveria;
+  dia: number;
+  hora: number;
+  minutoSimulacion?: number;
+}
+
+/** Espejo de `pe.edu.pucp.paqrap.experimentacion.ParametrosColapso`. */
+export interface ParametrosColapso {
+  archivoVentas: string;
+  diaInicio: number;
+  horaInicio?: number;
+  maximoPedidosPorTurno?: number | null;
+  algoritmo: AlgoritmoSolicitado;
+  semilla?: number | null;
+  cantidadAutos?: number | null;
+  cantidadMotos?: number | null;
+  cantidadBicicletas?: number | null;
+  averias?: AveriaSolicitada5D[];
 }
 
 /** Espejo de `ExperimentacionController.ParametrosVigentes`. */

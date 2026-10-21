@@ -22,6 +22,17 @@ export function useExperimentacion() {
   const registrarResultado = useSimulacionStore((estado) => estado.registrarResultado);
   const registrarError = useSimulacionStore((estado) => estado.registrarError);
 
+  const modoSimulacion = useSimulacionStore((estado) => estado.modoSimulacion);
+  const setModoSimulacion = useSimulacionStore((estado) => estado.setModoSimulacion);
+  const parametros5D = useSimulacionStore((estado) => estado.parametros5D);
+  const actualizarParametros5D = useSimulacionStore((estado) => estado.actualizarParametros5D);
+  const agregarAveria5D = useSimulacionStore((estado) => estado.agregarAveria5D);
+  const quitarAveria5D = useSimulacionStore((estado) => estado.quitarAveria5D);
+  const parametrosColapso = useSimulacionStore((estado) => estado.parametrosColapso);
+  const actualizarParametrosColapso = useSimulacionStore((estado) => estado.actualizarParametrosColapso);
+  const agregarAveriaColapso = useSimulacionStore((estado) => estado.agregarAveriaColapso);
+  const quitarAveriaColapso = useSimulacionStore((estado) => estado.quitarAveriaColapso);
+
   const [parametrosVigentes, setParametrosVigentes] = useState<ParametrosVigentes | null>(null);
 
   useEffect(() => {
@@ -54,6 +65,30 @@ export function useExperimentacion() {
     }
   }, [parametros, iniciarCarga, registrarResultado, registrarError]);
 
+  const ejecutar5D = useCallback(async () => {
+    iniciarCarga();
+    try {
+      const resultado = await experimentacionService.ejecutarCincoDias(parametros5D);
+      registrarResultado(resultado);
+      return resultado;
+    } catch (causa: unknown) {
+      registrarError(describirError(causa));
+      return null;
+    }
+  }, [parametros5D, iniciarCarga, registrarResultado, registrarError]);
+
+  const ejecutarColapso = useCallback(async () => {
+    iniciarCarga();
+    try {
+      const resultado = await experimentacionService.ejecutarColapso(parametrosColapso);
+      registrarResultado(resultado);
+      return resultado;
+    } catch (causa: unknown) {
+      registrarError(describirError(causa));
+      return null;
+    }
+  }, [parametrosColapso, iniciarCarga, registrarResultado, registrarError]);
+
   const umbrales = useMemo(() => {
     const almacen = parametrosVigentes?.almacen;
     if (!almacen) {
@@ -65,7 +100,27 @@ export function useExperimentacion() {
     };
   }, [parametrosVigentes]);
 
-  return { conjuntos, parametros, cargando, error, ejecutar, parametrosVigentes, umbrales };
+  return {
+    conjuntos,
+    parametros,
+    parametros5D,
+    parametrosColapso,
+    modoSimulacion,
+    setModoSimulacion,
+    actualizarParametros5D,
+    agregarAveria5D,
+    quitarAveria5D,
+    actualizarParametrosColapso,
+    agregarAveriaColapso,
+    quitarAveriaColapso,
+    cargando,
+    error,
+    ejecutar,
+    ejecutar5D,
+    ejecutarColapso,
+    parametrosVigentes,
+    umbrales,
+  };
 }
 
 /** Ejecucion que el mapa y los paneles estan mostrando ahora mismo. */

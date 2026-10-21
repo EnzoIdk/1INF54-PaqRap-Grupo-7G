@@ -3,6 +3,8 @@ import { API_BASE_URL } from "../utils/constants";
 import type {
   ConjuntoDatos,
   ExperimentacionResponse,
+  ParametrosCincoDias,
+  ParametrosColapso,
   ParametrosEjecucion,
   ParametrosVigentes,
 } from "../types/Experimentacion";
@@ -28,6 +30,24 @@ export const experimentacionService = {
   async ejecutar(parametros: ParametrosEjecucion): Promise<ExperimentacionResponse> {
     const respuesta = await axios.post<ExperimentacionResponse>(
       `${API_BASE_URL}/experimentacion/ejecutar`,
+      parametros,
+    );
+    return respuesta.data;
+  },
+
+  /** Resuelve una simulacion continua de 5 dias con el I-ACO, con el AGA-ES-TW o con ambos. */
+  async ejecutarCincoDias(parametros: ParametrosCincoDias): Promise<ExperimentacionResponse> {
+    const respuesta = await axios.post<ExperimentacionResponse>(
+      `${API_BASE_URL}/experimentacion/ejecutar-5d`,
+      parametros,
+    );
+    return respuesta.data;
+  },
+
+  /** Resuelve una simulacion continua hasta el colapso con el I-ACO, con el AGA-ES-TW o con ambos. */
+  async ejecutarColapso(parametros: ParametrosColapso): Promise<ExperimentacionResponse> {
+    const respuesta = await axios.post<ExperimentacionResponse>(
+      `${API_BASE_URL}/experimentacion/ejecutar-colapso`,
       parametros,
     );
     return respuesta.data;

@@ -1,11 +1,14 @@
 package pe.edu.pucp.paqrap.controller;
 
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
 import pe.edu.pucp.paqrap.config.ParametrosAlmacen;
 import pe.edu.pucp.paqrap.config.ParametrosFlota;
 import pe.edu.pucp.paqrap.config.ParametrosPlanificador;
@@ -13,8 +16,6 @@ import pe.edu.pucp.paqrap.dto.ExperimentacionResponse;
 import pe.edu.pucp.paqrap.experimentacion.CatalogoDatos;
 import pe.edu.pucp.paqrap.experimentacion.ParametrosEjecucion;
 import pe.edu.pucp.paqrap.experimentacion.ServicioExperimentacion;
-
-import java.util.List;
 
 /**
  * Expone la experimentacion numerica al visualizador: que conjuntos de
@@ -62,6 +63,18 @@ public class ExperimentacionController {
     @PostMapping("/ejecutar")
     public ExperimentacionResponse ejecutar(@Valid @RequestBody ParametrosEjecucion parametros) {
         return servicioExperimentacion.ejecutar(parametros);
+    }
+
+    /** Resuelve una simulacion continua de 5 dias con el I-ACO, con el AGA-ES-TW o con ambos. */
+    @PostMapping("/ejecutar-5d")
+    public ExperimentacionResponse ejecutarCincoDias(@Valid @RequestBody pe.edu.pucp.paqrap.experimentacion.ParametrosCincoDias parametros) {
+        return servicioExperimentacion.ejecutarCincoDias(parametros);
+    }
+
+    /** Resuelve una simulacion continua hasta alcanzar el colapso con el I-ACO, con el AGA-ES-TW o con ambos. */
+    @PostMapping("/ejecutar-colapso")
+    public ExperimentacionResponse ejecutarColapso(@Valid @RequestBody pe.edu.pucp.paqrap.experimentacion.ParametrosColapso parametros) {
+        return servicioExperimentacion.ejecutarColapso(parametros);
     }
 
     /**

@@ -2,10 +2,13 @@ import { create } from "zustand";
 import type {
   AlgoritmoSolicitado,
   AveriaSolicitada,
+  AveriaSolicitada5D,
   ConjuntoDatos,
   EjecucionDto,
   EscenarioDto,
   ExperimentacionResponse,
+  ParametrosCincoDias,
+  ParametrosColapso,
   ParametrosEjecucion,
 } from "../types/Experimentacion";
 import { VELOCIDADES_REPRODUCCION } from "../utils/constants";
@@ -25,10 +28,41 @@ const PARAMETROS_INICIALES: ParametrosEjecucion = {
   averias: [],
 };
 
+const PARAMETROS_5D_INICIALES: ParametrosCincoDias = {
+  archivoVentas: "ventas.202601.txt",
+  diaInicio: 1,
+  horaInicio: 7,
+  maximoPedidosPorTurno: 60,
+  algoritmo: "AMBOS",
+  semilla: null,
+  cantidadAutos: null,
+  cantidadMotos: null,
+  cantidadBicicletas: null,
+  averias: [],
+};
+
+const PARAMETROS_COLAPSO_INICIALES: ParametrosColapso = {
+  archivoVentas: "ventas.202601.txt",
+  diaInicio: 1,
+  horaInicio: 7,
+  maximoPedidosPorTurno: 60,
+  algoritmo: "AMBOS",
+  semilla: null,
+  cantidadAutos: null,
+  cantidadMotos: null,
+  cantidadBicicletas: null,
+  averias: [],
+};
+
 interface SimulacionState {
+  // --- Modo de simulacion ---
+  modoSimulacion: "1D" | "5D" | "COLAPSO";
+
   // --- Catalogo y parametros de entrada ---
   conjuntos: ConjuntoDatos[];
   parametros: ParametrosEjecucion;
+  parametros5D: ParametrosCincoDias;
+  parametrosColapso: ParametrosColapso;
 
   // --- Resultado de la ultima corrida ---
   escenario: EscenarioDto | null;
@@ -45,10 +79,17 @@ interface SimulacionState {
   unidadEnfocada: string | null;
 
   // --- Acciones ---
+  setModoSimulacion: (modo: "1D" | "5D" | "COLAPSO") => void;
   setConjuntos: (conjuntos: ConjuntoDatos[]) => void;
   actualizarParametros: (cambios: Partial<ParametrosEjecucion>) => void;
+  actualizarParametros5D: (cambios: Partial<ParametrosCincoDias>) => void;
+  actualizarParametrosColapso: (cambios: Partial<ParametrosColapso>) => void;
   agregarAveria: (averia: AveriaSolicitada) => void;
   quitarAveria: (indice: number) => void;
+  agregarAveria5D: (averia: AveriaSolicitada5D) => void;
+  quitarAveria5D: (indice: number) => void;
+  agregarAveriaColapso: (averia: AveriaSolicitada5D) => void;
+  quitarAveriaColapso: (indice: number) => void;
   setAlgoritmo: (algoritmo: AlgoritmoSolicitado) => void;
   iniciarCarga: () => void;
   registrarResultado: (resultado: ExperimentacionResponse) => void;
@@ -73,8 +114,11 @@ interface SimulacionState {
  * misma hora simulada.</p>
  */
 export const useSimulacionStore = create<SimulacionState>((set, get) => ({
+  modoSimulacion: "1D",
   conjuntos: [],
   parametros: PARAMETROS_INICIALES,
+  parametros5D: PARAMETROS_5D_INICIALES,
+  parametrosColapso: PARAMETROS_COLAPSO_INICIALES,
 
   escenario: null,
   ejecuciones: [],
@@ -88,16 +132,36 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   segundosReales: 0,
   unidadEnfocada: null,
 
+  setModoSimulacion: (modoSimulacion) => set({ modoSimulacion }),
+
   setConjuntos: (conjuntos) =>
-    set((estado) => ({
-      conjuntos,
-      parametros: conjuntos.some((conjunto) => conjunto.archivoVentas === estado.parametros.archivoVentas)
-        ? estado.parametros
-        : { ...estado.parametros, archivoVentas: conjuntos[0]?.archivoVentas ?? estado.parametros.archivoVentas },
-    })),
+    set((estado) => {
+      const archivoPorDefecto = conjuntos[0]?.archivoVentas ?? "ventas.202601.txt";
+      const arch1D = conjuntos.some((c) => c.archivoVentas === estado.parametros.archivoVentas)
+        ? estado.parametros.archivoVentas
+        : archivoPorDefecto;
+      const arch5D = conjuntos.some((c) => c.archivoVentas === estado.parametros5D.archivoVentas)
+        ? estado.parametros5D.archivoVentas
+        : archivoPorDefecto;
+      const archColapso = conjuntos.some((c) => c.archivoVentas === estado.parametrosColapso.archivoVentas)
+        ? estado.parametrosColapso.archivoVentas
+        : archivoPorDefecto;
+      return {
+        conjuntos,
+        parametros: { ...estado.parametros, archivoVentas: arch1D },
+        parametros5D: { ...estado.parametros5D, archivoVentas: arch5D },
+        parametrosColapso: { ...estado.parametrosColapso, archivoVentas: archColapso },
+      };
+    }),
 
   actualizarParametros: (cambios) =>
     set((estado) => ({ parametros: { ...estado.parametros, ...cambios } })),
+
+  actualizarParametros5D: (cambios) =>
+    set((estado) => ({ parametros5D: { ...estado.parametros5D, ...cambios } })),
+
+  actualizarParametrosColapso: (cambios) =>
+    set((estado) => ({ parametrosColapso: { ...estado.parametrosColapso, ...cambios } })),
 
   agregarAveria: (averia) =>
     set((estado) => ({
@@ -109,6 +173,32 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
       parametros: {
         ...estado.parametros,
         averias: (estado.parametros.averias ?? []).filter((_, i) => i !== indice),
+      },
+    })),
+
+  agregarAveria5D: (averia) =>
+    set((estado) => ({
+      parametros5D: { ...estado.parametros5D, averias: [...(estado.parametros5D.averias ?? []), averia] },
+    })),
+
+  quitarAveria5D: (indice) =>
+    set((estado) => ({
+      parametros5D: {
+        ...estado.parametros5D,
+        averias: (estado.parametros5D.averias ?? []).filter((_, i) => i !== indice),
+      },
+    })),
+
+  agregarAveriaColapso: (averia) =>
+    set((estado) => ({
+      parametrosColapso: { ...estado.parametrosColapso, averias: [...(estado.parametrosColapso.averias ?? []), averia] },
+    })),
+
+  quitarAveriaColapso: (indice) =>
+    set((estado) => ({
+      parametrosColapso: {
+        ...estado.parametrosColapso,
+        averias: (estado.parametrosColapso.averias ?? []).filter((_, i) => i !== indice),
       },
     })),
 
@@ -139,6 +229,20 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
     const estado = get();
     const limite = calcularMinutoFinal(estado);
     const siguiente = estado.minutoActual + minutos;
+
+    // Si llegamos o pasamos el momento del colapso, detener la reproduccion en el instante exacto del colapso
+    const minColapso = estado.escenario?.minutoColapso;
+    if (estado.escenario?.colapsoOcurrido && minColapso !== null && minColapso !== undefined) {
+      if (estado.minutoActual < minColapso && siguiente >= minColapso) {
+        set({
+          minutoActual: minColapso,
+          reproduciendo: false,
+          segundosReales: estado.segundosReales + segundosTranscurridos,
+        });
+        return;
+      }
+    }
+
     if (siguiente >= limite) {
       set({ minutoActual: limite, reproduciendo: false, segundosReales: estado.segundosReales + segundosTranscurridos });
       return;

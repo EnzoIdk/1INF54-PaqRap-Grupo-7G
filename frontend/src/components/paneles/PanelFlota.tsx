@@ -41,7 +41,10 @@ const PanelFlota = ({
   const inmovilizadas = unidades.filter(
     (unidad) =>
       unidadesAveriadas.includes(unidad.codigoUnidad) ||
-      unidadesEnMantenimiento.includes(unidad.codigoUnidad),
+      (unidadesEnMantenimiento.includes(unidad.codigoUnidad) &&
+        unidad.enAlmacen &&
+        !unidad.entregando &&
+        unidad.entregasHechas === 0),
   ).length;
 
   const visibles = unidades.filter((unidad) => tiposVisibles.includes(unidad.tipoUnidad));
@@ -85,7 +88,12 @@ const PanelFlota = ({
         ) : (
           visibles.map((unidad) => {
             const averiada = unidadesAveriadas.includes(unidad.codigoUnidad);
-            const enMantenimiento = unidadesEnMantenimiento.includes(unidad.codigoUnidad);
+            const enMantenimiento =
+              !averiada &&
+              unidadesEnMantenimiento.includes(unidad.codigoUnidad) &&
+              unidad.enAlmacen &&
+              !unidad.entregando &&
+              unidad.entregasHechas === 0;
 
             return (
               <article
@@ -130,18 +138,22 @@ function describir(unidad: PosicionUnidad, averiada: boolean, enMantenimiento: b
   if (averiada) {
     return "Averiada · carga reasignada";
   }
+  if (unidad.entregando) {
+    return `Entregando · ${unidad.entregasHechas}/${unidad.entregasTotales}`;
+  }
+  if (!unidad.enAlmacen && !unidad.finalizada) {
+    return `En ruta · ${unidad.entregasHechas}/${unidad.entregasTotales}`;
+  }
   if (enMantenimiento) {
     return "En mantenimiento preventivo";
-  }
-  if (unidad.enAlmacen) {
-    return "En el almacén";
   }
   if (unidad.finalizada) {
     return `Ruta completada · ${unidad.entregasTotales} entregas`;
   }
-  return unidad.entregando
-    ? `Entregando · ${unidad.entregasHechas}/${unidad.entregasTotales}`
-    : `En ruta · ${unidad.entregasHechas}/${unidad.entregasTotales}`;
+  if (unidad.enAlmacen) {
+    return "En el almacén";
+  }
+  return "Disponible";
 }
 
 export default PanelFlota;
