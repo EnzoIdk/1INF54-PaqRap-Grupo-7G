@@ -86,13 +86,20 @@ const GestionPedidosPage = () => {
     },
   ];
 
+  const modoSimulacion = useSimulacionStore((estado) => estado.modoSimulacion);
+  const esCincoDias = escenario ? escenario.minutoFin - escenario.minutoInicio > 1440 : false;
+
   return (
     <div className="pedidos">
       <Encabezado
         titulo="Gestión de Pedidos"
         contexto={
           escenario
-            ? `${escenario.archivoVentas} · ${escenario.pedidosDelTurno} pedidos del turno de ${escenario.pedidosDelMes} del mes · reloj en ${formatearTiempoSimulado(minutoActual)}`
+            ? modoSimulacion === "COLAPSO"
+              ? `${escenario.archivoVentas} · Simulación hasta el colapso (desde día ${escenario.dia}) · ${escenario.pedidosDelTurno} pedidos · reloj en ${formatearTiempoSimulado(minutoActual)}`
+              : esCincoDias
+              ? `${escenario.archivoVentas} · 5 días (días ${escenario.dia}–${escenario.dia + 4}) · ${escenario.pedidosDelTurno} pedidos · reloj en ${formatearTiempoSimulado(minutoActual)}`
+              : `${escenario.archivoVentas} · ${escenario.pedidosDelTurno} pedidos del turno de ${escenario.pedidosDelMes} del mes · reloj en ${formatearTiempoSimulado(minutoActual)}`
             : "Sin plan cargado · ejecute la experimentación numérica"
         }
         busqueda={{ valor: busqueda, onCambiar: setBusqueda, marcador: "P-0001, c4910 o TA01" }}

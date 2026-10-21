@@ -73,7 +73,13 @@ const MapaCiudad = ({
         >
           <CapaReticula escala={escala} />
           <CapaBloqueos bloqueos={bloqueos} escala={escala} minutoActual={minutoActual} />
-          <CapaRutas rutas={rutas} posiciones={unidades} escala={escala} unidadEnfocada={unidadEnfocada} />
+          <CapaRutas
+            rutas={rutas}
+            posiciones={unidades}
+            escala={escala}
+            unidadEnfocada={unidadEnfocada}
+            minutoActual={minutoActual}
+          />
           <CapaPedidos pedidos={pedidos} escala={escala} unidadEnfocada={unidadEnfocada} />
           <CapaAlmacenes
             almacenes={almacenes}

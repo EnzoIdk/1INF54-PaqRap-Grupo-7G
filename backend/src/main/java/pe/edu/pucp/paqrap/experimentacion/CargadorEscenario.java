@@ -1,8 +1,14 @@
 package pe.edu.pucp.paqrap.experimentacion;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 import pe.edu.pucp.paqrap.carga.LectorBloqueos;
 import pe.edu.pucp.paqrap.carga.LectorMantenimiento;
 import pe.edu.pucp.paqrap.carga.LectorVentas;
@@ -21,9 +27,6 @@ import pe.edu.pucp.paqrap.model.Bloqueo;
 import pe.edu.pucp.paqrap.model.Nodo;
 import pe.edu.pucp.paqrap.model.Pedido;
 import pe.edu.pucp.paqrap.model.UnidadTransporte;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Construye el escenario de un turno a partir de los archivos del cliente.
@@ -113,6 +116,153 @@ public class CargadorEscenario {
                 ventas.resumen(), resumenBloqueos, resumenMantenimiento);
     }
 
+    public EscenarioCincoDias cargarCincoDias(ParametrosCincoDias parametros) {
+        CatalogoDatos.ConjuntoDatos conjunto = catalogoDatos.buscarPorArchivoVentas(parametros.archivoVentas());
+
+        LectorVentas.Resultado ventas = lectorVentas.leer(localizador.localizar(conjunto.archivoVentas()));
+        numerarPedidos(ventas.pedidos());
+
+        List<Bloqueo> bloqueosDelMes = new ArrayList<>();
+        ResultadoCarga resumenBloqueos = new ResultadoCarga();
+        if (conjunto.archivoBloqueos() != null) {
+            LectorBloqueos.Resultado leidos = lectorBloqueos.leer(localizador.localizar(conjunto.archivoBloqueos()));
+            bloqueosDelMes = leidos.bloqueos();
+            resumenBloqueos = leidos.resumen();
+        }
+
+        List<MantenimientoProgramado> mantenimientos = new ArrayList<>();
+        ResultadoCarga resumenMantenimiento = new ResultadoCarga();
+        if (conjunto.archivoMantenimiento() != null) {
+            LectorMantenimiento.Resultado leidos =
+                    lectorMantenimiento.leer(localizador.localizar(conjunto.archivoMantenimiento()));
+            mantenimientos = leidos.mantenimientos();
+            resumenMantenimiento = leidos.resumen();
+        }
+
+        int minutoInicio = parametros.minutoInicio();
+        int minutoFin = parametros.minutoFin();
+
+        List<Pedido> pedidosCincoDias = ventas.pedidos().stream()
+                .filter(pedido -> pedido.getMinutoSimulacion() >= minutoInicio && pedido.getMinutoSimulacion() < minutoFin)
+                .toList();
+
+        List<Bloqueo> bloqueosVigentes = bloqueosDelMes.stream()
+                .filter(bloqueo -> bloqueo.getInicioMinuto() < minutoFin && bloqueo.getFinMinuto() > minutoInicio)
+                .toList();
+
+        List<Almacen> almacenes = construirAlmacenes();
+        List<UnidadTransporte> flota = construirFlota(
+                parametros.cantidadAutos(), parametros.cantidadMotos(), parametros.cantidadBicicletas(),
+                almacenes.get(0).getUbicacion());
+
+        Set<String> unidadesMantenimiento = new LinkedHashSet<>();
+        for (int dia = parametros.diaInicio(); dia <= parametros.diaFin(); dia++) {
+            for (MantenimientoProgramado registro : mantenimientos) {
+                if (registro.fecha().getDayOfMonth() == dia
+                        && registro.fecha().getMonthValue() % 2 == conjunto.mes() % 2) {
+                    unidadesMantenimiento.add(registro.codigoUnidad());
+                }
+            }
+        }
+
+        List<Averia> averias = construirAverias5D(flota, parametros);
+
+        log.info("Escenario 5D {} dias [{}, {}] [{}, {}): {} pedidos en 5 dias de {} del mes, {} bloqueos vigentes",
+                conjunto.archivoVentas(), parametros.diaInicio(), parametros.diaFin(), minutoInicio, minutoFin,
+                pedidosCincoDias.size(), ventas.pedidos().size(), bloqueosVigentes.size());
+
+        EscenarioTurno escenario = new EscenarioTurno(
+                conjunto, parametros.diaInicio(), minutoInicio, minutoFin,
+                pedidosCincoDias, ventas.pedidos().size(),
+                bloqueosVigentes, bloqueosDelMes.size(),
+                almacenes, flota, new ArrayList<>(unidadesMantenimiento), averias,
+                ventas.resumen(), resumenBloqueos, resumenMantenimiento);
+
+        return new EscenarioCincoDias(escenario, mantenimientos, bloqueosDelMes);
+    }
+
+    /**
+     * Carga el escenario para la simulacion continua hasta el colapso.
+     * Los pedidos y eventos se consideran desde el dia de inicio en adelante.
+     */
+    public EscenarioColapso cargarColapso(ParametrosColapso parametros) {
+        CatalogoDatos.ConjuntoDatos conjunto = catalogoDatos.buscarPorArchivoVentas(parametros.archivoVentas());
+
+        LectorVentas.Resultado ventas = lectorVentas.leer(localizador.localizar(conjunto.archivoVentas()));
+        numerarPedidos(ventas.pedidos());
+
+        List<Bloqueo> bloqueosDelMes = new ArrayList<>();
+        ResultadoCarga resumenBloqueos = new ResultadoCarga();
+        if (conjunto.archivoBloqueos() != null) {
+            LectorBloqueos.Resultado leidos = lectorBloqueos.leer(localizador.localizar(conjunto.archivoBloqueos()));
+            bloqueosDelMes = leidos.bloqueos();
+            resumenBloqueos = leidos.resumen();
+        }
+
+        List<MantenimientoProgramado> mantenimientos = new ArrayList<>();
+        ResultadoCarga resumenMantenimiento = new ResultadoCarga();
+        if (conjunto.archivoMantenimiento() != null) {
+            LectorMantenimiento.Resultado leidos =
+                    lectorMantenimiento.leer(localizador.localizar(conjunto.archivoMantenimiento()));
+            mantenimientos = leidos.mantenimientos();
+            resumenMantenimiento = leidos.resumen();
+        }
+
+        int minutoInicio = parametros.minutoInicio();
+        int minutoFin = 31 * ConstantesPaqrap.MINUTOS_POR_DIA;
+
+        List<Pedido> pedidosDesdeInicio = ventas.pedidos().stream()
+                .filter(pedido -> pedido.getMinutoSimulacion() >= minutoInicio)
+                .toList();
+
+        List<Bloqueo> bloqueosVigentes = bloqueosDelMes.stream()
+                .filter(bloqueo -> bloqueo.getFinMinuto() > minutoInicio)
+                .toList();
+
+        List<Almacen> almacenes = construirAlmacenes();
+        List<UnidadTransporte> flota = construirFlota(
+                parametros.cantidadAutos(), parametros.cantidadMotos(), parametros.cantidadBicicletas(),
+                almacenes.get(0).getUbicacion());
+
+        Set<String> unidadesMantenimiento = new LinkedHashSet<>();
+        for (int dia = parametros.diaInicio(); dia <= 31; dia++) {
+            for (MantenimientoProgramado registro : mantenimientos) {
+                if (registro.fecha().getDayOfMonth() == dia
+                        && registro.fecha().getMonthValue() % 2 == conjunto.mes() % 2) {
+                    unidadesMantenimiento.add(registro.codigoUnidad());
+                }
+            }
+        }
+
+        List<Averia> averias = construirAveriasColapso(flota, parametros);
+
+        log.info("Escenario Colapso {} desde dia {} (minuto {}): {} pedidos por procesar de {} del mes",
+                conjunto.archivoVentas(), parametros.diaInicio(), minutoInicio,
+                pedidosDesdeInicio.size(), ventas.pedidos().size());
+
+        EscenarioTurno escenario = new EscenarioTurno(
+                conjunto, parametros.diaInicio(), minutoInicio, minutoFin,
+                pedidosDesdeInicio, ventas.pedidos().size(),
+                bloqueosVigentes, bloqueosDelMes.size(),
+                almacenes, flota, new ArrayList<>(unidadesMantenimiento), averias,
+                ventas.resumen(), resumenBloqueos, resumenMantenimiento);
+
+        return new EscenarioColapso(escenario, mantenimientos, bloqueosDelMes);
+    }
+
+    public List<Averia> construirAveriasColapso(List<UnidadTransporte> flota, ParametrosColapso parametros) {
+        List<Averia> averias = new ArrayList<>();
+        for (ParametrosCincoDias.AveriaSolicitada5D solicitada : parametros.averiasSeguras()) {
+            UnidadTransporte unidad = flota.stream()
+                    .filter(candidata -> candidata.getCodigo().equalsIgnoreCase(solicitada.codigoUnidad()))
+                    .findFirst()
+                    .orElseThrow(() -> new CargaArchivoException(
+                            "La unidad " + solicitada.codigoUnidad() + " no pertenece a la flota configurada"));
+            averias.add(new Averia(unidad, TipoAveria.valueOf(solicitada.tipo()), solicitada.calcularMinutoSimulacion()));
+        }
+        return averias;
+    }
+
     /** Los pedidos reciben un correlativo P-#### en el orden del archivo. */
     private void numerarPedidos(List<Pedido> pedidos) {
         for (int i = 0; i < pedidos.size(); i++) {
@@ -133,7 +283,7 @@ public class CargadorEscenario {
         return delTurno;
     }
 
-    private List<Almacen> construirAlmacenes() {
+    public List<Almacen> construirAlmacenes() {
         return List.of(
                 new Almacen("ALM-CENTRAL", TipoAlmacen.CENTRAL,
                         new Nodo(parametrosAlmacen.centralX(), parametrosAlmacen.centralY()),
@@ -151,13 +301,14 @@ public class CargadorEscenario {
      * (STD 2.2). El tamano de la flota puede configurarse antes de iniciar la
      * ejecucion, pero permanece fijo mientras dura.
      */
-    private List<UnidadTransporte> construirFlota(ParametrosEjecucion parametros, Nodo almacenCentral) {
-        int autos = parametros.cantidadAutos() != null
-                ? parametros.cantidadAutos() : parametrosFlota.cantidadAutos();
-        int motos = parametros.cantidadMotos() != null
-                ? parametros.cantidadMotos() : parametrosFlota.cantidadMotos();
-        int bicicletas = parametros.cantidadBicicletas() != null
-                ? parametros.cantidadBicicletas() : parametrosFlota.cantidadBicicletas();
+    public List<UnidadTransporte> construirFlota(
+            Integer cantidadAutos, Integer cantidadMotos, Integer cantidadBicicletas, Nodo almacenCentral) {
+        int autos = cantidadAutos != null
+                ? cantidadAutos : parametrosFlota.cantidadAutos();
+        int motos = cantidadMotos != null
+                ? cantidadMotos : parametrosFlota.cantidadMotos();
+        int bicicletas = cantidadBicicletas != null
+                ? cantidadBicicletas : parametrosFlota.cantidadBicicletas();
 
         List<UnidadTransporte> flota = new ArrayList<>(autos + motos + bicicletas);
         for (int i = 1; i <= autos; i++) {
@@ -172,17 +323,22 @@ public class CargadorEscenario {
         return flota;
     }
 
+    private List<UnidadTransporte> construirFlota(ParametrosEjecucion parametros, Nodo almacenCentral) {
+        return construirFlota(
+                parametros.cantidadAutos(), parametros.cantidadMotos(), parametros.cantidadBicicletas(), almacenCentral);
+    }
+
     /**
      * Aplica el plan de mantenimiento preventivo, que cubre dos meses y se
      * repite cada dos: el mes solicitado se corresponde con el mes del plan
      * que tenga su misma paridad. La unidad programada queda inmovilizada
      * toda la jornada.
      */
-    private List<String> aplicarMantenimiento(List<UnidadTransporte> flota,
-                                              List<MantenimientoProgramado> plan,
-                                              int mesSolicitado,
-                                              int dia,
-                                              int minutoInicio) {
+    public List<String> aplicarMantenimiento(List<UnidadTransporte> flota,
+                                             List<MantenimientoProgramado> plan,
+                                             int mesSolicitado,
+                                             int dia,
+                                             int minutoInicio) {
         List<String> enMantenimiento = new ArrayList<>();
         int minutoFinDelDia = (dia * ConstantesPaqrap.MINUTOS_POR_DIA);
 
@@ -212,6 +368,19 @@ public class CargadorEscenario {
                     .orElseThrow(() -> new CargaArchivoException(
                             "La unidad " + solicitada.codigoUnidad() + " no pertenece a la flota configurada"));
             averias.add(new Averia(unidad, TipoAveria.valueOf(solicitada.tipo()), solicitada.minutoSimulacion()));
+        }
+        return averias;
+    }
+
+    public List<Averia> construirAverias5D(List<UnidadTransporte> flota, ParametrosCincoDias parametros) {
+        List<Averia> averias = new ArrayList<>();
+        for (ParametrosCincoDias.AveriaSolicitada5D solicitada : parametros.averiasSeguras()) {
+            UnidadTransporte unidad = flota.stream()
+                    .filter(candidata -> candidata.getCodigo().equalsIgnoreCase(solicitada.codigoUnidad()))
+                    .findFirst()
+                    .orElseThrow(() -> new CargaArchivoException(
+                            "La unidad " + solicitada.codigoUnidad() + " no pertenece a la flota configurada"));
+            averias.add(new Averia(unidad, TipoAveria.valueOf(solicitada.tipo()), solicitada.calcularMinutoSimulacion()));
         }
         return averias;
     }

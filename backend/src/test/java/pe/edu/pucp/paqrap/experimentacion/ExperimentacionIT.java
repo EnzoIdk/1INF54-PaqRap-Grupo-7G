@@ -11,6 +11,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -104,6 +105,50 @@ class ExperimentacionIT {
                     ejecucion.algoritmo() + " debe reubicar toda la carga de la unidad averiada");
             assertEquals(0, ejecucion.metricas().entregasFueraDePlazo(),
                     ejecucion.algoritmo() + " debe respetar los plazos tras reasignar la carga");
+        }
+    }
+
+    @Test
+    @DisplayName("La simulacion de 5 dias resuelve los turnos continuos para ambos algoritmos")
+    void simulacionCincoDiasEjecutaCorrectamente() {
+        ParametrosCincoDias parametros = new ParametrosCincoDias(
+                "ventas.202601.txt", 1, 7, 30, "AMBOS", 20260917L, null, null, null, List.of());
+
+        ExperimentacionResponse respuesta = servicioExperimentacion.ejecutarCincoDias(parametros);
+
+        assertNotNull(respuesta);
+        assertEquals(parametros.minutoInicio(), respuesta.escenario().minutoInicio());
+        assertEquals(parametros.minutoFin(), respuesta.escenario().minutoFin());
+        assertTrue(respuesta.escenario().pedidosDelTurno() > 0);
+        assertEquals(2, respuesta.ejecuciones().size());
+
+        for (ExperimentacionResponse.EjecucionDto ejecucion : respuesta.ejecuciones()) {
+            assertTrue(ejecucion.metricas().pedidosAtendidos() > 0);
+            assertFalse(ejecucion.rutas().isEmpty());
+            assertTrue(ejecucion.metricas().costoOperativoTotal() > 0);
+        }
+    }
+
+    @Test
+    @DisplayName("La simulacion hasta el colapso detecta y reporta la fecha y motivo del colapso")
+    void simulacionHastaColapsoEjecutaCorrectamente() {
+        ParametrosColapso parametros = new ParametrosColapso(
+                "ventas.202601.txt", 1, 7, 20, "IACO", 20260917L, null, null, null, List.of());
+
+        ExperimentacionResponse respuesta = servicioExperimentacion.ejecutarColapso(parametros);
+
+        assertNotNull(respuesta);
+        assertNotNull(respuesta.escenario());
+        assertEquals(1, respuesta.ejecuciones().size());
+
+        ExperimentacionResponse.EjecucionDto ejecucion = respuesta.ejecuciones().get(0);
+        assertNotNull(ejecucion.colapsoOcurrido());
+        if (Boolean.TRUE.equals(ejecucion.colapsoOcurrido())) {
+            assertNotNull(ejecucion.minutoColapso());
+            assertNotNull(ejecucion.fechaHoraColapso());
+            assertNotNull(ejecucion.motivoColapso());
+            assertTrue(ejecucion.fechaHoraColapso().contains("Día"));
+            assertTrue(ejecucion.motivoColapso().length() > 10);
         }
     }
 

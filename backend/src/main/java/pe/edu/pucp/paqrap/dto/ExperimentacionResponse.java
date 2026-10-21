@@ -37,6 +37,7 @@ public record ExperimentacionResponse(
      * @param bloqueos trazado de los bloqueos vigentes
      * @param flota estado de cada unidad de transporte al inicio del turno
      * @param unidadesEnMantenimiento codigos fuera de servicio ese dia
+     * @param mantenimientosProgramados detalle de ventanas de mantenimiento por dia y unidad
      */
     public record EscenarioDto(
             String archivoVentas,
@@ -56,7 +57,47 @@ public record ExperimentacionResponse(
             List<AlmacenDto> almacenes,
             List<BloqueoDto> bloqueos,
             List<UnidadDto> flota,
-            List<String> unidadesEnMantenimiento) {
+            List<String> unidadesEnMantenimiento,
+            Boolean colapsoOcurrido,
+            Integer minutoColapso,
+            String fechaHoraColapso,
+            String motivoColapso,
+            List<MantenimientoDto> mantenimientosProgramados) {
+
+        public EscenarioDto(
+                String archivoVentas, String archivoBloqueos, String archivoMantenimiento,
+                int anio, int mes, int dia, int minutoInicio, int minutoFin,
+                int pedidosDelTurno, int pedidosDelMes, int bloqueosVigentes, int bloqueosDelMes,
+                long semilla, List<CargaDto> cargas, List<AlmacenDto> almacenes,
+                List<BloqueoDto> bloqueos, List<UnidadDto> flota, List<String> unidadesEnMantenimiento) {
+            this(archivoVentas, archivoBloqueos, archivoMantenimiento, anio, mes, dia,
+                 minutoInicio, minutoFin, pedidosDelTurno, pedidosDelMes, bloqueosVigentes,
+                 bloqueosDelMes, semilla, cargas, almacenes, bloqueos, flota, unidadesEnMantenimiento,
+                 false, null, null, null, List.of());
+        }
+
+        public EscenarioDto(
+                String archivoVentas, String archivoBloqueos, String archivoMantenimiento,
+                int anio, int mes, int dia, int minutoInicio, int minutoFin,
+                int pedidosDelTurno, int pedidosDelMes, int bloqueosVigentes, int bloqueosDelMes,
+                long semilla, List<CargaDto> cargas, List<AlmacenDto> almacenes,
+                List<BloqueoDto> bloqueos, List<UnidadDto> flota, List<String> unidadesEnMantenimiento,
+                Boolean colapsoOcurrido, Integer minutoColapso, String fechaHoraColapso, String motivoColapso) {
+            this(archivoVentas, archivoBloqueos, archivoMantenimiento, anio, mes, dia,
+                 minutoInicio, minutoFin, pedidosDelTurno, pedidosDelMes, bloqueosVigentes,
+                 bloqueosDelMes, semilla, cargas, almacenes, bloqueos, flota, unidadesEnMantenimiento,
+                 colapsoOcurrido, minutoColapso, fechaHoraColapso, motivoColapso, List.of());
+        }
+    }
+
+    /**
+     * Registro de mantenimiento preventivo aplicable con su intervalo en minutos de simulacion.
+     */
+    public record MantenimientoDto(
+            String codigoUnidad,
+            int dia,
+            int minutoInicio,
+            int minutoFin) {
     }
 
     /**
@@ -116,7 +157,17 @@ public record ExperimentacionResponse(
             MetricasDto metricas,
             List<RutaDto> rutas,
             List<PedidoPendienteDto> pedidosSinAtender,
-            List<String> riesgosDeColapso) {
+            List<String> riesgosDeColapso,
+            Boolean colapsoOcurrido,
+            Integer minutoColapso,
+            String fechaHoraColapso,
+            String motivoColapso) {
+
+        public EjecucionDto(
+                String algoritmo, MetricasDto metricas, List<RutaDto> rutas,
+                List<PedidoPendienteDto> pedidosSinAtender, List<String> riesgosDeColapso) {
+            this(algoritmo, metricas, rutas, pedidosSinAtender, riesgosDeColapso, false, null, null, null);
+        }
     }
 
     /**

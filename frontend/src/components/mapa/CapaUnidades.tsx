@@ -58,7 +58,12 @@ const CapaUnidades = ({
       const cx = escala.aX(unidad.x);
       const cy = escala.aY(unidad.y);
       const averiada = unidadesAveriadas.includes(unidad.codigoUnidad);
-      const enMantenimiento = !averiada && unidadesEnMantenimiento.includes(unidad.codigoUnidad);
+      const enMantenimiento =
+        !averiada &&
+        unidadesEnMantenimiento.includes(unidad.codigoUnidad) &&
+        unidad.enAlmacen &&
+        !unidad.entregando &&
+        unidad.entregasHechas === 0;
       const enfocada = unidadEnfocada === unidad.codigoUnidad;
       const atenuada = unidadEnfocada !== null && !enfocada;
 
@@ -130,16 +135,19 @@ function describirSituacion(unidad: PosicionUnidad, averiada: boolean, enManteni
   if (averiada) {
     return "Averiada";
   }
+  if (unidad.entregando) {
+    return "Entregando al cliente";
+  }
+  if (!unidad.enAlmacen && !unidad.finalizada) {
+    return "En ruta";
+  }
   if (enMantenimiento) {
     return "En mantenimiento preventivo";
-  }
-  if (unidad.enAlmacen) {
-    return "En el almacén";
   }
   if (unidad.finalizada) {
     return "Ruta completada";
   }
-  return unidad.entregando ? "Entregando al cliente" : "En ruta";
+  return "En el almacén";
 }
 
 export default memo(CapaUnidades);

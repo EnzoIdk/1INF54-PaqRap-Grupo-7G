@@ -71,3 +71,15 @@ export function formatearMilisegundos(ms: number): string {
 export function dosDigitos(valor: number): string {
   return String(valor).padStart(2, "0");
 }
+
+/** Limpia el texto de motivo de colapso para que muestre la fecha en vez del minuto bruto */
+export function formatearMotivoColapso(motivo?: string | null): string {
+  if (!motivo) return "";
+  return motivo
+    .replace(/vence en el minuto \d+ \((\d{2}\/\d{2}\/\d{4}) (\d{2}:\d{2})\)/g, "vence el $1 a las $2")
+    .replace(/vence en el minuto \d+ \((.*?)\)/g, "vence el $1")
+    .replace(/vence el (\d{2}\/\d{2}\/\d{4}) (\d{2}:\d{2})/g, "vence el $1 a las $2")
+    .replace(/llega en el minuto \d+ \((\d{2}\/\d{2}\/\d{4}) (\d{2}:\d{2})\)/g, "llega el $1 a las $2")
+    .replace(/llega en el minuto \d+ \((.*?)\)/g, "llega el $1")
+    .replace(/llega el (\d{2}\/\d{2}\/\d{4}) (\d{2}:\d{2})/g, "llega el $1 a las $2");
+}

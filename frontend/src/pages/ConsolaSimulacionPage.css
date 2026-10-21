@@ -39,6 +39,65 @@
   gap: 14px;
 }
 
+.consola__pestanas {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.consola__info-5d {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background-color: var(--color-azul-suave);
+  border-left: 4px solid var(--color-primario);
+  border-radius: 6px;
+  color: var(--color-texto);
+  font-size: 12.5px;
+}
+
+.consola__info-5d-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--color-primario);
+}
+
+.consola__info-5d-desc {
+  margin: 0;
+  color: var(--color-texto-secundario);
+  line-height: 1.4;
+}
+
+.consola__info-colapso {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-left: 4px solid #ef4444;
+  border-radius: 6px;
+  color: var(--color-texto);
+  font-size: 12.5px;
+}
+
+.consola__info-colapso-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.consola__info-colapso-desc {
+  margin: 0;
+  color: var(--color-texto-secundario);
+  line-height: 1.4;
+}
+
 .consola__averia-nueva {
   display: grid;
   grid-template-columns: minmax(120px, 1fr) minmax(200px, 2fr) minmax(110px, 1fr) auto;
@@ -46,8 +105,16 @@
   gap: 12px;
 }
 
-@media (max-width: 760px) {
-  .consola__averia-nueva {
+.consola__averia-nueva-5d {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.2fr) minmax(100px, 1fr) minmax(190px, 2fr) minmax(90px, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+@media (max-width: 860px) {
+  .consola__averia-nueva,
+  .consola__averia-nueva-5d {
     grid-template-columns: 1fr 1fr;
   }
 }

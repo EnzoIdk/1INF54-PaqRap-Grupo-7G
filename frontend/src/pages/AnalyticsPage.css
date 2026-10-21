@@ -130,3 +130,73 @@
   font-size: 11.5px;
   color: var(--color-texto);
 }
+
+.analytics__colapso-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 12px 16px;
+}
+
+.analytics__colapso-item {
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.colapso-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.badge-colapso {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.badge-colapso.colapsado {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-colapso.estable {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.colapso-item__detalle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.colapso-dato {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.colapso-motivo {
+  margin-top: 4px;
+  padding: 8px;
+  background-color: var(--color-fondo);
+  border-radius: 4px;
+  border-left: 3px solid #ef4444;
+}
+
+.colapso-motivo p {
+  margin: 4px 0 0 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--color-texto-secundario);
+}

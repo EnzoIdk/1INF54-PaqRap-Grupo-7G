@@ -17,7 +17,7 @@ import { useAlertasOperacion } from "../hooks/useAlertasOperacion";
 import { useRelojSimulacion } from "../hooks/useRelojSimulacion";
 import { useEjecucionVisible, useExperimentacion } from "../hooks/useExperimentacion";
 import { calcularMinutoFinal, useSimulacionStore } from "../store/simulacionStore";
-import { formatearSoles } from "../utils/formatters";
+import { formatearMotivoColapso, formatearSoles } from "../utils/formatters";
 import "./CentroControlPage.css";
 
 /**
@@ -38,7 +38,10 @@ const CentroControlPage = () => {
   const minutosPorSegundo = useSimulacionStore((estado) => estado.minutosPorSegundo);
   const segundosReales = useSimulacionStore((estado) => estado.segundosReales);
   const unidadEnfocada = useSimulacionStore((estado) => estado.unidadEnfocada);
+  const modoSimulacion = useSimulacionStore((estado) => estado.modoSimulacion);
   const parametros = useSimulacionStore((estado) => estado.parametros);
+  const parametros5D = useSimulacionStore((estado) => estado.parametros5D);
+  const parametrosColapso = useSimulacionStore((estado) => estado.parametrosColapso);
 
   const alternarReproduccion = useSimulacionStore((estado) => estado.alternarReproduccion);
   const reiniciar = useSimulacionStore((estado) => estado.reiniciar);
@@ -51,20 +54,71 @@ const CentroControlPage = () => {
 
   const ejecucion = useEjecucionVisible();
   const minutoFinal = useSimulacionStore((estado) => calcularMinutoFinal(estado));
+  const esCincoDias = escenario ? escenario.minutoFin - escenario.minutoInicio > 1440 : false;
+  const modoEfectivo: "1D" | "5D" | "COLAPSO" =
+    modoSimulacion === "COLAPSO"
+      ? "COLAPSO"
+      : modoSimulacion === "5D" || esCincoDias
+        ? "5D"
+        : "1D";
+
+  const colapsoOcurrido = ejecucion?.colapsoOcurrido ?? escenario?.colapsoOcurrido;
+  const minutoColapso = ejecucion?.minutoColapso ?? escenario?.minutoColapso;
+  const fechaHoraColapso = ejecucion?.fechaHoraColapso ?? escenario?.fechaHoraColapso;
+  const motivoColapso = formatearMotivoColapso(ejecucion?.motivoColapso ?? escenario?.motivoColapso);
+  const esColapsoAlcanzado = Boolean(
+    colapsoOcurrido && minutoColapso !== null && minutoColapso !== undefined && minutoActual >= minutoColapso,
+  );
+
+  const listaAverias = useMemo(() => {
+    if (modoSimulacion === "COLAPSO") {
+      return (parametrosColapso.averias ?? []).map((a) => ({
+        codigoUnidad: a.codigoUnidad,
+        minutoSimulacion: (a.dia - 1) * 1440 + a.hora * 60,
+        tipo: a.tipo,
+      }));
+    }
+    if (esCincoDias || modoSimulacion === "5D") {
+      return (parametros5D.averias ?? []).map((a) => ({
+        codigoUnidad: a.codigoUnidad,
+        minutoSimulacion: (a.dia - 1) * 1440 + a.hora * 60,
+        tipo: a.tipo,
+      }));
+    }
+    return (parametros.averias ?? []).map((a) => ({
+      codigoUnidad: a.codigoUnidad,
+      minutoSimulacion: a.minutoSimulacion,
+      tipo: a.tipo,
+    }));
+  }, [modoSimulacion, esCincoDias, parametros.averias, parametros5D.averias, parametrosColapso.averias]);
 
   const unidadesAveriadas = useMemo(
     () =>
-      (parametros.averias ?? [])
+      listaAverias
         .filter((averia) => averia.minutoSimulacion <= minutoActual)
         .map((averia) => averia.codigoUnidad),
-    [parametros.averias, minutoActual],
+    [listaAverias, minutoActual],
   );
 
-  // Las unidades sin carga -averiadas o en mantenimiento- tambien se dibujan:
-  // son justamente las que el supervisor necesita localizar.
+  // Unidades cuyo mantenimiento preventivo esta realmente vigente en el minutoActual
+  const unidadesEnMantenimientoVigentes = useMemo(() => {
+    if (!escenario) return [];
+    if (escenario.mantenimientosProgramados && escenario.mantenimientosProgramados.length > 0) {
+      return escenario.mantenimientosProgramados
+        .filter((m) => minutoActual >= m.minutoInicio && minutoActual < m.minutoFin)
+        .map((m) => m.codigoUnidad);
+    }
+    const diaActual = Math.floor(minutoActual / 1440) + 1;
+    if (diaActual === escenario.dia) {
+      return escenario.unidadesEnMantenimiento ?? [];
+    }
+    return [];
+  }, [escenario, minutoActual]);
+
+  // Las unidades sin carga -averiadas o en mantenimiento vigente- tambien se dibujan
   const unidadesInmovilizadas = useMemo(
-    () => [...new Set([...unidadesAveriadas, ...(escenario?.unidadesEnMantenimiento ?? [])])],
-    [unidadesAveriadas, escenario],
+    () => [...new Set([...unidadesAveriadas, ...unidadesEnMantenimientoVigentes])],
+    [unidadesAveriadas, unidadesEnMantenimientoVigentes],
   );
 
   const { unidades, pedidos } = usePosicionesFlota(
@@ -78,16 +132,51 @@ const CentroControlPage = () => {
     escenario,
     ejecucion,
     pedidos,
-    averias: parametros.averias ?? [],
+    averias: listaAverias,
     minutoActual,
     ...umbrales,
   });
 
+  const almacenesConStockDinamico = useMemo(() => {
+    if (!escenario) return [];
+    if (!ejecucion || !esCincoDias) return escenario.almacenes;
+
+    const diaActualIndex = Math.floor(minutoActual / 1440);
+    const inicioDiaMinuto = diaActualIndex * 1440;
+
+    let consumidoNO = 0;
+    let consumidoEste = 0;
+
+    ejecucion.rutas.forEach((r) => {
+      if (r.minutoSalida >= inicioDiaMinuto && r.minutoSalida <= minutoActual) {
+        if (r.almacenOrigen === "ALM-NOROESTE") {
+          consumidoNO += r.cargaTotal;
+        } else if (r.almacenOrigen === "ALM-ESTE") {
+          consumidoEste += r.cargaTotal;
+        }
+      }
+    });
+
+    return escenario.almacenes.map((alm) => {
+      if (alm.tipo === "CENTRAL") return alm;
+      const consumido = alm.codigo === "ALM-NOROESTE" ? consumidoNO : consumidoEste;
+      const stock = Math.max(0, alm.stockMaximo - consumido);
+      return { ...alm, stockActual: stock };
+    });
+  }, [escenario, ejecucion, esCincoDias, minutoActual]);
+
   const almacenCentral = escenario?.almacenes.find((almacen) => almacen.tipo === "CENTRAL");
 
   const contexto = escenario
-    ? `${escenario.archivoVentas} · día ${escenario.dia} · ${escenario.pedidosDelTurno} pedidos del turno` +
-      (ejecucion ? ` · ${ejecucion.algoritmo} · ${formatearSoles(ejecucion.metricas.costoOperativoTotal)}` : "")
+    ? modoSimulacion === "COLAPSO"
+      ? `${escenario.archivoVentas} · Simulación hasta el colapso (desde día ${escenario.dia}) · ${escenario.pedidosDelTurno} pedidos` +
+      (ejecucion ? ` · ${ejecucion.algoritmo} · ${formatearSoles(ejecucion.metricas.costoOperativoTotal)}` : "") +
+      (esColapsoAlcanzado ? ` · ¡Colapso!: ${fechaHoraColapso}` : "")
+      : esCincoDias
+        ? `${escenario.archivoVentas} · 5 días (días ${escenario.dia}–${escenario.dia + 4}) · ${escenario.pedidosDelTurno} pedidos` +
+        (ejecucion ? ` · ${ejecucion.algoritmo} · ${formatearSoles(ejecucion.metricas.costoOperativoTotal)}` : "")
+        : `${escenario.archivoVentas} · día ${escenario.dia} · ${escenario.pedidosDelTurno} pedidos del turno` +
+        (ejecucion ? ` · ${ejecucion.algoritmo} · ${formatearSoles(ejecucion.metricas.costoOperativoTotal)}` : "")
     : "Sin plan cargado · ejecute la experimentación numérica";
 
   return (
@@ -103,6 +192,7 @@ const CentroControlPage = () => {
             reproduciendo={reproduciendo}
             habilitado={Boolean(escenario)}
             minutosPorSegundo={minutosPorSegundo}
+            modoSimulacion={modoEfectivo}
             onAlternar={alternarReproduccion}
             onReiniciar={reiniciar}
             onDetener={detener}
@@ -146,15 +236,31 @@ const CentroControlPage = () => {
               />
             </div>
 
+            {esColapsoAlcanzado && (
+              <div className="centro-control__alerta-colapso" role="alert">
+                <div className="alerta-colapso__cabecera">
+                  <div className="alerta-colapso__titular">
+                    <h3>¡COLAPSO LOGÍSTICO ALCANZADO!</h3>
+                    <span className="alerta-colapso__fecha">
+                      Fecha y hora del colapso: <strong>{fechaHoraColapso}</strong>
+                    </span>
+                  </div>
+                </div>
+                <p className="alerta-colapso__motivo">
+                  <strong>Motivo:</strong> {motivoColapso}
+                </p>
+              </div>
+            )}
+
             <div className="centro-control__lienzo">
               <MapaCiudad
-                almacenes={escenario.almacenes}
+                almacenes={almacenesConStockDinamico}
                 bloqueos={escenario.bloqueos}
                 rutas={ejecucion?.rutas ?? []}
                 unidades={unidades}
                 pedidos={pedidos}
                 unidadesAveriadas={unidadesAveriadas}
-                unidadesEnMantenimiento={escenario.unidadesEnMantenimiento}
+                unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
                 unidadEnfocada={unidadEnfocada}
                 onEnfocar={enfocarUnidad}
                 minutoActual={minutoActual}
@@ -175,12 +281,12 @@ const CentroControlPage = () => {
             <PanelFlota
               unidades={unidades}
               unidadesAveriadas={unidadesAveriadas}
-              unidadesEnMantenimiento={escenario.unidadesEnMantenimiento}
+              unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
               unidadEnfocada={unidadEnfocada}
               onEnfocar={enfocarUnidad}
             />
             <PanelAlmacenes
-              almacenes={escenario.almacenes}
+              almacenes={almacenesConStockDinamico}
               umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
               umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
             />

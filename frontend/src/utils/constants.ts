@@ -69,14 +69,36 @@ export const NOMBRE_ALGORITMO = {
 
 /**
  * Velocidades de reproduccion de la simulacion, en minutos simulados por
- * segundo real. El escenario 5D exige recorrer 5 dias en 30 a 60 minutos,
- * lo que equivale a 120-240 minutos simulados por segundo.
+ * segundo real. Para el escenario 5D, el requisito RF-46 exige recorrer
+ * los 5 dias (7,200 min) en un lapso de entre 30 y 60 minutos reales:
+ * - 2 min/s = 3,600 s = 60 min reales (limite maximo 5D)
+ * - 4 min/s = 1,800 s = 30 min reales (limite minimo 5D)
  */
 export const VELOCIDADES_REPRODUCCION = [
   { etiqueta: "1x", minutosPorSegundo: 1 },
+  { etiqueta: "2x", etiqueta5D: "2x (5D · 60 min)", minutosPorSegundo: 2 },
+  { etiqueta: "4x", etiqueta5D: "4x (5D · 30 min)", minutosPorSegundo: 4 },
   { etiqueta: "10x", minutosPorSegundo: 10 },
   { etiqueta: "30x", minutosPorSegundo: 30 },
   { etiqueta: "60x", minutosPorSegundo: 60 },
   { etiqueta: "120x", minutosPorSegundo: 120 },
   { etiqueta: "240x", minutosPorSegundo: 240 },
 ] as const;
+
+export type OpcionVelocidad = (typeof VELOCIDADES_REPRODUCCION)[number];
+
+/**
+ * Retorna la etiqueta formateada para el selector de velocidad segun el modo de simulacion.
+ * En el modo 5D incluye la referencia al tiempo total exigido por RF-46 (30 o 60 min).
+ * En 1D y COLAPSO muestra la velocidad limpia (ej. "2x · 2 min/s").
+ */
+export function formatearEtiquetaVelocidad(
+  velocidad: OpcionVelocidad,
+  modo?: "1D" | "5D" | "COLAPSO"
+): string {
+  if (modo === "5D" && "etiqueta5D" in velocidad && velocidad.etiqueta5D) {
+    return `${velocidad.etiqueta5D} · ${velocidad.minutosPorSegundo} min/s`;
+  }
+  return `${velocidad.etiqueta} · ${velocidad.minutosPorSegundo} min/s`;
+}
+

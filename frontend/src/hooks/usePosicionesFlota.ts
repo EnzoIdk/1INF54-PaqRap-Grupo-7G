@@ -31,6 +31,7 @@ export interface EstadoPedidoEnMapa {
   y: number;
   cantidadProducto: number;
   plazoHoras: number;
+  minutoRegistro: number;
   minutoLimite: number;
   minutoLlegada: number | null;
   codigoUnidad: string | null;
@@ -63,7 +64,34 @@ export function usePosicionesFlota(
       return { unidades: [], pedidos: [] };
     }
 
-    const unidades = ejecucion.rutas.map((ruta) => calcularPosicion(ruta, minutoActual));
+    // Agrupar rutas por codigo de unidad para soportar simulacion de multiples turnos/dias
+    const rutasPorUnidad = new Map<string, RutaDto[]>();
+    ejecucion.rutas.forEach((ruta) => {
+      const lista = rutasPorUnidad.get(ruta.codigoUnidad) ?? [];
+      lista.push(ruta);
+      rutasPorUnidad.set(ruta.codigoUnidad, lista);
+    });
+
+    const unidades: PosicionUnidad[] = [];
+    rutasPorUnidad.forEach((rutas) => {
+      rutas.sort((a, b) => a.minutoSalida - b.minutoSalida);
+
+      const rutaActiva = rutas.find(
+        (ruta) => minutoActual >= ruta.minutoSalida && minutoActual <= ruta.minutoFin,
+      );
+
+      if (rutaActiva) {
+        unidades.push(calcularPosicion(rutaActiva, minutoActual));
+      } else {
+        const siguienteRuta = rutas.find((ruta) => minutoActual < ruta.minutoSalida);
+        if (siguienteRuta) {
+          unidades.push(calcularPosicion(siguienteRuta, minutoActual));
+        } else {
+          const ultimaRuta = rutas[rutas.length - 1];
+          unidades.push(calcularPosicion(ultimaRuta, minutoActual));
+        }
+      }
+    });
 
     const conRuta = new Set(unidades.map((unidad) => unidad.codigoUnidad));
     unidadesInmovilizadas
@@ -86,10 +114,17 @@ export function usePosicionesFlota(
           y: parada.posY,
           cantidadProducto: parada.cantidadProducto,
           plazoHoras: parada.plazoHoras,
+          minutoRegistro: parada.minutoRegistro,
           minutoLimite: parada.minutoLimite,
           minutoLlegada: parada.minutoLlegada,
           codigoUnidad: ruta.codigoUnidad,
-          estado: estadoDeParada(parada.minutoLlegada, parada.cumplePlazo, ruta.minutoSalida, minutoActual),
+          estado: estadoDeParada(
+            parada.minutoRegistro,
+            parada.minutoLlegada,
+            parada.cumplePlazo,
+            ruta.minutoSalida,
+            minutoActual,
+          ),
         });
       });
     });
@@ -102,6 +137,7 @@ export function usePosicionesFlota(
         y: pedido.posY,
         cantidadProducto: pedido.cantidadProducto,
         plazoHoras: pedido.plazoHoras,
+        minutoRegistro: pedido.minutoRegistro,
         minutoLimite: pedido.minutoLimite,
         minutoLlegada: null,
         codigoUnidad: null,
@@ -210,6 +246,7 @@ function buscarTramo(minutos: number[], minutoActual: number): number {
  * (STD 2.1).
  */
 function estadoDeParada(
+  minutoRegistro: number,
   minutoLlegada: number,
   cumplePlazo: boolean,
   minutoSalidaUnidad: number,
@@ -218,5 +255,8 @@ function estadoDeParada(
   if (minutoActual >= minutoLlegada) {
     return cumplePlazo ? "ENTREGADO" : "INCUMPLIDO";
   }
-  return minutoActual >= minutoSalidaUnidad ? "EN_RUTA" : "ASIGNADO";
+  if (minutoActual >= minutoSalidaUnidad) {
+    return "EN_RUTA";
+  }
+  return minutoActual >= minutoRegistro ? "ASIGNADO" : "PENDIENTE";
 }
