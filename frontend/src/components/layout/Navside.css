@@ -107,6 +107,24 @@
   padding: 0 6px;
 }
 
+.navside__salir {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+}
+
+.navside__salir:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
 .navside__avatar {
   display: inline-flex;
   align-items: center;
