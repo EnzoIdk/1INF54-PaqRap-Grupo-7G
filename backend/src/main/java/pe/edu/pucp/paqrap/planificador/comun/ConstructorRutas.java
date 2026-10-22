@@ -43,6 +43,15 @@ public class ConstructorRutas {
                           List<Pedido> pedidosEnOrden,
                           int minutoPlanificacion,
                           Grafo grafo) {
+        return construir(unidad, almacenOrigen, pedidosEnOrden, minutoPlanificacion, grafo, List.of(almacenOrigen));
+    }
+
+    public Ruta construir(UnidadTransporte unidad,
+                          Almacen almacenOrigen,
+                          List<Pedido> pedidosEnOrden,
+                          int minutoPlanificacion,
+                          Grafo grafo,
+                          List<Almacen> almacenesDisponibles) {
         Ruta ruta = new Ruta(unidad, almacenOrigen, minutoPlanificacion);
 
         Nodo posicion = almacenOrigen.getUbicacion();
@@ -74,8 +83,53 @@ public class ConstructorRutas {
             posicion = destino;
         }
 
+        // Tramo de retorno: al completar las entregas, la unidad retorna a recargar
+        // al almacen mas cercano que cuente con stock disponible o al central.
+        if (!pedidosEnOrden.isEmpty()) {
+            int minutoInicioRetorno = (int) Math.round(reloj);
+            Almacen almacenDestino = seleccionarAlmacenRetorno(posicion, almacenesDisponibles, almacenOrigen, grafo);
+            Nodo destinoRetorno = almacenDestino.getUbicacion();
+            double distanciaRetorno = grafo.distanciaKm(posicion, destinoRetorno);
+            double minutosViajeRetorno = evaluadorCosto.minutosDeViaje(unidad.getTipoUnidad(), distanciaRetorno);
+
+            double minutoLlegadaExacto = reloj + minutosViajeRetorno;
+            int minutoLlegadaAlmacen = (int) Math.round(minutoLlegadaExacto);
+
+            agregarTramoAlRecorrido(grafo, posicion, destinoRetorno, reloj, minutoLlegadaExacto, recorrido, minutos);
+            ruta.definirRetorno(almacenDestino, distanciaRetorno, minutoInicioRetorno, minutoLlegadaAlmacen);
+        }
+
         ruta.definirRecorrido(recorrido, minutos);
         return ruta;
+    }
+
+    /**
+     * Elige el almacen de retorno mas cercano que posea stock de paquetes para recargar.
+     * Si los intermedios no tienen stock, retorna al almacen central.
+     */
+    public static Almacen seleccionarAlmacenRetorno(Nodo posicion,
+                                                    List<Almacen> almacenes,
+                                                    Almacen almacenOrigen,
+                                                    Grafo grafo) {
+        if (almacenes == null || almacenes.isEmpty()) {
+            return almacenOrigen;
+        }
+        List<Almacen> conStock = almacenes.stream()
+                .filter(a -> a.esCentral() || a.getStockActual() > 0)
+                .toList();
+        List<Almacen> candidatos = conStock.isEmpty() ? almacenes : conStock;
+
+        Almacen mejor = candidatos.get(0);
+        double menorDistancia = grafo.distanciaKm(posicion, mejor.getUbicacion());
+        for (int i = 1; i < candidatos.size(); i++) {
+            Almacen candidata = candidatos.get(i);
+            double dist = grafo.distanciaKm(posicion, candidata.getUbicacion());
+            if (dist < menorDistancia) {
+                menorDistancia = dist;
+                mejor = candidata;
+            }
+        }
+        return mejor;
     }
 
     /**
@@ -94,6 +148,8 @@ public class ConstructorRutas {
         List<Nodo> camino = grafo.caminoEnL(origen, destino);
         int pasos = camino.size() - 1;
         if (pasos <= 0) {
+            recorrido.add(destino);
+            minutos.add((int) Math.round(minutoLlegada));
             return;
         }
         double duracion = minutoLlegada - minutoSalida;

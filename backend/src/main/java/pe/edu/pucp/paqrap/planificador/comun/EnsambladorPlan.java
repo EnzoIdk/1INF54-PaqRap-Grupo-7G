@@ -91,6 +91,12 @@ public class EnsambladorPlan {
             posicion = pedido.getUbicacion();
         }
 
+        if (!asignacion.getPedidos().isEmpty()) {
+            pe.edu.pucp.paqrap.model.Almacen almacenDestino = ConstructorRutas.seleccionarAlmacenRetorno(
+                    posicion, contexto.almacenes(), asignacion.getAlmacenOrigen(), contexto.grafo());
+            distanciaKm += contexto.grafo().distanciaKm(posicion, almacenDestino.getUbicacion());
+        }
+
         int capacidad = evaluadorCosto.obtenerCapacidad(asignacion.getUnidad().getTipoUnidad());
         int exceso = asignacion.getCarga() - capacidad;
         if (exceso > 0) {
@@ -118,7 +124,8 @@ public class EnsambladorPlan {
                     asignacion.getAlmacenOrigen(),
                     asignacion.getPedidos(),
                     contexto.minutoPlanificacion(),
-                    contexto.grafo());
+                    contexto.grafo(),
+                    contexto.almacenes());
             plan.agregarRuta(ruta);
 
             costoTotal += evaluadorCosto.calcularCostoOperativo(ruta);

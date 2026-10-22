@@ -1,30 +1,56 @@
-/* Leyenda del mapa (STD 2.6.3). */
+/* Leyenda del mapa (STD 2.6.3). Horizontal sobre el mapa. */
 
 .leyenda {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  width: 218px;
-  flex: 0 0 218px;
-  padding: 16px;
-  overflow-y: auto;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  box-sizing: border-box;
+}
+
+.leyenda__seccion {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.leyenda__seccion + .leyenda__seccion {
+  border-top: 1px solid var(--color-borde);
+  padding-top: 8px;
+}
+
+.leyenda__seccion .rotulo {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-texto-secundario);
+  flex-shrink: 0;
+  min-width: 135px;
 }
 
 .leyenda__seccion ul {
   display: flex;
-  flex-direction: column;
-  gap: 9px;
-  margin: 10px 0 0;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+  margin: 0;
   padding: 0;
   list-style: none;
+  flex: 1;
 }
 
 .leyenda__seccion li {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 11.5px;
   color: var(--color-texto-secundario);
+  white-space: nowrap;
 }
 
 .leyenda__cuadro {

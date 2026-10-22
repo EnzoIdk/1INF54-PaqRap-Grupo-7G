@@ -98,9 +98,8 @@ const PanelFlota = ({
             return (
               <article
                 key={unidad.codigoUnidad}
-                className={`panel-flota__unidad ${
-                  unidadEnfocada === unidad.codigoUnidad ? "panel-flota__unidad--enfocada" : ""
-                }`}
+                className={`panel-flota__unidad ${unidadEnfocada === unidad.codigoUnidad ? "panel-flota__unidad--enfocada" : ""
+                  }`}
                 onClick={() => onEnfocar(unidadEnfocada === unidad.codigoUnidad ? null : unidad.codigoUnidad)}
               >
                 <span className={`panel-flota__icono ${averiada ? "panel-flota__icono--averiada" : ""}`}>
@@ -137,6 +136,9 @@ const PanelFlota = ({
 function describir(unidad: PosicionUnidad, averiada: boolean, enMantenimiento: boolean): string {
   if (averiada) {
     return "Averiada · carga reasignada";
+  }
+  if (unidad.retornando) {
+    return unidad.almacenDestino ? `Retornando a ${unidad.almacenDestino}` : "Retornando al almacén";
   }
   if (unidad.entregando) {
     return `Entregando · ${unidad.entregasHechas}/${unidad.entregasTotales}`;

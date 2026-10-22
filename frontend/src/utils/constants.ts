@@ -25,6 +25,9 @@ export const COLOR_TIPO_UNIDAD = {
   BICICLETA: "var(--color-tipo-bicicleta)",
 } as const;
 
+export const COLOR_RUTA_RETORNO = "var(--color-ruta-retorno)";
+export const COLOR_RUTA_RECORRIDA = "var(--color-ruta-recorrida)";
+
 export const ETIQUETA_TIPO_UNIDAD = {
   AUTO: "Auto",
   MOTO: "Moto",

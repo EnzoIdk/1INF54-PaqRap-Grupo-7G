@@ -2,7 +2,7 @@ import "./Tabs.css";
 
 export interface OpcionTab {
   id: string;
-  etiqueta: string;
+  etiqueta: React.ReactNode;
   detalle?: string;
 }
 

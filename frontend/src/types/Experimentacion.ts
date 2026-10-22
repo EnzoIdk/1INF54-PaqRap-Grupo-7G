@@ -113,11 +113,13 @@ export interface RutaDto {
   codigoUnidad: string;
   tipoUnidad: TipoUnidad;
   almacenOrigen: string;
+  almacenDestino?: string;
   cargaTotal: number;
   capacidad: number;
   distanciaKm: number;
   costoSoles: number;
   minutoSalida: number;
+  minutoInicioRetorno?: number;
   minutoFin: number;
   /** Nodos por los que pasa la unidad, en orden. */
   recorrido: NodoMapa[];

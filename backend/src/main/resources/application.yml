@@ -63,11 +63,11 @@ paqrap:
     stock-minimo: 0
     umbral-ambar-porcentaje: 0.33
     umbral-rojo-porcentaje: 0.66
-    central-x: 25
-    central-y: 15
+    central-x: 27
+    central-y: 14
     noroeste-x: 12
     noroeste-y: 38
-    este-x: 55
+    este-x: 57
     este-y: 27
 
 logging:
