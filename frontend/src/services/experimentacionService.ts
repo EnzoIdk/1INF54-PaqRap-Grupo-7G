@@ -45,6 +45,21 @@ export const experimentacionService = {
   },
 
   /** Resuelve una simulacion continua hasta el colapso con el I-ACO, con el AGA-ES-TW o con ambos. */
+  /** Cambia en caliente los parámetros de la flota y de los almacenes (solo ADMIN). */
+  async actualizarParametros(
+    flota: ParametrosVigentes["flota"],
+    almacen: ParametrosVigentes["almacen"],
+  ): Promise<ParametrosVigentes> {
+    const respuesta = await axios.put<ParametrosVigentes>(`${API_BASE_URL}/admin/parametros`, { flota, almacen });
+    return respuesta.data;
+  },
+
+  /** Vuelve a los valores de application.yml (solo ADMIN). */
+  async restablecerParametros(): Promise<ParametrosVigentes> {
+    const respuesta = await axios.post<ParametrosVigentes>(`${API_BASE_URL}/admin/parametros/restablecer`);
+    return respuesta.data;
+  },
+
   async ejecutarColapso(parametros: ParametrosColapso): Promise<ExperimentacionResponse> {
     const respuesta = await axios.post<ExperimentacionResponse>(
       `${API_BASE_URL}/experimentacion/ejecutar-colapso`,

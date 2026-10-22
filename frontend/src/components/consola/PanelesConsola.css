@@ -1,0 +1,62 @@
+.pedidos-adicionales__formulario {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: var(--espacio-3, 12px);
+}
+
+.pedidos-adicionales__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--espacio-2, 8px);
+  margin-top: var(--espacio-3, 12px);
+}
+
+.pedidos-adicionales__ayuda {
+  font-size: 12px;
+}
+
+.pedidos-adicionales__resumen {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: var(--espacio-3, 12px) 0 0;
+  font-size: 13px;
+}
+
+.pedidos-adicionales__rechazo {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.dia-a-dia__datos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--espacio-3, 12px);
+  align-items: end;
+}
+
+.dia-a-dia__dato {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dia-a-dia__dato strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.dia-a-dia__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-semaforo-verde);
+  background: var(--color-verde-suave);
+}

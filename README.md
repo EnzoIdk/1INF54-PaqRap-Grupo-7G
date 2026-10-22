@@ -73,21 +73,35 @@ para usarlo, `docker compose up -d db` y `mvn spring-boot:run`.
 
 ### Flujo de uso
 
-1. **Consola de Simulación** — elija el mes de ventas, el día, la hora de inicio
-   del turno, la ventana de pedidos, el tamaño de la flota, la semilla y el
-   algoritmo. Puede inyectar averías para observar la reasignación de carga.
+1. **Consola de Simulación** — cuatro escenarios: **Día a día** (el turno vigente
+   con la hora real de Lima; el reloj sigue la hora real y al cambiar de turno se
+   planifica solo el siguiente), **1 día**, **5 días** y **hasta el colapso**. Se
+   elige mes, día, turno (07:00, 15:00 o 23:00), flota, semilla y algoritmo; se
+   inyectan averías y se registran pedidos propios, uno a uno o desde un archivo
+   con el formato de ventas, todos con validación de campos obligatorios.
 2. **Centro de Control** — el plan se reproduce sobre el mapa: las unidades se
    desplazan por la retícula siguiendo la ruta que el algoritmo encontró, el
    trazo ya recorrido queda en gris y los pedidos cambian de estado al ser
    entregados. El reloj dual muestra el tiempo simulado y el real; la velocidad
-   va de 1x a 240x y la línea de tiempo permite adelantar o retroceder.
-3. **Gestión de Pedidos** — los pedidos del turno con su unidad, su cuenta
-   regresiva y su estado en el instante que se reproduce.
-4. **Analytics** — la comparación numérica de los dos algoritmos sobre el mismo
-   turno: costo operativo, distancia, pedidos atendidos, entregas fuera de plazo,
-   unidades movilizadas, tiempo de cómputo y fitness.
-5. **Configuración** — los parámetros vigentes del planificador, la flota y los
-   almacenes, tal como los expone el backend.
+   va de 1x a 240x (o tiempo real) y la línea de tiempo permite adelantar o
+   retroceder. Los chips de la flota filtran autos, motos y bicicletas también en
+   el mapa; los pedidos reasignados por avería se resaltan; un aviso informa cada
+   entrega completada; la unidad seleccionada permite descargar su itinerario.
+3. **Gestión de Pedidos** — los pedidos con su unidad, su cuenta regresiva y su
+   estado; filtros por cliente, plazo y estado, y exportación a CSV.
+4. **Analytics** — la comparación de los dos algoritmos y, por cada uno, la tasa de
+   cumplimiento (a tiempo, fuera de plazo, sin atender, reasignados), el gráfico de
+   tiempo real de entrega frente al plazo, el análisis de costos (total, por km, por
+   pedido y por tipo de unidad), indicadores de eficiencia, uso de los almacenes,
+   cuellos de botella y horas de refrigerio. Exporta resultados a Excel (CSV),
+   el historial de incidencias y los refrigerios.
+5. **Configuración** — los parámetros vigentes. Un ADMIN cambia en caliente
+   velocidades, capacidades, costos, flota por defecto, umbrales del semáforo y
+   ubicación de los almacenes; un USUARIO solo los consulta.
+
+La planificación respeta además la hora de alimentación de cada conductor: una
+hora completa, al menos una hora después del cambio de turno y una hora antes del
+siguiente, sin retrasar ninguna entrega que cumplía su plazo.
 
 ### API
 
@@ -96,6 +110,14 @@ para usarlo, `docker compose up -d db` y `mvn spring-boot:run`.
 | `GET` | `/api/experimentacion/datos` | Conjuntos de datos del cliente disponibles |
 | `GET` | `/api/experimentacion/parametros` | Parámetros vigentes del planificador, la flota y los almacenes |
 | `POST` | `/api/experimentacion/ejecutar` | Resuelve un turno con el I-ACO, el AGA-ES-TW o ambos |
+| `POST` | `/api/experimentacion/ejecutar-5d` | Simulación de 5 días (15 turnos) |
+| `POST` | `/api/experimentacion/ejecutar-colapso` | Simulación continua hasta el colapso logístico |
+| `PUT` | `/api/admin/parametros` | (ADMIN) Cambia en caliente flota y almacenes |
+| `POST` | `/api/admin/parametros/restablecer` | (ADMIN) Vuelve a los valores de `application.yml` |
+
+Las tres ejecuciones aceptan `pedidosAdicionales`: pedidos registrados por el usuario
+(`clienteId`, `posX`, `posY`, `cantidadProducto`, `plazoHoras`, `dia`, `hora`, `minuto`).
+Toda la API, salvo `/api/auth/**`, exige sesión iniciada.
 
 ```bash
 curl -X POST http://localhost:8080/api/experimentacion/ejecutar \

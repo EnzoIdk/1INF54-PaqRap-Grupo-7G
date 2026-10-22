@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component;
 import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.config.ParametrosPlanificador;
 import pe.edu.pucp.paqrap.model.Nodo;
+import pe.edu.pucp.paqrap.model.ParadaRuta;
 import pe.edu.pucp.paqrap.model.Pedido;
 import pe.edu.pucp.paqrap.model.PlanRutas;
 import pe.edu.pucp.paqrap.model.Ruta;
@@ -126,6 +127,9 @@ public class EnsambladorPlan {
                     contexto.minutoPlanificacion(),
                     contexto.grafo(),
                     contexto.almacenes());
+            ruta.getParadas().stream()
+                    .filter(parada -> asignacion.esReasignado(parada.getPedido()))
+                    .forEach(ParadaRuta::marcarReasignada);
             plan.agregarRuta(ruta);
 
             costoTotal += evaluadorCosto.calcularCostoOperativo(ruta);

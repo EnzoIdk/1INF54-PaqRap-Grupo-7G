@@ -213,7 +213,7 @@ public class PlanificadorIACO implements Planificador {
             }
 
             if (mejorHospedera != null) {
-                mejorHospedera.agregar(paquete);
+                mejorHospedera.agregarReasignado(paquete);
             }
         }
     }

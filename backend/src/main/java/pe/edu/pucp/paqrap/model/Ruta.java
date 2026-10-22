@@ -25,6 +25,9 @@ public class Ruta {
     private final List<Nodo> secuenciaNodos = new ArrayList<>();
     private final List<Integer> minutosPorNodo = new ArrayList<>();
     private double distanciaKm;
+    private Integer minutoInicioAlimentacion;
+    private Integer minutoFinAlimentacion;
+    private boolean alimentacionDentroDeVentana;
 
     public Ruta(UnidadTransporte unidadTransporte, Almacen almacenOrigen, int minutoSalidaAlmacen) {
         this.unidadTransporte = unidadTransporte;
@@ -126,6 +129,25 @@ public class Ruta {
             return minutoSalidaAlmacen;
         }
         return minutoLlegadaAlmacen > 0 ? minutoLlegadaAlmacen : paradas.get(paradas.size() - 1).getMinutoSalida();
+    }
+
+    /** Hora de alimentacion del conductor (RF-26, RF-27); la decide {@code ProgramadorAlimentacion}. */
+    public void programarAlimentacion(int minutoInicio, int minutoFin, boolean dentroDeVentana) {
+        this.minutoInicioAlimentacion = minutoInicio;
+        this.minutoFinAlimentacion = minutoFin;
+        this.alimentacionDentroDeVentana = dentroDeVentana;
+    }
+
+    public Integer getMinutoInicioAlimentacion() {
+        return minutoInicioAlimentacion;
+    }
+
+    public Integer getMinutoFinAlimentacion() {
+        return minutoFinAlimentacion;
+    }
+
+    public boolean isAlimentacionDentroDeVentana() {
+        return alimentacionDentroDeVentana;
     }
 
     public long contarParadasFueraDePlazo() {

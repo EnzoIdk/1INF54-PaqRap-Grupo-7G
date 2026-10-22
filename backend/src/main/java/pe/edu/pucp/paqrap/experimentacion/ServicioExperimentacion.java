@@ -17,6 +17,7 @@ import pe.edu.pucp.paqrap.carga.MantenimientoProgramado;
 import pe.edu.pucp.paqrap.carga.ResultadoCarga;
 import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.config.ParametrosAlmacen;
+import pe.edu.pucp.paqrap.config.ParametrosOperacion;
 import pe.edu.pucp.paqrap.dto.ExperimentacionResponse;
 import pe.edu.pucp.paqrap.enums.TipoAlmacen;
 import pe.edu.pucp.paqrap.model.Almacen;
@@ -57,7 +58,7 @@ public class ServicioExperimentacion {
     private final PlanificadorAgaEsTw planificadorAgaEsTw;
     private final EvaluadorCosto evaluadorCosto;
     private final GeneradorAleatorio generadorAleatorio;
-    private final ParametrosAlmacen parametrosAlmacen;
+    private final ParametrosOperacion parametrosOperacion;
 
     public ServicioExperimentacion(CatalogoDatos catalogoDatos,
                                    CargadorEscenario cargadorEscenario,
@@ -65,14 +66,19 @@ public class ServicioExperimentacion {
                                    PlanificadorAgaEsTw planificadorAgaEsTw,
                                    EvaluadorCosto evaluadorCosto,
                                    GeneradorAleatorio generadorAleatorio,
-                                   ParametrosAlmacen parametrosAlmacen) {
+                                   ParametrosOperacion parametrosOperacion) {
         this.catalogoDatos = catalogoDatos;
         this.cargadorEscenario = cargadorEscenario;
         this.planificadorIACO = planificadorIACO;
         this.planificadorAgaEsTw = planificadorAgaEsTw;
         this.evaluadorCosto = evaluadorCosto;
         this.generadorAleatorio = generadorAleatorio;
-        this.parametrosAlmacen = parametrosAlmacen;
+        this.parametrosOperacion = parametrosOperacion;
+    }
+
+    /** Valores vigentes de los almacenes: un administrador puede cambiarlos en caliente. */
+    private ParametrosAlmacen parametrosAlmacen() {
+        return parametrosOperacion.almacen();
     }
 
     public List<CatalogoDatos.ConjuntoDatos> listarConjuntos() {
@@ -179,8 +185,8 @@ public class ServicioExperimentacion {
         Nodo ubicacionCentral = almacenesBase.get(0).getUbicacion();
 
         // Stock de almacenes intermedios
-        int stockNO = parametrosAlmacen.stockMaximo();
-        int stockEste = parametrosAlmacen.stockMaximo();
+        int stockNO = parametrosAlmacen().stockMaximo();
+        int stockEste = parametrosAlmacen().stockMaximo();
         int diaAnterior = -1;
 
         List<Pedido> pedidosPendientes = new ArrayList<>();
@@ -204,8 +210,8 @@ public class ServicioExperimentacion {
 
             // Recarga instantanea diaria a las 23:59:59 cada 24 horas
             if (diaAnterior != -1 && diaActual != diaAnterior) {
-                stockNO = parametrosAlmacen.stockMaximo();
-                stockEste = parametrosAlmacen.stockMaximo();
+                stockNO = parametrosAlmacen().stockMaximo();
+                stockEste = parametrosAlmacen().stockMaximo();
             }
             diaAnterior = diaActual;
 
@@ -259,7 +265,7 @@ public class ServicioExperimentacion {
                     .toList();
 
             // Almacenes con stock vigente
-            Almacen almCentral = new Almacen("ALM-CENTRAL", TipoAlmacen.CENTRAL, almacenesBase.get(0).getUbicacion(), parametrosAlmacen.stockMaximo());
+            Almacen almCentral = new Almacen("ALM-CENTRAL", TipoAlmacen.CENTRAL, almacenesBase.get(0).getUbicacion(), parametrosAlmacen().stockMaximo());
             Almacen almNO = new Almacen("ALM-NOROESTE", TipoAlmacen.INTERMEDIO, almacenesBase.get(1).getUbicacion(), stockNO);
             Almacen almEste = new Almacen("ALM-ESTE", TipoAlmacen.INTERMEDIO, almacenesBase.get(2).getUbicacion(), stockEste);
             List<Almacen> almacenesTurno = List.of(almCentral, almNO, almEste);
@@ -446,8 +452,8 @@ public class ServicioExperimentacion {
         List<Almacen> almacenesBase = cargadorEscenario.construirAlmacenes();
         Nodo ubicacionCentral = almacenesBase.get(0).getUbicacion();
 
-        int stockNO = parametrosAlmacen.stockMaximo();
-        int stockEste = parametrosAlmacen.stockMaximo();
+        int stockNO = parametrosAlmacen().stockMaximo();
+        int stockEste = parametrosAlmacen().stockMaximo();
         int diaAnterior = -1;
 
         List<Pedido> pedidosPendientes = new ArrayList<>();
@@ -480,8 +486,8 @@ public class ServicioExperimentacion {
 
             // Recarga instantanea diaria a las 23:59:59 cada 24 horas
             if (diaAnterior != -1 && diaActual != diaAnterior) {
-                stockNO = parametrosAlmacen.stockMaximo();
-                stockEste = parametrosAlmacen.stockMaximo();
+                stockNO = parametrosAlmacen().stockMaximo();
+                stockEste = parametrosAlmacen().stockMaximo();
             }
             diaAnterior = diaActual;
 
@@ -546,7 +552,7 @@ public class ServicioExperimentacion {
                     .toList();
 
             // Almacenes con stock vigente
-            Almacen almCentral = new Almacen("ALM-CENTRAL", TipoAlmacen.CENTRAL, almacenesBase.get(0).getUbicacion(), parametrosAlmacen.stockMaximo());
+            Almacen almCentral = new Almacen("ALM-CENTRAL", TipoAlmacen.CENTRAL, almacenesBase.get(0).getUbicacion(), parametrosAlmacen().stockMaximo());
             Almacen almNO = new Almacen("ALM-NOROESTE", TipoAlmacen.INTERMEDIO, almacenesBase.get(1).getUbicacion(), stockNO);
             Almacen almEste = new Almacen("ALM-ESTE", TipoAlmacen.INTERMEDIO, almacenesBase.get(2).getUbicacion(), stockEste);
             List<Almacen> almacenesTurno = List.of(almCentral, almNO, almEste);
@@ -791,7 +797,7 @@ public class ServicioExperimentacion {
                 almacen.getUbicacion().getX(),
                 almacen.getUbicacion().getY(),
                 almacen.getStockActual(),
-                parametrosAlmacen.stockMaximo());
+                parametrosAlmacen().stockMaximo());
     }
 
     private ExperimentacionResponse.BloqueoDto aBloqueoDto(Bloqueo bloqueo) {
@@ -860,7 +866,10 @@ public class ServicioExperimentacion {
                 ruta.getMinutoFin(),
                 recorrido,
                 ruta.getMinutosPorNodo(),
-                ruta.getParadas().stream().map(this::aParadaDto).toList());
+                ruta.getParadas().stream().map(this::aParadaDto).toList(),
+                ruta.getMinutoInicioAlimentacion(),
+                ruta.getMinutoFinAlimentacion(),
+                ruta.isAlimentacionDentroDeVentana());
     }
 
     private ExperimentacionResponse.ParadaDto aParadaDto(ParadaRuta parada) {
@@ -877,7 +886,8 @@ public class ServicioExperimentacion {
                 parada.getMinutoLlegada(),
                 parada.getMinutoSalida(),
                 parada.cumplePlazo(),
-                parada.getHolguraMinutos());
+                parada.getHolguraMinutos(),
+                parada.isReasignada());
     }
 
     private ExperimentacionResponse.PedidoPendienteDto aPedidoPendienteDto(Pedido pedido) {

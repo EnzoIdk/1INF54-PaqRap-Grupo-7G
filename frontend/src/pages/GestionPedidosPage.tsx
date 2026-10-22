@@ -8,6 +8,10 @@ import { usePosicionesFlota, type EstadoPedidoEnMapa } from "../hooks/usePosicio
 import { useEjecucionVisible } from "../hooks/useExperimentacion";
 import { useSimulacionStore } from "../store/simulacionStore";
 import { formatearRestante, formatearTiempoSimulado } from "../utils/formatters";
+import { Chip } from "../components/comunes/Campo";
+import { FileDown } from "lucide-react";
+import { ETIQUETA_ESTADO_PEDIDO } from "../utils/constants";
+import { PLAZOS_HORAS, exportarPedidos } from "../utils/reportes";
 import "./GestionPedidosPage.css";
 
 /**
@@ -26,19 +30,25 @@ const GestionPedidosPage = () => {
 
   const { pedidos } = usePosicionesFlota(ejecucion, minutoActual);
 
+  // Filtros del historial por plazo y estado (RF-10); el cliente se filtra con la búsqueda.
+  const [plazoFiltro, setPlazoFiltro] = useState<number | null>(null);
+  const [estadoFiltro, setEstadoFiltro] = useState<string>("TODOS");
+
   const filtrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
-    const ordenados = [...pedidos].sort((a, b) => a.minutoLimite - b.minutoLimite);
-    if (!texto) {
-      return ordenados;
-    }
-    return ordenados.filter((pedido) =>
-      [pedido.codigoPedido, pedido.clienteId, pedido.codigoUnidad ?? ""]
-        .join(" ")
-        .toLowerCase()
-        .includes(texto),
-    );
-  }, [pedidos, busqueda]);
+    return [...pedidos]
+      .sort((a, b) => a.minutoLimite - b.minutoLimite)
+      .filter((pedido) => plazoFiltro === null || pedido.plazoHoras === plazoFiltro)
+      .filter((pedido) => estadoFiltro === "TODOS" || pedido.estado === estadoFiltro)
+      .filter(
+        (pedido) =>
+          !texto ||
+          [pedido.codigoPedido, pedido.clienteId, pedido.codigoUnidad ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(texto),
+      );
+  }, [pedidos, busqueda, plazoFiltro, estadoFiltro]);
 
   const columnas: ColumnaTabla<EstadoPedidoEnMapa>[] = [
     {
@@ -111,6 +121,44 @@ const GestionPedidosPage = () => {
       />
 
       <div className="pedidos__cuerpo">
+        <div className="pedidos__filtros">
+          <span className="rotulo">Plazo</span>
+          <Chip
+            etiqueta="Todos"
+            color="var(--color-tipo-auto)"
+            activo={plazoFiltro === null}
+            onClick={() => setPlazoFiltro(null)}
+          />
+          {PLAZOS_HORAS.map((plazo) => (
+            <Chip
+              key={plazo}
+              etiqueta={plazo === 36 ? "36 h · regular" : `${plazo} h`}
+              color="var(--color-tipo-auto)"
+              activo={plazoFiltro === plazo}
+              detalle={String(pedidos.filter((pedido) => pedido.plazoHoras === plazo).length)}
+              onClick={() => setPlazoFiltro(plazoFiltro === plazo ? null : plazo)}
+            />
+          ))}
+          <label className="pedidos__filtro-estado">
+            <span className="rotulo">Estado</span>
+            <select value={estadoFiltro} onChange={(evento) => setEstadoFiltro(evento.target.value)}>
+              <option value="TODOS">Todos</option>
+              {Object.entries(ETIQUETA_ESTADO_PEDIDO).map(([valor, etiqueta]) => (
+                <option key={valor} value={valor}>
+                  {etiqueta}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Boton
+            variante="fantasma"
+            icono={<FileDown size={14} />}
+            disabled={filtrados.length === 0}
+            onClick={() => exportarPedidos(filtrados)}
+          >
+            Exportar ({filtrados.length})
+          </Boton>
+        </div>
         <section className="tarjeta pedidos__tabla">
           <Tabla
             columnas={columnas}

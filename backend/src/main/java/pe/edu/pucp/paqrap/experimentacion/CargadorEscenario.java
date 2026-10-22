@@ -1,6 +1,8 @@
 package pe.edu.pucp.paqrap.experimentacion;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -17,10 +19,12 @@ import pe.edu.pucp.paqrap.carga.ResultadoCarga;
 import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.config.ParametrosAlmacen;
 import pe.edu.pucp.paqrap.config.ParametrosFlota;
+import pe.edu.pucp.paqrap.config.ParametrosOperacion;
 import pe.edu.pucp.paqrap.enums.TipoAlmacen;
 import pe.edu.pucp.paqrap.enums.TipoAveria;
 import pe.edu.pucp.paqrap.enums.TipoUnidad;
 import pe.edu.pucp.paqrap.exception.CargaArchivoException;
+import pe.edu.pucp.paqrap.exception.PedidoInvalidoException;
 import pe.edu.pucp.paqrap.model.Almacen;
 import pe.edu.pucp.paqrap.model.Averia;
 import pe.edu.pucp.paqrap.model.Bloqueo;
@@ -46,23 +50,30 @@ public class CargadorEscenario {
     private final LectorVentas lectorVentas;
     private final LectorBloqueos lectorBloqueos;
     private final LectorMantenimiento lectorMantenimiento;
-    private final ParametrosFlota parametrosFlota;
-    private final ParametrosAlmacen parametrosAlmacen;
+    private final ParametrosOperacion parametrosOperacion;
 
     public CargadorEscenario(LocalizadorArchivosDatos localizador,
                              CatalogoDatos catalogoDatos,
                              LectorVentas lectorVentas,
                              LectorBloqueos lectorBloqueos,
                              LectorMantenimiento lectorMantenimiento,
-                             ParametrosFlota parametrosFlota,
-                             ParametrosAlmacen parametrosAlmacen) {
+                             ParametrosOperacion parametrosOperacion) {
         this.localizador = localizador;
         this.catalogoDatos = catalogoDatos;
         this.lectorVentas = lectorVentas;
         this.lectorBloqueos = lectorBloqueos;
         this.lectorMantenimiento = lectorMantenimiento;
-        this.parametrosFlota = parametrosFlota;
-        this.parametrosAlmacen = parametrosAlmacen;
+        this.parametrosOperacion = parametrosOperacion;
+    }
+
+    /** Valores vigentes de la flota: un administrador puede cambiarlos en caliente. */
+    private ParametrosFlota parametrosFlota() {
+        return parametrosOperacion.flota();
+    }
+
+    /** Valores vigentes de los almacenes: un administrador puede cambiarlos en caliente. */
+    private ParametrosAlmacen parametrosAlmacen() {
+        return parametrosOperacion.almacen();
     }
 
     public EscenarioTurno cargar(ParametrosEjecucion parametros) {
@@ -70,6 +81,7 @@ public class CargadorEscenario {
 
         LectorVentas.Resultado ventas = lectorVentas.leer(localizador.localizar(conjunto.archivoVentas()));
         numerarPedidos(ventas.pedidos());
+        List<Pedido> pedidosDelMes = incorporarAdicionales(ventas.pedidos(), parametros.pedidosAdicionalesSeguros());
 
         List<Bloqueo> bloqueosDelMes = new ArrayList<>();
         ResultadoCarga resumenBloqueos = new ResultadoCarga();
@@ -93,7 +105,7 @@ public class CargadorEscenario {
         int minutoFin = minutoInicio + parametros.ventanaHoras() * ConstantesPaqrap.MINUTOS_POR_HORA;
 
         List<Pedido> pedidosDelTurno = recortarAlTurno(
-                ventas.pedidos(), minutoInicio, minutoFin, parametros.maximoPedidos());
+                pedidosDelMes, minutoInicio, minutoFin, parametros.maximoPedidos());
         List<Bloqueo> bloqueosVigentes = bloqueosDelMes.stream()
                 .filter(bloqueo -> bloqueo.getInicioMinuto() < minutoFin && bloqueo.getFinMinuto() > minutoInicio)
                 .toList();
@@ -106,11 +118,11 @@ public class CargadorEscenario {
 
         log.info("Escenario {} dia {} [{}, {}): {} pedidos del turno de {} del mes, {} bloqueos vigentes, {} unidades en mantenimiento",
                 conjunto.archivoVentas(), parametros.dia(), minutoInicio, minutoFin,
-                pedidosDelTurno.size(), ventas.pedidos().size(), bloqueosVigentes.size(), enMantenimiento.size());
+                pedidosDelTurno.size(), pedidosDelMes.size(), bloqueosVigentes.size(), enMantenimiento.size());
 
         return new EscenarioTurno(
                 conjunto, parametros.dia(), minutoInicio, minutoFin,
-                pedidosDelTurno, ventas.pedidos().size(),
+                pedidosDelTurno, pedidosDelMes.size(),
                 bloqueosVigentes, bloqueosDelMes.size(),
                 almacenes, flota, enMantenimiento, averias,
                 ventas.resumen(), resumenBloqueos, resumenMantenimiento);
@@ -121,6 +133,7 @@ public class CargadorEscenario {
 
         LectorVentas.Resultado ventas = lectorVentas.leer(localizador.localizar(conjunto.archivoVentas()));
         numerarPedidos(ventas.pedidos());
+        List<Pedido> pedidosDelMes = incorporarAdicionales(ventas.pedidos(), parametros.pedidosAdicionalesSeguros());
 
         List<Bloqueo> bloqueosDelMes = new ArrayList<>();
         ResultadoCarga resumenBloqueos = new ResultadoCarga();
@@ -142,7 +155,7 @@ public class CargadorEscenario {
         int minutoInicio = parametros.minutoInicio();
         int minutoFin = parametros.minutoFin();
 
-        List<Pedido> pedidosCincoDias = ventas.pedidos().stream()
+        List<Pedido> pedidosCincoDias = pedidosDelMes.stream()
                 .filter(pedido -> pedido.getMinutoSimulacion() >= minutoInicio && pedido.getMinutoSimulacion() < minutoFin)
                 .toList();
 
@@ -169,11 +182,11 @@ public class CargadorEscenario {
 
         log.info("Escenario 5D {} dias [{}, {}] [{}, {}): {} pedidos en 5 dias de {} del mes, {} bloqueos vigentes",
                 conjunto.archivoVentas(), parametros.diaInicio(), parametros.diaFin(), minutoInicio, minutoFin,
-                pedidosCincoDias.size(), ventas.pedidos().size(), bloqueosVigentes.size());
+                pedidosCincoDias.size(), pedidosDelMes.size(), bloqueosVigentes.size());
 
         EscenarioTurno escenario = new EscenarioTurno(
                 conjunto, parametros.diaInicio(), minutoInicio, minutoFin,
-                pedidosCincoDias, ventas.pedidos().size(),
+                pedidosCincoDias, pedidosDelMes.size(),
                 bloqueosVigentes, bloqueosDelMes.size(),
                 almacenes, flota, new ArrayList<>(unidadesMantenimiento), averias,
                 ventas.resumen(), resumenBloqueos, resumenMantenimiento);
@@ -190,6 +203,7 @@ public class CargadorEscenario {
 
         LectorVentas.Resultado ventas = lectorVentas.leer(localizador.localizar(conjunto.archivoVentas()));
         numerarPedidos(ventas.pedidos());
+        List<Pedido> pedidosDelMes = incorporarAdicionales(ventas.pedidos(), parametros.pedidosAdicionalesSeguros());
 
         List<Bloqueo> bloqueosDelMes = new ArrayList<>();
         ResultadoCarga resumenBloqueos = new ResultadoCarga();
@@ -211,7 +225,7 @@ public class CargadorEscenario {
         int minutoInicio = parametros.minutoInicio();
         int minutoFin = 31 * ConstantesPaqrap.MINUTOS_POR_DIA;
 
-        List<Pedido> pedidosDesdeInicio = ventas.pedidos().stream()
+        List<Pedido> pedidosDesdeInicio = pedidosDelMes.stream()
                 .filter(pedido -> pedido.getMinutoSimulacion() >= minutoInicio)
                 .toList();
 
@@ -238,11 +252,11 @@ public class CargadorEscenario {
 
         log.info("Escenario Colapso {} desde dia {} (minuto {}): {} pedidos por procesar de {} del mes",
                 conjunto.archivoVentas(), parametros.diaInicio(), minutoInicio,
-                pedidosDesdeInicio.size(), ventas.pedidos().size());
+                pedidosDesdeInicio.size(), pedidosDelMes.size());
 
         EscenarioTurno escenario = new EscenarioTurno(
                 conjunto, parametros.diaInicio(), minutoInicio, minutoFin,
-                pedidosDesdeInicio, ventas.pedidos().size(),
+                pedidosDesdeInicio, pedidosDelMes.size(),
                 bloqueosVigentes, bloqueosDelMes.size(),
                 almacenes, flota, new ArrayList<>(unidadesMantenimiento), averias,
                 ventas.resumen(), resumenBloqueos, resumenMantenimiento);
@@ -270,30 +284,82 @@ public class CargadorEscenario {
         }
     }
 
+    /**
+     * Suma al mes los pedidos que el usuario registro (RF-01, RF-54). Reciben
+     * el correlativo M-#### para distinguirlos de los del archivo, y la lista
+     * se reordena por instante de llegada, como el propio archivo de ventas.
+     */
+    private List<Pedido> incorporarAdicionales(List<Pedido> delArchivo, List<PedidoAdicional> adicionales) {
+        if (adicionales.isEmpty()) {
+            return delArchivo;
+        }
+        int capacidadMaxima = Math.max(parametrosFlota().capacidadAuto(),
+                Math.max(parametrosFlota().capacidadMoto(), parametrosFlota().capacidadBicicleta()));
+        List<Pedido> combinados = new ArrayList<>(delArchivo);
+        for (int i = 0; i < adicionales.size(); i++) {
+            PedidoAdicional adicional = adicionales.get(i);
+            validarAdicional(adicional, i + 1, capacidadMaxima);
+            Pedido pedido = new Pedido(adicional.clienteNormalizado(),
+                    new Nodo(adicional.posX(), adicional.posY()),
+                    adicional.cantidadProducto(), adicional.plazoHoras(), adicional.minutoSimulacion());
+            pedido.setCodigo(String.format("M-%04d", i + 1));
+            combinados.add(pedido);
+        }
+        combinados.sort(Comparator.comparingInt(Pedido::getMinutoSimulacion));
+        log.info("Se incorporaron {} pedidos registrados por el usuario", adicionales.size());
+        return combinados;
+    }
+
+    private void validarAdicional(PedidoAdicional adicional, int posicion, int capacidadMaxima) {
+        boolean plazoValido = adicional.plazoHoras() != null && Arrays.stream(ConstantesPaqrap.PLAZOS_HORAS_VALIDOS)
+                .anyMatch(plazo -> plazo == adicional.plazoHoras());
+        if (!plazoValido) {
+            throw new PedidoInvalidoException("Pedido registrado " + posicion + ": el plazo debe ser 36 h (regular) "
+                    + "o 4, 8, 12 o 18 h (priorizado)");
+        }
+        if (adicional.cantidadProducto() > capacidadMaxima) {
+            throw new PedidoInvalidoException("Pedido registrado " + posicion + ": la cantidad "
+                    + adicional.cantidadProducto() + " supera la capacidad de la unidad mas grande ("
+                    + capacidadMaxima + ")");
+        }
+    }
+
     private List<Pedido> recortarAlTurno(List<Pedido> pedidos, int minutoInicio, int minutoFin, int maximo) {
         List<Pedido> delTurno = new ArrayList<>();
+        // Los pedidos que el usuario registro entran siempre: el tope solo
+        // acota los que vienen del archivo del mes.
+        pedidos.stream()
+                .filter(pedido -> esRegistradoPorUsuario(pedido)
+                        && pedido.getMinutoSimulacion() >= minutoInicio && pedido.getMinutoSimulacion() < minutoFin)
+                .forEach(delTurno::add);
         for (Pedido pedido : pedidos) {
-            if (pedido.getMinutoSimulacion() >= minutoInicio && pedido.getMinutoSimulacion() < minutoFin) {
-                delTurno.add(pedido);
-            }
             if (delTurno.size() >= maximo) {
                 break;
             }
+            if (!esRegistradoPorUsuario(pedido)
+                    && pedido.getMinutoSimulacion() >= minutoInicio && pedido.getMinutoSimulacion() < minutoFin) {
+                delTurno.add(pedido);
+            }
         }
+        delTurno.sort(Comparator.comparingInt(Pedido::getMinutoSimulacion));
         return delTurno;
+    }
+
+    private static boolean esRegistradoPorUsuario(Pedido pedido) {
+        return pedido.getCodigo() != null && pedido.getCodigo().startsWith("M-");
     }
 
     public List<Almacen> construirAlmacenes() {
         return List.of(
                 new Almacen("ALM-CENTRAL", TipoAlmacen.CENTRAL,
-                        new Nodo(parametrosAlmacen.centralX(), parametrosAlmacen.centralY()),
-                        parametrosAlmacen.stockMaximo()),
+                        new Nodo(parametrosAlmacen().centralX(), parametrosAlmacen().centralY()),
+                        parametrosAlmacen().stockMaximo()),
                 new Almacen("ALM-NOROESTE", TipoAlmacen.INTERMEDIO,
-                        new Nodo(parametrosAlmacen.noroesteX(), parametrosAlmacen.noroesteY()),
-                        parametrosAlmacen.stockMaximo()),
+                        new Nodo(parametrosAlmacen().noroesteX(), parametrosAlmacen().noroesteY()),
+                        parametrosAlmacen().stockMaximo()),
                 new Almacen("ALM-ESTE", TipoAlmacen.INTERMEDIO,
-                        new Nodo(parametrosAlmacen.esteX(), parametrosAlmacen.esteY()),
-                        parametrosAlmacen.stockMaximo()));
+                        new Nodo(parametrosAlmacen().esteX(), parametrosAlmacen().esteY()),
+                        parametrosAlmacen().stockMaximo()));
     }
 
     /**
@@ -304,11 +370,11 @@ public class CargadorEscenario {
     public List<UnidadTransporte> construirFlota(
             Integer cantidadAutos, Integer cantidadMotos, Integer cantidadBicicletas, Nodo almacenCentral) {
         int autos = cantidadAutos != null
-                ? cantidadAutos : parametrosFlota.cantidadAutos();
+                ? cantidadAutos : parametrosFlota().cantidadAutos();
         int motos = cantidadMotos != null
-                ? cantidadMotos : parametrosFlota.cantidadMotos();
+                ? cantidadMotos : parametrosFlota().cantidadMotos();
         int bicicletas = cantidadBicicletas != null
-                ? cantidadBicicletas : parametrosFlota.cantidadBicicletas();
+                ? cantidadBicicletas : parametrosFlota().cantidadBicicletas();
 
         List<UnidadTransporte> flota = new ArrayList<>(autos + motos + bicicletas);
         for (int i = 1; i <= autos; i++) {

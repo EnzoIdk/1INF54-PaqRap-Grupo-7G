@@ -3,6 +3,7 @@ package pe.edu.pucp.paqrap.planificador.comun;
 import org.springframework.stereotype.Component;
 import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.config.ParametrosFlota;
+import pe.edu.pucp.paqrap.config.ParametrosOperacion;
 import pe.edu.pucp.paqrap.enums.TipoUnidad;
 import pe.edu.pucp.paqrap.model.Ruta;
 
@@ -15,10 +16,15 @@ import pe.edu.pucp.paqrap.model.Ruta;
 @Component
 public class EvaluadorCosto {
 
-    private final ParametrosFlota parametrosFlota;
+    private final ParametrosOperacion parametrosOperacion;
 
-    public EvaluadorCosto(ParametrosFlota parametrosFlota) {
-        this.parametrosFlota = parametrosFlota;
+    public EvaluadorCosto(ParametrosOperacion parametrosOperacion) {
+        this.parametrosOperacion = parametrosOperacion;
+    }
+
+    /** Valores vigentes: un administrador puede cambiarlos en caliente. */
+    private ParametrosFlota parametrosFlota() {
+        return parametrosOperacion.flota();
     }
 
     public double calcularCostoOperativo(Ruta ruta) {
@@ -31,25 +37,25 @@ public class EvaluadorCosto {
 
     public double obtenerCostoPorKm(TipoUnidad tipoUnidad) {
         return switch (tipoUnidad) {
-            case AUTO -> parametrosFlota.costoKmAuto();
-            case MOTO -> parametrosFlota.costoKmMoto();
-            case BICICLETA -> parametrosFlota.costoKmBicicleta();
+            case AUTO -> parametrosFlota().costoKmAuto();
+            case MOTO -> parametrosFlota().costoKmMoto();
+            case BICICLETA -> parametrosFlota().costoKmBicicleta();
         };
     }
 
     public double obtenerVelocidadKmH(TipoUnidad tipoUnidad) {
         return switch (tipoUnidad) {
-            case AUTO -> parametrosFlota.velocidadKmhAuto();
-            case MOTO -> parametrosFlota.velocidadKmhMoto();
-            case BICICLETA -> parametrosFlota.velocidadKmhBicicleta();
+            case AUTO -> parametrosFlota().velocidadKmhAuto();
+            case MOTO -> parametrosFlota().velocidadKmhMoto();
+            case BICICLETA -> parametrosFlota().velocidadKmhBicicleta();
         };
     }
 
     public int obtenerCapacidad(TipoUnidad tipoUnidad) {
         return switch (tipoUnidad) {
-            case AUTO -> parametrosFlota.capacidadAuto();
-            case MOTO -> parametrosFlota.capacidadMoto();
-            case BICICLETA -> parametrosFlota.capacidadBicicleta();
+            case AUTO -> parametrosFlota().capacidadAuto();
+            case MOTO -> parametrosFlota().capacidadMoto();
+            case BICICLETA -> parametrosFlota().capacidadBicicleta();
         };
     }
 

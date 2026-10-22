@@ -330,7 +330,7 @@ public class PlanificadorAgaEsTw implements Planificador {
             AsignacionUnidad copia = new AsignacionUnidad(original.getUnidad(), original.getAlmacenOrigen());
             if (i < corte) {
                 for (Pedido pedido : original.getPedidos()) {
-                    copia.agregar(pedido);
+                    copia.agregarDesde(original, pedido);
                     tomados.add(pedido);
                 }
             }
@@ -348,7 +348,7 @@ public class PlanificadorAgaEsTw implements Planificador {
                 }
                 if (restricciones.cabeEnLaUnidad(
                         destino.getUnidad().getTipoUnidad(), destino.getCarga(), pedido.getCantidadProducto())) {
-                    destino.agregar(pedido);
+                    destino.agregarDesde(delPadre2, pedido);
                     tomados.add(pedido);
                 }
             }
@@ -477,7 +477,7 @@ public class PlanificadorAgaEsTw implements Planificador {
             }
 
             if (mejorHospedera != null) {
-                mejorHospedera.agregar(paquete);
+                mejorHospedera.agregarReasignado(paquete);
             }
         }
     }

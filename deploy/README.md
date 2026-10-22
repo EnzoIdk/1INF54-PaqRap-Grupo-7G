@@ -95,9 +95,17 @@ Comprobaciones rápidas, en el servidor:
 
 ```bash
 curl -I http://localhost/                          # 200, el visualizador
-curl -s http://localhost/api/experimentacion/datos | head -c 200
+curl -s http://localhost/api/auth/setup-status     # {"requiereConfiguracion":true} la primera vez
 docker compose -f deploy/docker-compose.prod.yml ps
 ```
+
+(Las rutas `/api/experimentacion/...` responden 401 sin sesión: la API exige iniciar sesión.)
+
+> **Inmediatamente después del primer despliegue, cree el administrador.** Abra
+> `http://<host-o-ip-publica>`: la primera visita muestra la pantalla de configuración inicial y
+> quien la complete queda como ADMIN. Como el sitio es público, hágalo antes de compartir la
+> URL. Después, desde **Usuarios**, cree cuentas con rol USUARIO para los evaluadores: pueden
+> ejecutar y ver todo, pero no cambiar los parámetros de operación.
 
 Y desde su navegador, `http://<host-o-ip-publica>`. Pruebe también recargar con F5 estando en
 `/pedidos` o `/analytics`: no debe dar 404.

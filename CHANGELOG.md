@@ -4,7 +4,44 @@ Registro de las versiones entregadas del proyecto PaqRap, conforme a la sección
 
 ## [Unreleased]
 
+### Fixed
+- Ubicación de los almacenes según la respuesta "CAMBIO" del Q&A: central (27,14),
+  Nor-Oeste (12,38) y Este (57,27).
+
 ### Added
+- Escenario **Día a día** en tiempo real (RF-44): turno vigente según la hora de Lima,
+  reloj sincronizado con la hora real y planificación automática del turno siguiente.
+- Pedidos registrados por el usuario, uno a uno o desde un archivo con el formato de
+  ventas (RF-01, RF-54), con validación de campos obligatorios en el visualizador y en el
+  backend (RF-64); los plazos se restringen a 36 h o 4/8/12/18 h (RF-02, RF-03).
+- Parámetros de flota y almacenes modificables en caliente por un ADMIN: velocidades,
+  capacidades, costos, flota por defecto, umbrales del semáforo y ubicaciones (RF-39,
+  RF-56, RF-60, RF-61; Q&A 6, 15 y 16), en `/api/admin/parametros`.
+- Hora de alimentación del conductor programada en cada ruta (RF-26, RF-27) sin dejar
+  fuera de plazo ninguna entrega; turnos de 5D y colapso limitados a 07:00, 15:00 y 23:00
+  (RF-25).
+- Marca de pedidos reasignados por avería, resaltados en el mapa y contados en los reportes
+  (RF-43, RF-68).
+- Reportes en Analytics: tasa de cumplimiento, tiempo real de entrega frente al plazo
+  (RF-73), costos por km, por pedido y por tipo de unidad (RF-65), indicadores de
+  eficiencia (RF-75), uso de almacenes (RF-71), cuellos de botella (RF-72) y refrigerios
+  (RF-74).
+- Exportaciones: resultados a Excel/CSV (RF-69), historial de incidencias (RF-67),
+  refrigerios, lista de pedidos e itinerario de una unidad en texto (RF-58).
+- Filtros de pedidos por plazo y estado (RF-10), filtro por tipo de unidad aplicado al mapa
+  (RF-59) y avisos de entregas completadas (RF-09).
+- Errores de validación de la API devueltos como 400 con el detalle de cada campo.
+- Integración con el retorno de las unidades al almacén (PR #3): la hora de alimentación
+  se programa contando el tramo de retorno (se come estacionado en el almacén o antes de
+  volver, sin retrasar entregas) y el itinerario y la exportación muestran el almacén de
+  retorno.
+
+### Changed
+- Centro de Control: la leyenda pasa a un botón desplegable sobre el mapa y los paneles de
+  la derecha se organizan en alertas plegables y pestañas Pedidos · Flota · Almacenes, para
+  que ninguno quede sin espacio.
+- `vite.config.ts` acepta `PAQRAP_BACKEND` para apuntar el proxy a otro backend (por
+  defecto `http://localhost:8080`).
 - Despliegue en servidor (`deploy/`), válido para la VM de la PUCP y para una instancia EC2 de
   AWS Academy: Docker Compose de producción con
   PostgreSQL persistente, backend con perfil `prod` y proxy inverso Caddy como único punto

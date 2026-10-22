@@ -96,6 +96,8 @@ export interface ParadaDto {
   minutoSalida: number;
   cumplePlazo: boolean;
   holguraMinutos: number;
+  /** El pedido llegó a esta unidad por la reasignación de una unidad averiada. */
+  reasignado?: boolean;
 }
 
 export interface PedidoPendienteDto {
@@ -126,6 +128,10 @@ export interface RutaDto {
   /** Minuto de simulacion de cada nodo del recorrido; mismo tamaño que `recorrido`. */
   minutosPorNodo: number[];
   paradas: ParadaDto[];
+  /** Hora de alimentación del conductor (RF-26, RF-27). */
+  minutoInicioAlimentacion?: number | null;
+  minutoFinAlimentacion?: number | null;
+  alimentacionEnVentana?: boolean;
 }
 
 export interface MetricasDto {
@@ -172,6 +178,19 @@ export interface ParametrosEjecucion {
   cantidadMotos?: number | null;
   cantidadBicicletas?: number | null;
   averias?: AveriaSolicitada[];
+  pedidosAdicionales?: PedidoAdicional[];
+}
+
+/** Pedido registrado por el usuario, a mano o desde un archivo (RF-01, RF-54). */
+export interface PedidoAdicional {
+  clienteId: string;
+  posX: number;
+  posY: number;
+  cantidadProducto: number;
+  plazoHoras: number;
+  dia: number;
+  hora: number;
+  minuto: number;
 }
 
 export interface AveriaSolicitada {
@@ -192,6 +211,7 @@ export interface ParametrosCincoDias {
   cantidadMotos?: number | null;
   cantidadBicicletas?: number | null;
   averias?: AveriaSolicitada5D[];
+  pedidosAdicionales?: PedidoAdicional[];
 }
 
 export interface AveriaSolicitada5D {
@@ -214,6 +234,7 @@ export interface ParametrosColapso {
   cantidadMotos?: number | null;
   cantidadBicicletas?: number | null;
   averias?: AveriaSolicitada5D[];
+  pedidosAdicionales?: PedidoAdicional[];
 }
 
 /** Espejo de `ExperimentacionController.ParametrosVigentes`. */

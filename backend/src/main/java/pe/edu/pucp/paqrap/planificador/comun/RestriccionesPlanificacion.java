@@ -2,7 +2,7 @@ package pe.edu.pucp.paqrap.planificador.comun;
 
 import org.springframework.stereotype.Component;
 import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
-import pe.edu.pucp.paqrap.config.ParametrosAlmacen;
+import pe.edu.pucp.paqrap.config.ParametrosOperacion;
 import pe.edu.pucp.paqrap.enums.TipoAlmacen;
 import pe.edu.pucp.paqrap.model.Almacen;
 import pe.edu.pucp.paqrap.model.Pedido;
@@ -23,11 +23,11 @@ import java.util.Map;
 public class RestriccionesPlanificacion {
 
     private final EvaluadorCosto evaluadorCosto;
-    private final ParametrosAlmacen parametrosAlmacen;
+    private final ParametrosOperacion parametrosOperacion;
 
-    public RestriccionesPlanificacion(EvaluadorCosto evaluadorCosto, ParametrosAlmacen parametrosAlmacen) {
+    public RestriccionesPlanificacion(EvaluadorCosto evaluadorCosto, ParametrosOperacion parametrosOperacion) {
         this.evaluadorCosto = evaluadorCosto;
-        this.parametrosAlmacen = parametrosAlmacen;
+        this.parametrosOperacion = parametrosOperacion;
     }
 
     /**
@@ -57,7 +57,7 @@ public class RestriccionesPlanificacion {
             return true;
         }
         int comprometido = yaDespachado.getOrDefault(almacen, 0);
-        return almacen.getStockActual() - comprometido - cantidadProducto >= parametrosAlmacen.stockMinimo();
+        return almacen.getStockActual() - comprometido - cantidadProducto >= parametrosOperacion.almacen().stockMinimo();
     }
 
     /**

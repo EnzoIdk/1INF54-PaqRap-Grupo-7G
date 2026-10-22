@@ -39,6 +39,8 @@ export interface EstadoPedidoEnMapa {
   minutoLlegada: number | null;
   codigoUnidad: string | null;
   estado: EstadoPedidoVisual;
+  /** Llegó a su unidad por la reasignación de la carga de una unidad averiada (RF-43). */
+  reasignado?: boolean;
 }
 
 /**
@@ -110,7 +112,15 @@ export function usePosicionesFlota(
 
     ejecucion.rutas.forEach((ruta) => {
       ruta.paradas.forEach((parada) => {
+        const estado = estadoDeParada(
+          parada.minutoRegistro,
+          parada.minutoLlegada,
+          parada.cumplePlazo,
+          ruta.minutoSalida,
+          minutoActual,
+        );
         pedidos.push({
+          reasignado: Boolean(parada.reasignado),
           codigoPedido: parada.codigoPedido,
           clienteId: parada.clienteId,
           x: parada.posX,
@@ -121,13 +131,8 @@ export function usePosicionesFlota(
           minutoLimite: parada.minutoLimite,
           minutoLlegada: parada.minutoLlegada,
           codigoUnidad: ruta.codigoUnidad,
-          estado: estadoDeParada(
-            parada.minutoRegistro,
-            parada.minutoLlegada,
-            parada.cumplePlazo,
-            ruta.minutoSalida,
-            minutoActual,
-          ),
+          // Un pedido reasignado se resalta mientras sigue en camino (RF-43).
+          estado: parada.reasignado && (estado === "ASIGNADO" || estado === "EN_RUTA") ? "REASIGNADO" : estado,
         });
       });
     });

@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import "./Tabs.css";
 
 export interface OpcionTab {
   id: string;
-  etiqueta: React.ReactNode;
+  etiqueta: ReactNode;
   detalle?: string;
 }
 

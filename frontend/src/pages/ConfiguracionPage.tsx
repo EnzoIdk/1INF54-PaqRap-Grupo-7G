@@ -1,6 +1,8 @@
 import Encabezado from "../components/layout/Encabezado";
 import SemaforoStock from "../components/paneles/SemaforoStock";
 import { useExperimentacion } from "../hooks/useExperimentacion";
+import { useAuth } from "../auth/AuthContext";
+import EditorParametros from "../components/configuracion/EditorParametros";
 import "./ConfiguracionPage.css";
 
 /** Descripcion de cada parametro, para que la pantalla explique y no solo liste. */
@@ -55,7 +57,9 @@ const DESCRIPCIONES: Record<string, string> = {
  * (STD 2.3, 5.6); se modifican en {@code application.yml}.
  */
 const ConfiguracionPage = () => {
-  const { parametrosVigentes, umbrales } = useExperimentacion();
+  const { parametrosVigentes, umbrales, guardarParametros, restablecerParametros } = useExperimentacion();
+  const { usuario } = useAuth();
+  const esAdmin = usuario?.rol === "ADMIN";
 
   if (!parametrosVigentes) {
     return (
@@ -79,10 +83,21 @@ const ConfiguracionPage = () => {
     <div className="configuracion">
       <Encabezado
         titulo="Configuración"
-        contexto="Valores vigentes en application.yml · se leen del backend, nunca se declaran en el visualizador"
+        contexto="Valores vigentes en el backend · un administrador puede cambiarlos en caliente"
       />
 
       <div className="configuracion__cuerpo desplazable">
+        {esAdmin ? (
+          <EditorParametros
+            vigentes={parametrosVigentes}
+            onGuardar={guardarParametros}
+            onRestablecer={restablecerParametros}
+          />
+        ) : (
+          <p className="texto-tenue">
+            Solo un administrador puede modificar los parámetros de operación. Usted puede consultarlos aquí.
+          </p>
+        )}
         <section className="tarjeta">
           <header className="tarjeta__encabezado">
             <div>

@@ -1,5 +1,6 @@
 package pe.edu.pucp.paqrap.experimentacion;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -26,6 +27,7 @@ import java.util.List;
  * @param cantidadMotos motos de la flota; nulo para usar la configurada
  * @param cantidadBicicletas bicicletas de la flota; nulo para usar la configurada
  * @param averias averias que se inyectan dentro del turno
+ * @param pedidosAdicionales pedidos registrados por el usuario (manual o archivo)
  */
 public record ParametrosEjecucion(
         @NotBlank String archivoVentas,
@@ -38,7 +40,20 @@ public record ParametrosEjecucion(
         @Min(0) @Max(60) Integer cantidadAutos,
         @Min(0) @Max(60) Integer cantidadMotos,
         @Min(0) @Max(60) Integer cantidadBicicletas,
-        List<AveriaSolicitada> averias) {
+        List<AveriaSolicitada> averias,
+        @Valid List<PedidoAdicional> pedidosAdicionales) {
+
+    /** Constructor sin pedidos adicionales, compatible con las llamadas previas. */
+    public ParametrosEjecucion(String archivoVentas, int dia, int horaInicio, int ventanaHoras,
+                               int maximoPedidos, String algoritmo, Long semilla, Integer cantidadAutos,
+                               Integer cantidadMotos, Integer cantidadBicicletas, List<AveriaSolicitada> averias) {
+        this(archivoVentas, dia, horaInicio, ventanaHoras, maximoPedidos, algoritmo, semilla,
+                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, List.of());
+    }
+
+    public List<PedidoAdicional> pedidosAdicionalesSeguros() {
+        return pedidosAdicionales == null ? List.of() : pedidosAdicionales;
+    }
 
     /**
      * Averia que el supervisor inyecta para observar la reasignacion de la

@@ -1,0 +1,29 @@
+.editor-parametros__acciones {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-parametros__mensaje {
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+
+.editor-parametros__grupos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.editor-parametros__grupo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+}
+
+.editor-parametros__grupo legend {
+  padding: 0 4px;
+}

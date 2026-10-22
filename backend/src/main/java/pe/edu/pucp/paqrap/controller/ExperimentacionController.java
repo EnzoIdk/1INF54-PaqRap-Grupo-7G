@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import pe.edu.pucp.paqrap.config.ParametrosAlmacen;
 import pe.edu.pucp.paqrap.config.ParametrosFlota;
+import pe.edu.pucp.paqrap.config.ParametrosOperacion;
 import pe.edu.pucp.paqrap.config.ParametrosPlanificador;
 import pe.edu.pucp.paqrap.dto.ExperimentacionResponse;
 import pe.edu.pucp.paqrap.experimentacion.CatalogoDatos;
@@ -30,17 +31,14 @@ public class ExperimentacionController {
 
     private final ServicioExperimentacion servicioExperimentacion;
     private final ParametrosPlanificador parametrosPlanificador;
-    private final ParametrosFlota parametrosFlota;
-    private final ParametrosAlmacen parametrosAlmacen;
+    private final ParametrosOperacion parametrosOperacion;
 
     public ExperimentacionController(ServicioExperimentacion servicioExperimentacion,
                                      ParametrosPlanificador parametrosPlanificador,
-                                     ParametrosFlota parametrosFlota,
-                                     ParametrosAlmacen parametrosAlmacen) {
+                                     ParametrosOperacion parametrosOperacion) {
         this.servicioExperimentacion = servicioExperimentacion;
         this.parametrosPlanificador = parametrosPlanificador;
-        this.parametrosFlota = parametrosFlota;
-        this.parametrosAlmacen = parametrosAlmacen;
+        this.parametrosOperacion = parametrosOperacion;
     }
 
     /** Conjuntos de datos del cliente disponibles, ordenados cronologicamente. */
@@ -56,7 +54,8 @@ public class ExperimentacionController {
      */
     @GetMapping("/parametros")
     public ParametrosVigentes obtenerParametros() {
-        return new ParametrosVigentes(parametrosPlanificador, parametrosFlota, parametrosAlmacen);
+        return new ParametrosVigentes(
+                parametrosPlanificador, parametrosOperacion.flota(), parametrosOperacion.almacen());
     }
 
     /** Resuelve un turno con el I-ACO, con el AGA-ES-TW o con ambos. */

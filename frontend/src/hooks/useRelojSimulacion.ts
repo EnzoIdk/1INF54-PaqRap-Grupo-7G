@@ -19,11 +19,13 @@ export function useRelojSimulacion(): void {
   const reproduciendo = useSimulacionStore((estado) => estado.reproduciendo);
   const minutosPorSegundo = useSimulacionStore((estado) => estado.minutosPorSegundo);
   const avanzarMinutos = useSimulacionStore((estado) => estado.avanzarMinutos);
+  // En tiempo real el reloj lo fija useOperacionDiaADia con la hora de Lima.
+  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
 
   const instantePrevioRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!reproduciendo) {
+    if (!reproduciendo || tiempoReal) {
       instantePrevioRef.current = null;
       return;
     }
@@ -43,7 +45,7 @@ export function useRelojSimulacion(): void {
 
     solicitud = window.requestAnimationFrame(paso);
     return () => window.cancelAnimationFrame(solicitud);
-  }, [reproduciendo, minutosPorSegundo, avanzarMinutos]);
+  }, [reproduciendo, tiempoReal, minutosPorSegundo, avanzarMinutos]);
 }
 
 function instantePrevioSeguro(referencia: { current: number | null }, instante: number): number {

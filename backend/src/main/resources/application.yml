@@ -63,6 +63,8 @@ paqrap:
     stock-minimo: 0
     umbral-ambar-porcentaje: 0.33
     umbral-rojo-porcentaje: 0.66
+    # Ubicaciones vigentes segun la respuesta "CAMBIO" del Q&A del curso:
+    # central (27,14), Nor-Oeste (12,38), Este (57,27).
     central-x: 27
     central-y: 14
     noroeste-x: 12

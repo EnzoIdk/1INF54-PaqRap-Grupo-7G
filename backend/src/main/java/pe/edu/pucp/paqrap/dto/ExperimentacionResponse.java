@@ -250,8 +250,12 @@ public record ExperimentacionResponse(
             int minutoFin,
             List<int[]> recorrido,
             List<Integer> minutosPorNodo,
-            List<ParadaDto> paradas) {
+            List<ParadaDto> paradas,
+            Integer minutoInicioAlimentacion,
+            Integer minutoFinAlimentacion,
+            boolean alimentacionEnVentana) {
 
+        /** Ruta sin tramo de retorno ni hora de alimentacion, compatible con las llamadas previas. */
         public RutaDto(
                 String codigoUnidad,
                 String tipoUnidad,
@@ -266,7 +270,8 @@ public record ExperimentacionResponse(
                 List<Integer> minutosPorNodo,
                 List<ParadaDto> paradas) {
             this(codigoUnidad, tipoUnidad, almacenOrigen, almacenOrigen, cargaTotal, capacidad,
-                 distanciaKm, costoSoles, minutoSalida, minutoFin, minutoFin, recorrido, minutosPorNodo, paradas);
+                 distanciaKm, costoSoles, minutoSalida, minutoFin, minutoFin, recorrido, minutosPorNodo, paradas,
+                 null, null, false);
         }
     }
 
@@ -296,6 +301,7 @@ public record ExperimentacionResponse(
             int minutoLlegada,
             int minutoSalida,
             boolean cumplePlazo,
-            int holguraMinutos) {
+            int holguraMinutos,
+            boolean reasignado) {
     }
 }

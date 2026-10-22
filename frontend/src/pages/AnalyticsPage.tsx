@@ -1,6 +1,14 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Award, Clock, Coins, Route, Timer, TriangleAlert } from "lucide-react";
+import { Award, Clock, Coins, FileDown, FileSpreadsheet, Route, Timer, TriangleAlert } from "lucide-react";
+import ReportesDesempeno from "../components/reportes/ReportesDesempeno";
+import { useAveriasDeLaCorrida } from "../hooks/useAveriasDeLaCorrida";
+import {
+  descargarItinerario,
+  exportarIncidencias,
+  exportarRefrigerios,
+  exportarResultados,
+} from "../utils/reportes";
 import Encabezado from "../components/layout/Encabezado";
 import Indicador from "../components/comunes/Indicador";
 import Boton from "../components/comunes/Boton";
@@ -36,6 +44,7 @@ const AnalyticsPage = () => {
   const ejecuciones = useSimulacionStore((estado) => estado.ejecuciones);
   const modoSimulacion = useSimulacionStore((estado) => estado.modoSimulacion);
 
+  const averias = useAveriasDeLaCorrida();
   const comparativa = useMemo(() => construirComparativa(ejecuciones), [ejecuciones]);
   const mejor = useMemo(() => elegirMejor(ejecuciones), [ejecuciones]);
 
@@ -72,6 +81,35 @@ const AnalyticsPage = () => {
       cifra: true,
       renderizar: (ruta) => formatearTiempoSimulado(ruta.minutoFin),
     },
+    {
+      encabezado: "Refrigerio",
+      cifra: true,
+      renderizar: (ruta) =>
+        ruta.minutoInicioAlimentacion === null || ruta.minutoInicioAlimentacion === undefined ? (
+          "—"
+        ) : (
+          <span className={ruta.alimentacionEnVentana ? "" : "plazo--critica"}>
+            {formatearTiempoSimulado(ruta.minutoInicioAlimentacion)}
+          </span>
+        ),
+    },
+    {
+      encabezado: "Itinerario",
+      renderizar: (ruta) => (
+        <Boton
+          variante="fantasma"
+          soloIcono
+          title={`Descargar el itinerario de ${ruta.codigoUnidad}`}
+          aria-label={`Descargar el itinerario de ${ruta.codigoUnidad}`}
+          icono={<FileDown size={14} />}
+          onClick={(evento) => {
+            evento.stopPropagation();
+            const ejecucionDeRuta = ejecuciones.find((candidata) => candidata.rutas.includes(ruta));
+            descargarItinerario(ruta.codigoUnidad, ejecucionDeRuta?.rutas ?? [ruta], escenario);
+          }}
+        />
+      ),
+    },
   ];
 
   if (!escenario || ejecuciones.length === 0) {
@@ -101,9 +139,35 @@ const AnalyticsPage = () => {
               : `${escenario.archivoVentas} · día ${escenario.dia} · ${escenario.pedidosDelTurno} pedidos · semilla ${escenario.semilla}`
         }
         acciones={
-          <Boton variante="secundario" onClick={() => navegar("/simulacion")}>
-            Nueva ejecución
-          </Boton>
+          <>
+            <Boton
+              variante="secundario"
+              icono={<FileSpreadsheet size={15} />}
+              onClick={() => exportarResultados(escenario, ejecuciones)}
+              title="Resultados, rutas y entregas en un archivo que Excel abre directamente"
+            >
+              Exportar a Excel
+            </Boton>
+            <Boton
+              variante="secundario"
+              icono={<FileDown size={15} />}
+              onClick={() => exportarIncidencias(escenario, averias)}
+              title="Historial de averías, mantenimientos y bloqueos de calles"
+            >
+              Incidencias
+            </Boton>
+            <Boton
+              variante="secundario"
+              icono={<FileDown size={15} />}
+              onClick={() => exportarRefrigerios(ejecuciones)}
+              title="Horas de alimentación de los conductores"
+            >
+              Refrigerios
+            </Boton>
+            <Boton variante="secundario" onClick={() => navegar("/simulacion")}>
+              Nueva ejecución
+            </Boton>
+          </>
         }
       />
 
@@ -257,6 +321,8 @@ const AnalyticsPage = () => {
             </div>
           </section>
         )}
+
+        <ReportesDesempeno escenario={escenario} ejecuciones={ejecuciones} />
 
         {ejecuciones.map((ejecucion) => (
           <section className="tarjeta" key={`rutas-${ejecucion.algoritmo}`}>

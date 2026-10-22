@@ -102,3 +102,12 @@
   border-radius: 2px;
   transition: width 0.2s linear;
 }
+
+.panel-flota__itinerario {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 var(--espacio-4, 16px) 8px;
+  font-size: 13px;
+}

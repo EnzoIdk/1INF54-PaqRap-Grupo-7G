@@ -2,6 +2,7 @@ package pe.edu.pucp.paqrap.experimentacion;
 
 import java.util.List;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -27,6 +28,7 @@ import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
  * @param cantidadMotos motos de la flota; nulo para usar la configurada
  * @param cantidadBicicletas bicicletas de la flota; nulo para usar la configurada
  * @param averias averias programadas a lo largo de la simulacion
+ * @param pedidosAdicionales pedidos registrados por el usuario (manual o archivo)
  */
 public record ParametrosColapso(
         @NotBlank String archivoVentas,
@@ -38,7 +40,21 @@ public record ParametrosColapso(
         @Min(0) @Max(60) Integer cantidadAutos,
         @Min(0) @Max(60) Integer cantidadMotos,
         @Min(0) @Max(60) Integer cantidadBicicletas,
-        List<ParametrosCincoDias.AveriaSolicitada5D> averias) {
+        List<ParametrosCincoDias.AveriaSolicitada5D> averias,
+        @Valid List<PedidoAdicional> pedidosAdicionales) {
+
+    /** Constructor sin pedidos adicionales, compatible con las llamadas previas. */
+    public ParametrosColapso(String archivoVentas, int diaInicio, Integer horaInicio,
+                             Integer maximoPedidosPorTurno, String algoritmo, Long semilla,
+                             Integer cantidadAutos, Integer cantidadMotos, Integer cantidadBicicletas,
+                             List<ParametrosCincoDias.AveriaSolicitada5D> averias) {
+        this(archivoVentas, diaInicio, horaInicio, maximoPedidosPorTurno, algoritmo, semilla,
+                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, List.of());
+    }
+
+    public List<PedidoAdicional> pedidosAdicionalesSeguros() {
+        return pedidosAdicionales == null ? List.of() : pedidosAdicionales;
+    }
 
     public int horaInicioEfectiva() {
         return horaInicio != null ? horaInicio : 7;

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import axios from "axios";
 import { experimentacionService } from "../services/experimentacionService";
 import { seleccionarEjecucionVisible, useSimulacionStore } from "../store/simulacionStore";
-import type { ParametrosVigentes } from "../types/Experimentacion";
+import type { AlgoritmoSolicitado, ConjuntoDatos, ParametrosVigentes } from "../types/Experimentacion";
+import { ahoraEnLima, minutoDelMes, turnoVigente } from "../utils/tiempoReal";
 
 /** Umbrales por defecto, mientras el backend responde (STD 2.2). */
 const UMBRALES_POR_DEFECTO = { umbralAmbarPorcentaje: 0.33, umbralRojoPorcentaje: 0.66 };
@@ -33,7 +34,10 @@ export function useExperimentacion() {
   const agregarAveriaColapso = useSimulacionStore((estado) => estado.agregarAveriaColapso);
   const quitarAveriaColapso = useSimulacionStore((estado) => estado.quitarAveriaColapso);
 
-  const [parametrosVigentes, setParametrosVigentes] = useState<ParametrosVigentes | null>(null);
+  const parametrosVigentes = useSimulacionStore((estado) => estado.parametrosVigentes);
+  const setParametrosVigentes = useSimulacionStore((estado) => estado.setParametrosVigentes);
+  const pedidosAdicionales = useSimulacionStore((estado) => estado.pedidosAdicionales);
+  const activarTiempoReal = useSimulacionStore((estado) => estado.activarTiempoReal);
 
   useEffect(() => {
     let vigente = true;
@@ -51,43 +55,96 @@ export function useExperimentacion() {
     return () => {
       vigente = false;
     };
-  }, [setConjuntos, registrarError]);
+  }, [setConjuntos, registrarError, setParametrosVigentes]);
 
   const ejecutar = useCallback(async () => {
     iniciarCarga();
     try {
-      const resultado = await experimentacionService.ejecutar(parametros);
+      const resultado = await experimentacionService.ejecutar({ ...parametros, pedidosAdicionales });
       registrarResultado(resultado);
       return resultado;
     } catch (causa: unknown) {
       registrarError(describirError(causa));
       return null;
     }
-  }, [parametros, iniciarCarga, registrarResultado, registrarError]);
+  }, [parametros, pedidosAdicionales, iniciarCarga, registrarResultado, registrarError]);
 
   const ejecutar5D = useCallback(async () => {
     iniciarCarga();
     try {
-      const resultado = await experimentacionService.ejecutarCincoDias(parametros5D);
+      const resultado = await experimentacionService.ejecutarCincoDias({ ...parametros5D, pedidosAdicionales });
       registrarResultado(resultado);
       return resultado;
     } catch (causa: unknown) {
       registrarError(describirError(causa));
       return null;
     }
-  }, [parametros5D, iniciarCarga, registrarResultado, registrarError]);
+  }, [parametros5D, pedidosAdicionales, iniciarCarga, registrarResultado, registrarError]);
 
   const ejecutarColapso = useCallback(async () => {
     iniciarCarga();
     try {
-      const resultado = await experimentacionService.ejecutarColapso(parametrosColapso);
+      const resultado = await experimentacionService.ejecutarColapso({ ...parametrosColapso, pedidosAdicionales });
       registrarResultado(resultado);
       return resultado;
     } catch (causa: unknown) {
       registrarError(describirError(causa));
       return null;
     }
-  }, [parametrosColapso, iniciarCarga, registrarResultado, registrarError]);
+  }, [parametrosColapso, pedidosAdicionales, iniciarCarga, registrarResultado, registrarError]);
+
+  /**
+   * Operación día a día (RF-44): resuelve el turno vigente según la hora de
+   * Lima, con el archivo de ventas del mes actual y los pedidos registrados,
+   * y deja el reloj siguiendo la hora real.
+   */
+  const ejecutarDiaADia = useCallback(
+    async (algoritmo: AlgoritmoSolicitado) => {
+      const configuracion = configuracionDiaADia(useSimulacionStore.getState().conjuntos);
+      if (!configuracion) {
+        registrarError("No hay archivos de ventas cargados para operar día a día.");
+        return null;
+      }
+      iniciarCarga();
+      try {
+        const actual = useSimulacionStore.getState();
+        const resultado = await experimentacionService.ejecutar({
+          ...actual.parametros,
+          archivoVentas: configuracion.archivoVentas,
+          dia: configuracion.turno.dia,
+          horaInicio: configuracion.turno.horaInicio,
+          ventanaHoras: configuracion.turno.ventanaHoras,
+          maximoPedidos: MAXIMO_PEDIDOS_DIA_A_DIA,
+          algoritmo,
+          averias: [],
+          pedidosAdicionales: actual.pedidosAdicionales,
+        });
+        registrarResultado(resultado);
+        activarTiempoReal(minutoDelMes(ahoraEnLima()));
+        return resultado;
+      } catch (causa: unknown) {
+        registrarError(describirError(causa));
+        return null;
+      }
+    },
+    [iniciarCarga, registrarResultado, registrarError, activarTiempoReal],
+  );
+
+  /** Graba en caliente los parámetros de flota y almacenes; solo un ADMIN puede hacerlo. */
+  const guardarParametros = useCallback(
+    async (flota: ParametrosVigentes["flota"], almacen: ParametrosVigentes["almacen"]) => {
+      const vigentes = await experimentacionService.actualizarParametros(flota, almacen);
+      setParametrosVigentes(vigentes);
+      return vigentes;
+    },
+    [setParametrosVigentes],
+  );
+
+  const restablecerParametros = useCallback(async () => {
+    const vigentes = await experimentacionService.restablecerParametros();
+    setParametrosVigentes(vigentes);
+    return vigentes;
+  }, [setParametrosVigentes]);
 
   const umbrales = useMemo(() => {
     const almacen = parametrosVigentes?.almacen;
@@ -118,9 +175,32 @@ export function useExperimentacion() {
     ejecutar,
     ejecutar5D,
     ejecutarColapso,
+    ejecutarDiaADia,
+    guardarParametros,
+    restablecerParametros,
     parametrosVigentes,
     umbrales,
   };
+}
+
+/** Tope de pedidos del turno en el modo día a día. */
+const MAXIMO_PEDIDOS_DIA_A_DIA = 200;
+
+/**
+ * Archivo de ventas y turno que corresponden a la hora real de Lima. Si el
+ * año en curso no tiene archivo, usa el mismo mes del año más cercano.
+ */
+export function configuracionDiaADia(conjuntos: ConjuntoDatos[]) {
+  if (conjuntos.length === 0) {
+    return null;
+  }
+  const ahora = ahoraEnLima();
+  const delMismoMes = conjuntos.filter((conjunto) => conjunto.mes === ahora.mes);
+  const elegido =
+    conjuntos.find((conjunto) => conjunto.mes === ahora.mes && conjunto.anio === ahora.anio) ??
+    [...delMismoMes].sort((a, b) => Math.abs(a.anio - ahora.anio) - Math.abs(b.anio - ahora.anio))[0] ??
+    conjuntos[0];
+  return { archivoVentas: elegido.archivoVentas, conjunto: elegido, turno: turnoVigente(ahora), ahora };
 }
 
 /** Ejecucion que el mapa y los paneles estan mostrando ahora mismo. */

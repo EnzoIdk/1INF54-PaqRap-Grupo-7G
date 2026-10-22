@@ -1,0 +1,52 @@
+.notificaciones-entregas {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 300px;
+  pointer-events: none;
+}
+
+.notificaciones-entregas__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border-left: 4px solid var(--color-semaforo-verde);
+  background: var(--color-superficie, #fff);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  font-size: 13px;
+  color: var(--color-semaforo-verde);
+  animation: notificacion-entrada 0.2s ease-out;
+}
+
+.notificaciones-entregas__aviso strong {
+  display: block;
+  color: var(--color-texto, inherit);
+}
+
+.notificaciones-entregas__aviso--alerta {
+  border-left-color: var(--color-semaforo-ambar);
+  color: var(--color-semaforo-ambar);
+}
+
+.notificaciones-entregas__detalle {
+  display: block;
+  color: var(--color-texto-secundario, inherit);
+  opacity: 0.85;
+}
+
+@keyframes notificacion-entrada {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

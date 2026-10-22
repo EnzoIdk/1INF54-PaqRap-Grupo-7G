@@ -7,8 +7,11 @@ import Indicador from "../components/comunes/Indicador";
 import Tabs, { type OpcionTab } from "../components/comunes/Tabs";
 import { CampoSelect, CampoTexto } from "../components/comunes/Campo";
 import { useExperimentacion } from "../hooks/useExperimentacion";
-import { useSimulacionStore } from "../store/simulacionStore";
+import { useSimulacionStore, type ModoSimulacion } from "../store/simulacionStore";
 import type { AlgoritmoSolicitado, TipoAveria } from "../types/Experimentacion";
+import PanelDiaADia from "../components/consola/PanelDiaADia";
+import PanelPedidosAdicionales from "../components/consola/PanelPedidosAdicionales";
+import { ahoraEnLima } from "../utils/tiempoReal";
 import {
   formatearMilisegundos,
   formatearSoles,
@@ -44,6 +47,7 @@ const TIPOS_AVERIA: { valor: TipoAveria; etiqueta: string }[] = [
 ];
 
 const OPCIONES_MODO: OpcionTab[] = [
+  { id: "DIA", etiqueta: "Día a día (tiempo real)", detalle: "Turno vigente · hora de Lima" },
   { id: "1D", etiqueta: "Simulación 1 día", detalle: "1 turno · 12 h" },
   { id: "5D", etiqueta: "Simulación 5 días", detalle: "15 turnos consecutivos · 120 h" },
   { id: "COLAPSO", etiqueta: "Simulación hasta el colapso", detalle: "Continuo hasta ruptura del servicio" },
@@ -75,7 +79,29 @@ const ConsolaSimulacionPage = () => {
     ejecutar,
     ejecutar5D,
     ejecutarColapso,
+    ejecutarDiaADia,
+    parametrosVigentes,
   } = useExperimentacion();
+
+  const [algoritmoDia, setAlgoritmoDia] = useState<AlgoritmoSolicitado>("AMBOS");
+  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
+  const flotaVigente = parametrosVigentes?.flota;
+  const capacidadMaxima = flotaVigente
+    ? Math.max(
+        Number(flotaVigente.capacidadAuto ?? 24),
+        Number(flotaVigente.capacidadMoto ?? 8),
+        Number(flotaVigente.capacidadBicicleta ?? 4),
+      )
+    : 24;
+  const ahora = ahoraEnLima();
+  const referenciaPedidos =
+    modoSimulacion === "DIA"
+      ? { dia: ahora.dia, hora: ahora.hora, minuto: ahora.minuto }
+      : modoSimulacion === "5D"
+        ? { dia: parametros5D.diaInicio, hora: parametros5D.horaInicio, minuto: 0 }
+        : modoSimulacion === "COLAPSO"
+          ? { dia: parametrosColapso.diaInicio, hora: parametrosColapso.horaInicio ?? 7, minuto: 0 }
+          : { dia: parametros.dia, hora: parametros.horaInicio, minuto: 0 };
 
   const actualizarParametros = useSimulacionStore((estado) => estado.actualizarParametros);
   const agregarAveria = useSimulacionStore((estado) => estado.agregarAveria);
@@ -121,7 +147,9 @@ const ConsolaSimulacionPage = () => {
 
   const handleEjecutar = async () => {
     let resultado = null;
-    if (modoSimulacion === "COLAPSO") {
+    if (modoSimulacion === "DIA") {
+      resultado = await ejecutarDiaADia(algoritmoDia);
+    } else if (modoSimulacion === "COLAPSO") {
       resultado = await ejecutarColapso();
     } else if (modoSimulacion === "5D") {
       resultado = await ejecutar5D();
@@ -157,7 +185,9 @@ const ConsolaSimulacionPage = () => {
       <Encabezado
         titulo="Consola de Simulación"
         contexto={
-          modoSimulacion === "COLAPSO"
+          modoSimulacion === "DIA"
+            ? "Operación día a día · turno vigente con la hora real de Lima · replanificación automática en cada cambio de turno"
+            : modoSimulacion === "COLAPSO"
             ? "Simulación continua hasta el colapso logístico · detección de incumplimientos de plazos de entrega"
             : modoSimulacion === "5D"
               ? "Simulación continua de 5 días (15 turnos consecutivos de 8 h) · recarga diaria a 23:59:59 · descanso para refrigerio"
@@ -171,12 +201,18 @@ const ConsolaSimulacionPage = () => {
             icono={<CirclePlay size={16} />}
           >
             {cargando
-              ? modoSimulacion === "COLAPSO"
+              ? modoSimulacion === "DIA"
+                ? "Planificando el turno vigente…"
+                : modoSimulacion === "COLAPSO"
                 ? "Simulando hasta el colapso…"
                 : modoSimulacion === "5D"
                   ? "Planificando 5 días (15 turnos)…"
                   : "Ejecutando…"
-              : modoSimulacion === "COLAPSO"
+              : modoSimulacion === "DIA"
+                ? tiempoReal
+                  ? "Replanificar el turno vigente"
+                  : "Iniciar operación día a día"
+                : modoSimulacion === "COLAPSO"
                 ? "Ejecutar simulación hasta el colapso"
                 : modoSimulacion === "5D"
                   ? "Ejecutar simulación 5 días"
@@ -190,7 +226,7 @@ const ConsolaSimulacionPage = () => {
           <Tabs
             opciones={OPCIONES_MODO}
             activa={modoSimulacion}
-            onCambiar={(id) => setModoSimulacion(id as "1D" | "5D" | "COLAPSO")}
+            onCambiar={(id) => setModoSimulacion(id as ModoSimulacion)}
           />
         </div>
 
@@ -201,7 +237,10 @@ const ConsolaSimulacionPage = () => {
           </div>
         )}
 
-        {modoSimulacion === "1D" ? (
+        {modoSimulacion === "DIA" ? (
+          /* ============================================ DÍA A DÍA (RF-44) */
+          <PanelDiaADia algoritmo={algoritmoDia} onCambiarAlgoritmo={setAlgoritmoDia} />
+        ) : modoSimulacion === "1D" ? (
           /* ======================================================== 1 DÍA */
           <>
             <section className="tarjeta">
@@ -472,10 +511,6 @@ const ConsolaSimulacionPage = () => {
                     { valor: "7", etiqueta: "07:00 · Primer turno estándar (Recomendado)" },
                     { valor: "15", etiqueta: "15:00 · Segundo turno" },
                     { valor: "23", etiqueta: "23:00 · Tercer turno" },
-                    ...Array.from({ length: 24 }, (_, h) => ({
-                      valor: String(h),
-                      etiqueta: `${String(h).padStart(2, "0")}:00`,
-                    })).filter((o) => !["7", "15", "23"].includes(o.valor)),
                   ]}
                   ayuda="Los 15 turnos se sucederán cada 8 horas a partir de esta hora"
                 />
@@ -720,10 +755,6 @@ const ConsolaSimulacionPage = () => {
                     { valor: "7", etiqueta: "07:00 · Primer turno estándar (Recomendado)" },
                     { valor: "15", etiqueta: "15:00 · Segundo turno" },
                     { valor: "23", etiqueta: "23:00 · Tercer turno" },
-                    ...Array.from({ length: 24 }, (_, h) => ({
-                      valor: String(h),
-                      etiqueta: `${String(h).padStart(2, "0")}:00`,
-                    })).filter((o) => !["7", "15", "23"].includes(o.valor)),
                   ]}
                   ayuda="Los turnos se sucederán de forma continua cada 8 horas a partir de esta hora"
                 />
@@ -911,6 +942,19 @@ const ConsolaSimulacionPage = () => {
             </section>
           </>
         )}
+
+        <PanelPedidosAdicionales
+          key={`${modoSimulacion}-${referenciaPedidos.dia}-${referenciaPedidos.hora}`}
+          diaPorDefecto={referenciaPedidos.dia}
+          horaPorDefecto={referenciaPedidos.hora}
+          minutoPorDefecto={referenciaPedidos.minuto}
+          capacidadMaxima={capacidadMaxima}
+          accionExtra={
+            modoSimulacion === "DIA" && tiempoReal
+              ? { etiqueta: "Replanificar con los pedidos registrados", onClick: handleEjecutar, deshabilitado: cargando }
+              : undefined
+          }
+        />
 
         {escenario && (
           <section className="tarjeta">

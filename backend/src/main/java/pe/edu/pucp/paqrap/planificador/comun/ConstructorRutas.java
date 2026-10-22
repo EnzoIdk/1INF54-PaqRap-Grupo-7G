@@ -33,9 +33,11 @@ import java.util.List;
 public class ConstructorRutas {
 
     private final EvaluadorCosto evaluadorCosto;
+    private final ProgramadorAlimentacion programadorAlimentacion;
 
-    public ConstructorRutas(EvaluadorCosto evaluadorCosto) {
+    public ConstructorRutas(EvaluadorCosto evaluadorCosto, ProgramadorAlimentacion programadorAlimentacion) {
         this.evaluadorCosto = evaluadorCosto;
+        this.programadorAlimentacion = programadorAlimentacion;
     }
 
     public Ruta construir(UnidadTransporte unidad,
@@ -62,6 +64,10 @@ public class ConstructorRutas {
         recorrido.add(posicion);
         minutos.add(minutoPlanificacion);
 
+        List<ParadaRuta> paradas = new ArrayList<>();
+        // Posicion, dentro del recorrido, del nodo con el que la unidad deja cada parada.
+        List<Integer> nodoDeSalida = new ArrayList<>();
+
         for (Pedido pedido : pedidosEnOrden) {
             Nodo destino = pedido.getUbicacion();
             double distanciaKm = grafo.distanciaKm(posicion, destino);
@@ -70,7 +76,7 @@ public class ConstructorRutas {
             double minutoLlegadaExacto = reloj + minutosViaje;
             int minutoLlegada = (int) Math.round(minutoLlegadaExacto);
             int minutoSalida = minutoLlegada + ConstantesPaqrap.MINUTOS_ENTREGA_DESTINATARIO;
-            ruta.agregarParada(new ParadaRuta(pedido, distanciaKm, minutoLlegada, minutoSalida));
+            paradas.add(new ParadaRuta(pedido, distanciaKm, minutoLlegada, minutoSalida));
 
             agregarTramoAlRecorrido(grafo, posicion, destino, reloj, minutoLlegadaExacto, recorrido, minutos);
 
@@ -78,6 +84,7 @@ public class ConstructorRutas {
             // la hora de entrega, que ocupa su reloj pero no cuenta en el plazo.
             recorrido.add(destino);
             minutos.add(minutoSalida);
+            nodoDeSalida.add(recorrido.size() - 1);
 
             reloj = minutoSalida;
             posicion = destino;
@@ -85,18 +92,37 @@ public class ConstructorRutas {
 
         // Tramo de retorno: al completar las entregas, la unidad retorna a recargar
         // al almacen mas cercano que cuente con stock disponible o al central.
+        // Se calcula antes de programar la alimentacion, porque la pausa puede
+        // tomarse ya estacionada en ese almacen.
+        Almacen almacenDestino = null;
+        double distanciaRetorno = 0.0;
+        double minutosViajeRetorno = 0.0;
         if (!pedidosEnOrden.isEmpty()) {
-            int minutoInicioRetorno = (int) Math.round(reloj);
-            Almacen almacenDestino = seleccionarAlmacenRetorno(posicion, almacenesDisponibles, almacenOrigen, grafo);
-            Nodo destinoRetorno = almacenDestino.getUbicacion();
-            double distanciaRetorno = grafo.distanciaKm(posicion, destinoRetorno);
-            double minutosViajeRetorno = evaluadorCosto.minutosDeViaje(unidad.getTipoUnidad(), distanciaRetorno);
+            almacenDestino = seleccionarAlmacenRetorno(posicion, almacenesDisponibles, almacenOrigen, grafo);
+            distanciaRetorno = grafo.distanciaKm(posicion, almacenDestino.getUbicacion());
+            minutosViajeRetorno = evaluadorCosto.minutosDeViaje(unidad.getTipoUnidad(), distanciaRetorno);
+        }
 
+        ProgramadorAlimentacion.Programacion pausa = programadorAlimentacion.programar(
+                paradas, minutoPlanificacion, (int) Math.round(minutosViajeRetorno));
+        if (pausa != null && pausa.desplazaParadas()) {
+            intercalarPausa(pausa, paradas, nodoDeSalida, recorrido, minutos);
+            // Todo lo que sigue a la pausa, incluido el retorno, se corre una hora.
+            reloj += ConstantesPaqrap.MINUTOS_PAUSA_ALIMENTACION;
+        }
+        paradas.forEach(ruta::agregarParada);
+
+        if (almacenDestino != null) {
+            int minutoInicioRetorno = (int) Math.round(reloj);
+            Nodo destinoRetorno = almacenDestino.getUbicacion();
             double minutoLlegadaExacto = reloj + minutosViajeRetorno;
             int minutoLlegadaAlmacen = (int) Math.round(minutoLlegadaExacto);
 
             agregarTramoAlRecorrido(grafo, posicion, destinoRetorno, reloj, minutoLlegadaExacto, recorrido, minutos);
             ruta.definirRetorno(almacenDestino, distanciaRetorno, minutoInicioRetorno, minutoLlegadaAlmacen);
+        }
+        if (pausa != null) {
+            ruta.programarAlimentacion(pausa.minutoInicio(), pausa.minutoFin(), pausa.dentroDeVentana());
         }
 
         ruta.definirRecorrido(recorrido, minutos);
@@ -130,6 +156,31 @@ public class ConstructorRutas {
             }
         }
         return mejor;
+    }
+
+    /**
+     * Detiene la unidad una hora en el punto elegido: el nodo se repite con el
+     * minuto en que termina la pausa y todo lo posterior se corre una hora,
+     * tanto en las paradas como en el recorrido fechado que anima el mapa.
+     */
+    private void intercalarPausa(ProgramadorAlimentacion.Programacion pausa,
+                                 List<ParadaRuta> paradas,
+                                 List<Integer> nodoDeSalida,
+                                 List<Nodo> recorrido,
+                                 List<Integer> minutos) {
+        int desplazamiento = ConstantesPaqrap.MINUTOS_PAUSA_ALIMENTACION;
+        int despuesDe = pausa.despuesDeParada();
+        for (int j = despuesDe + 1; j < paradas.size(); j++) {
+            ParadaRuta original = paradas.get(j);
+            paradas.set(j, new ParadaRuta(original.getPedido(), original.getDistanciaKmDesdeAnterior(),
+                    original.getMinutoLlegada() + desplazamiento, original.getMinutoSalida() + desplazamiento));
+        }
+        int nodoPausa = despuesDe == ProgramadorAlimentacion.EN_EL_ALMACEN ? 0 : nodoDeSalida.get(despuesDe);
+        for (int i = nodoPausa + 1; i < minutos.size(); i++) {
+            minutos.set(i, minutos.get(i) + desplazamiento);
+        }
+        recorrido.add(nodoPausa + 1, recorrido.get(nodoPausa));
+        minutos.add(nodoPausa + 1, minutos.get(nodoPausa) + desplazamiento);
     }
 
     /**

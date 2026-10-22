@@ -110,6 +110,7 @@
 }
 
 .centro-control__lienzo {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -120,7 +121,19 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  overflow: hidden;
   padding-right: 2px;
+}
+
+/* Las alertas no crecen mas alla de su lista acotada: el resto es para las pestanas. */
+.centro-control__paneles .panel-alertas {
+  flex-shrink: 0;
+}
+
+.centro-control__tab-almacenes {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .centro-control__seccion-operativa {
@@ -199,6 +212,14 @@
   }
 
   .centro-control__lienzo {
+    min-height: 460px;
+  }
+
+  .centro-control__paneles {
+    overflow: visible;
+  }
+
+  .centro-control__seccion-operativa {
     min-height: 460px;
   }
 }

@@ -10,7 +10,16 @@ import type {
   ParametrosCincoDias,
   ParametrosColapso,
   ParametrosEjecucion,
+  ParametrosVigentes,
+  PedidoAdicional,
+  TipoUnidad,
 } from "../types/Experimentacion";
+
+/** "DIA" es la operación día a día en tiempo real (RF-44). */
+export type ModoSimulacion = "1D" | "5D" | "COLAPSO" | "DIA";
+
+/** Velocidad del modo día a día: un segundo real es un segundo simulado. */
+export const MINUTOS_POR_SEGUNDO_TIEMPO_REAL = 1 / 60;
 import { VELOCIDADES_REPRODUCCION } from "../utils/constants";
 
 /** Parametros por defecto del lanzador de la experimentacion numerica. */
@@ -56,7 +65,15 @@ const PARAMETROS_COLAPSO_INICIALES: ParametrosColapso = {
 
 interface SimulacionState {
   // --- Modo de simulacion ---
-  modoSimulacion: "1D" | "5D" | "COLAPSO";
+  modoSimulacion: ModoSimulacion;
+  /** El reloj sigue la hora real de Lima en lugar de avanzar a una velocidad elegida. */
+  tiempoReal: boolean;
+  // --- Pedidos registrados por el usuario (RF-01, RF-54) ---
+  pedidosAdicionales: PedidoAdicional[];
+  // --- Parametros vigentes del backend, compartidos por todas las pantallas ---
+  parametrosVigentes: ParametrosVigentes | null;
+  // --- Tipos de unidad visibles en el mapa (RF-59) ---
+  tiposVisibles: TipoUnidad[];
 
   // --- Catalogo y parametros de entrada ---
   conjuntos: ConjuntoDatos[];
@@ -79,7 +96,14 @@ interface SimulacionState {
   unidadEnfocada: string | null;
 
   // --- Acciones ---
-  setModoSimulacion: (modo: "1D" | "5D" | "COLAPSO") => void;
+  setModoSimulacion: (modo: ModoSimulacion) => void;
+  activarTiempoReal: (minutoActual: number) => void;
+  sincronizarTiempoReal: (minutoActual: number) => void;
+  agregarPedidosAdicionales: (pedidos: PedidoAdicional[]) => void;
+  quitarPedidoAdicional: (indice: number) => void;
+  limpiarPedidosAdicionales: () => void;
+  setParametrosVigentes: (parametros: ParametrosVigentes) => void;
+  alternarTipoVisible: (tipo: TipoUnidad) => void;
   setConjuntos: (conjuntos: ConjuntoDatos[]) => void;
   actualizarParametros: (cambios: Partial<ParametrosEjecucion>) => void;
   actualizarParametros5D: (cambios: Partial<ParametrosCincoDias>) => void;
@@ -115,6 +139,10 @@ interface SimulacionState {
  */
 export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   modoSimulacion: "1D",
+  tiempoReal: false,
+  pedidosAdicionales: [],
+  parametrosVigentes: null,
+  tiposVisibles: ["AUTO", "MOTO", "BICICLETA"],
   conjuntos: [],
   parametros: PARAMETROS_INICIALES,
   parametros5D: PARAMETROS_5D_INICIALES,
@@ -133,6 +161,37 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   unidadEnfocada: null,
 
   setModoSimulacion: (modoSimulacion) => set({ modoSimulacion }),
+  activarTiempoReal: (minutoActual) =>
+    set({
+      tiempoReal: true,
+      reproduciendo: true,
+      minutoActual,
+      minutosPorSegundo: MINUTOS_POR_SEGUNDO_TIEMPO_REAL,
+      segundosReales: 0,
+    }),
+  sincronizarTiempoReal: (minutoActual) => {
+    const estado = get();
+    if (!estado.tiempoReal || !estado.reproduciendo || !estado.escenario) {
+      return;
+    }
+    const limite = calcularMinutoFinal(estado);
+    set({
+      minutoActual: Math.min(Math.max(minutoActual, estado.escenario.minutoInicio), limite),
+      segundosReales: estado.segundosReales + 1,
+    });
+  },
+  agregarPedidosAdicionales: (pedidos) =>
+    set((estado) => ({ pedidosAdicionales: [...estado.pedidosAdicionales, ...pedidos] })),
+  quitarPedidoAdicional: (indice) =>
+    set((estado) => ({ pedidosAdicionales: estado.pedidosAdicionales.filter((_, i) => i !== indice) })),
+  limpiarPedidosAdicionales: () => set({ pedidosAdicionales: [] }),
+  setParametrosVigentes: (parametrosVigentes) => set({ parametrosVigentes }),
+  alternarTipoVisible: (tipo) =>
+    set((estado) => ({
+      tiposVisibles: estado.tiposVisibles.includes(tipo)
+        ? estado.tiposVisibles.filter((candidato) => candidato !== tipo)
+        : [...estado.tiposVisibles, tipo],
+    })),
 
   setConjuntos: (conjuntos) =>
     set((estado) => {
@@ -217,6 +276,7 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
       segundosReales: 0,
       reproduciendo: false,
       unidadEnfocada: null,
+      tiempoReal: false,
     }),
 
   registrarError: (mensaje) => set({ cargando: false, error: mensaje }),
@@ -266,6 +326,7 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   detener: () =>
     set((estado) => ({
       reproduciendo: false,
+      tiempoReal: false,
       minutoActual: estado.escenario?.minutoInicio ?? 0,
       segundosReales: 0,
     })),
@@ -276,7 +337,9 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
       segundosReales: 0,
     })),
 
-  setMinutosPorSegundo: (minutosPorSegundo) => set({ minutosPorSegundo }),
+  // Elegir una velocidad abandona el seguimiento de la hora real.
+  setMinutosPorSegundo: (minutosPorSegundo) =>
+    set({ minutosPorSegundo, tiempoReal: minutosPorSegundo === MINUTOS_POR_SEGUNDO_TIEMPO_REAL && get().tiempoReal }),
 
   enfocarUnidad: (codigoUnidad) => set({ unidadEnfocada: codigoUnidad }),
 }));

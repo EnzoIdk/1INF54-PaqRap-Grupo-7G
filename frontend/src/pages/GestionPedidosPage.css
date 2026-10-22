@@ -11,12 +11,37 @@
   flex: 1;
   min-height: 0;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pedidos__filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pedidos__filtro-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.pedidos__filtro-estado select {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-superficie);
+  color: var(--color-texto);
 }
 
 .pedidos__tabla {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
   min-height: 0;
   overflow: hidden;
 }

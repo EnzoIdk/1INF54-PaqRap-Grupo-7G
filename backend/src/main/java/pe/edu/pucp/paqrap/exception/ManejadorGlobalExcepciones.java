@@ -4,11 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Traduce las excepciones del dominio a respuestas HTTP. Los controladores
@@ -41,6 +43,34 @@ public class ManejadorGlobalExcepciones {
     public ResponseEntity<Object> manejarCargaArchivo(CargaArchivoException ex) {
         log.error("Error al cargar archivo de datos: {}", ex.getMessage(), ex);
         return construirRespuesta(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
+    @ExceptionHandler(ParametrosInvalidosException.class)
+    public ResponseEntity<Object> manejarParametrosInvalidos(ParametrosInvalidosException ex) {
+        log.warn("Parametros invalidos: {}", ex.getMessage());
+        return construirRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    /**
+     * Campos obligatorios vacios o fuera de rango en el cuerpo de la peticion
+     * (RF-64): se informa cada campo para que el visualizador lo muestre.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Object> manejarValidacion(MethodArgumentNotValidException ex) {
+        String detalle = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .distinct()
+                .collect(Collectors.joining("; "));
+        log.warn("Peticion rechazada por validacion: {}", detalle);
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                detalle.isBlank() ? "La peticion tiene campos invalidos" : "Campos invalidos: " + detalle);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> manejarArgumentoInvalido(IllegalArgumentException ex) {
+        log.warn("Argumento invalido: {}", ex.getMessage());
+        return construirRespuesta(HttpStatus.BAD_REQUEST,
+                ex.getMessage() != null ? ex.getMessage() : "Argumento invalido");
     }
 
     private ResponseEntity<Object> construirRespuesta(HttpStatus estado, String mensaje) {

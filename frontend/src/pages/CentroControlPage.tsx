@@ -7,11 +7,12 @@ import LineaDeTiempo from "../components/comunes/LineaDeTiempo";
 import Tabs from "../components/comunes/Tabs";
 import Boton from "../components/comunes/Boton";
 import MapaCiudad from "../components/mapa/MapaCiudad";
-import LeyendaMapa from "../components/mapa/LeyendaMapa";
+import LeyendaDesplegable from "../components/mapa/LeyendaDesplegable";
 import PanelSeguimientoPedidos from "../components/paneles/PanelSeguimientoPedidos";
 import PanelAlertas from "../components/paneles/PanelAlertas";
 import PanelFlota from "../components/paneles/PanelFlota";
 import PanelAlmacenes from "../components/paneles/PanelAlmacenes";
+import NotificacionesEntregas from "../components/paneles/NotificacionesEntregas";
 import { usePosicionesFlota } from "../hooks/usePosicionesFlota";
 import { useAlertasOperacion } from "../hooks/useAlertasOperacion";
 import { useRelojSimulacion } from "../hooks/useRelojSimulacion";
@@ -51,6 +52,8 @@ const CentroControlPage = () => {
   const setMinutosPorSegundo = useSimulacionStore((estado) => estado.setMinutosPorSegundo);
   const setMinutoActual = useSimulacionStore((estado) => estado.setMinutoActual);
   const enfocarUnidad = useSimulacionStore((estado) => estado.enfocarUnidad);
+  const tiposVisibles = useSimulacionStore((estado) => estado.tiposVisibles);
+  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
 
   useRelojSimulacion();
 
@@ -174,7 +177,17 @@ const CentroControlPage = () => {
 
   const almacenCentral = escenario?.almacenes.find((almacen) => almacen.tipo === "CENTRAL");
 
-  const contexto = escenario
+  // El filtro por tipo del panel de flota también se aplica al mapa (RF-59).
+  const unidadesEnMapa = useMemo(
+    () => unidades.filter((unidad) => tiposVisibles.includes(unidad.tipoUnidad)),
+    [unidades, tiposVisibles],
+  );
+  const rutasEnMapa = useMemo(
+    () => (ejecucion?.rutas ?? []).filter((ruta) => tiposVisibles.includes(ruta.tipoUnidad)),
+    [ejecucion, tiposVisibles],
+  );
+
+  const contextoBase = escenario
     ? modoSimulacion === "COLAPSO"
       ? `${escenario.archivoVentas} · Simulación hasta el colapso (desde día ${escenario.dia}) · ${escenario.pedidosDelTurno} pedidos` +
       (ejecucion ? ` · ${ejecucion.algoritmo} · ${formatearSoles(ejecucion.metricas.costoOperativoTotal)}` : "") +
@@ -185,6 +198,7 @@ const CentroControlPage = () => {
         : `${escenario.archivoVentas} · día ${escenario.dia} · ${escenario.pedidosDelTurno} pedidos del turno` +
         (ejecucion ? ` · ${ejecucion.algoritmo} · ${formatearSoles(ejecucion.metricas.costoOperativoTotal)}` : "")
     : "Sin plan cargado · ejecute la experimentación numérica";
+  const contexto = tiempoReal ? `Operación día a día · hora de Lima · ${contextoBase}` : contextoBase;
 
   return (
     <div className="centro-control">
@@ -259,14 +273,12 @@ const CentroControlPage = () => {
               </div>
             )}
 
-            <LeyendaMapa almacenCentral={almacenCentral} />
-
             <div className="centro-control__lienzo">
               <MapaCiudad
                 almacenes={almacenesConStockDinamico}
                 bloqueos={escenario.bloqueos}
-                rutas={ejecucion?.rutas ?? []}
-                unidades={unidades}
+                rutas={rutasEnMapa}
+                unidades={unidadesEnMapa}
                 pedidos={pedidos}
                 unidadesAveriadas={unidadesAveriadas}
                 unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
@@ -276,16 +288,17 @@ const CentroControlPage = () => {
                 umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
                 umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
               />
+              {/* La leyenda se despliega sobre el mapa para no quitarle espacio. */}
+              <LeyendaDesplegable almacenCentral={almacenCentral} />
+              <NotificacionesEntregas
+                pedidos={pedidos}
+                claveEjecucion={`${escenario.archivoVentas}-${escenario.minutoInicio}-${escenario.semilla}-${ejecucion?.algoritmo ?? ""}`}
+              />
             </div>
           </section>
 
-          <aside className="centro-control__paneles desplazable">
+          <aside className="centro-control__paneles">
             <PanelAlertas alertas={alertas} onEnfocarUnidad={enfocarUnidad} />
-            <PanelAlmacenes
-              almacenes={almacenesConStockDinamico}
-              umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
-              umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
-            />
             <div className="centro-control__seccion-operativa">
               <div className="centro-control__tabs-operacion">
                 <Tabs
@@ -300,6 +313,11 @@ const CentroControlPage = () => {
                       etiqueta: "Flota",
                       detalle: String(unidades.length),
                     },
+                    {
+                      id: "almacenes",
+                      etiqueta: "Almacenes",
+                      detalle: String(almacenesConStockDinamico.length),
+                    },
                   ]}
                   activa={tabOperativa}
                   onCambiar={setTabOperativa}
@@ -312,14 +330,25 @@ const CentroControlPage = () => {
                   minutoActual={minutoActual}
                   onEnfocarUnidad={enfocarUnidad}
                 />
-              ) : (
+              ) : tabOperativa === "flota" ? (
                 <PanelFlota
                   unidades={unidades}
                   unidadesAveriadas={unidadesAveriadas}
                   unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
                   unidadEnfocada={unidadEnfocada}
                   onEnfocar={enfocarUnidad}
+                  rutas={ejecucion?.rutas ?? []}
+                  minutoActual={minutoActual}
+                  escenario={escenario}
                 />
+              ) : (
+                <div className="centro-control__tab-almacenes desplazable">
+                  <PanelAlmacenes
+                    almacenes={almacenesConStockDinamico}
+                    umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
+                    umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
+                  />
+                </div>
               )}
             </div>
           </aside>

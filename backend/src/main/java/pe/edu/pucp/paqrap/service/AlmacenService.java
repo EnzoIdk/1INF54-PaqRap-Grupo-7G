@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import pe.edu.pucp.paqrap.config.ParametrosAlmacen;
+import pe.edu.pucp.paqrap.config.ParametrosOperacion;
 import pe.edu.pucp.paqrap.exception.StockInsuficienteException;
 import pe.edu.pucp.paqrap.model.Almacen;
 import pe.edu.pucp.paqrap.repository.AlmacenRepository;
@@ -23,11 +24,11 @@ public class AlmacenService {
     }
 
     private final AlmacenRepository almacenRepository;
-    private final ParametrosAlmacen parametrosAlmacen;
+    private final ParametrosOperacion parametrosOperacion;
 
-    public AlmacenService(AlmacenRepository almacenRepository, ParametrosAlmacen parametrosAlmacen) {
+    public AlmacenService(AlmacenRepository almacenRepository, ParametrosOperacion parametrosOperacion) {
         this.almacenRepository = almacenRepository;
-        this.parametrosAlmacen = parametrosAlmacen;
+        this.parametrosOperacion = parametrosOperacion;
     }
 
     public void despacharStock(Almacen almacen, int cantidadProducto) {
@@ -42,6 +43,7 @@ public class AlmacenService {
     }
 
     public ColorSemaforo calcularColorSemaforo(Almacen almacen) {
+        ParametrosAlmacen parametrosAlmacen = parametrosOperacion.almacen();
         double porcentajeDespachado = 1.0 - ((double) almacen.getStockActual() / parametrosAlmacen.stockMaximo());
         if (porcentajeDespachado >= parametrosAlmacen.umbralRojoPorcentaje()) {
             return ColorSemaforo.ROJO;

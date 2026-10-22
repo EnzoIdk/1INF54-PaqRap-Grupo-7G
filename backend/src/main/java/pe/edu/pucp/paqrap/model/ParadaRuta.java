@@ -16,6 +16,7 @@ public class ParadaRuta {
     private final double distanciaKmDesdeAnterior;
     private final int minutoLlegada;
     private final int minutoSalida;
+    private boolean reasignada;
 
     public ParadaRuta(Pedido pedido, double distanciaKmDesdeAnterior, int minutoLlegada, int minutoSalida) {
         this.pedido = pedido;
@@ -43,6 +44,15 @@ public class ParadaRuta {
     /** El plazo se cumple cuando la unidad llega antes del limite comprometido. */
     public boolean cumplePlazo() {
         return minutoLlegada <= pedido.getMinutoLimiteEntrega();
+    }
+
+    /** El pedido llego a esta unidad por la reasignacion de una unidad averiada. */
+    public boolean isReasignada() {
+        return reasignada;
+    }
+
+    public void marcarReasignada() {
+        this.reasignada = true;
     }
 
     /** Minutos de holgura frente al plazo; negativo si el plazo se incumplio. */

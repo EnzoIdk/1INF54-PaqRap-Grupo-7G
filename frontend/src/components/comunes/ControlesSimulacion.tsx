@@ -4,7 +4,7 @@ import {
   VELOCIDADES_REPRODUCCION,
   formatearEtiquetaVelocidad,
 } from "../../utils/constants";
-import { useSimulacionStore } from "../../store/simulacionStore";
+import { MINUTOS_POR_SEGUNDO_TIEMPO_REAL, useSimulacionStore } from "../../store/simulacionStore";
 import "./ControlesSimulacion.css";
 
 interface ControlesSimulacionProps {
@@ -35,6 +35,7 @@ const ControlesSimulacion = ({
   onCambiarVelocidad,
 }: ControlesSimulacionProps) => {
   const modoStore = useSimulacionStore((estado) => estado.modoSimulacion);
+  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
   const modoActivo = modoSimulacion ?? modoStore;
 
   return (
@@ -47,6 +48,9 @@ const ControlesSimulacion = ({
           onChange={(evento) => onCambiarVelocidad(Number(evento.target.value))}
           aria-label="Minutos simulados por segundo real"
         >
+          {tiempoReal && (
+            <option value={MINUTOS_POR_SEGUNDO_TIEMPO_REAL}>Tiempo real · hora de Lima</option>
+          )}
           {VELOCIDADES_REPRODUCCION.map((velocidad) => (
             <option key={velocidad.minutosPorSegundo} value={velocidad.minutosPorSegundo}>
               {formatearEtiquetaVelocidad(velocidad, modoActivo)}

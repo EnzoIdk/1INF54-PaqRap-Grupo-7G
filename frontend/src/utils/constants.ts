@@ -97,7 +97,7 @@ export type OpcionVelocidad = (typeof VELOCIDADES_REPRODUCCION)[number];
  */
 export function formatearEtiquetaVelocidad(
   velocidad: OpcionVelocidad,
-  modo?: "1D" | "5D" | "COLAPSO"
+  modo?: string
 ): string {
   if (modo === "5D" && "etiqueta5D" in velocidad && velocidad.etiqueta5D) {
     return `${velocidad.etiqueta5D} · ${velocidad.minutosPorSegundo} min/s`;

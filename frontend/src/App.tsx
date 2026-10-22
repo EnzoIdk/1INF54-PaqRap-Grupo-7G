@@ -9,6 +9,7 @@ import ConfiguracionPage from "./pages/ConfiguracionPage";
 import LoginPage from "./pages/LoginPage";
 import ConfigurarAdminPage from "./pages/ConfigurarAdminPage";
 import UsuariosPage from "./pages/UsuariosPage";
+import { useOperacionDiaADia } from "./hooks/useOperacionDiaADia";
 import "./App.css";
 
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
@@ -42,6 +43,12 @@ const RutasProtegidas = () => {
     return <Navigate to="/login" replace state={{ desde: ubicacion.pathname }} />;
   }
 
+  return <AplicacionAutenticada esAdmin={usuario.rol === "ADMIN"} />;
+};
+
+/** Contenido para un usuario con sesión; mantiene viva la operación día a día. */
+const AplicacionAutenticada = ({ esAdmin }: { esAdmin: boolean }) => {
+  useOperacionDiaADia();
   return (
     <div className="aplicacion">
       <Navside />
@@ -61,7 +68,7 @@ const RutasProtegidas = () => {
           <Route path="/configuracion" element={<ConfiguracionPage />} />
           <Route
             path="/usuarios"
-            element={usuario.rol === "ADMIN" ? <UsuariosPage /> : <Navigate to="/" replace />}
+            element={esAdmin ? <UsuariosPage /> : <Navigate to="/" replace />}
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
