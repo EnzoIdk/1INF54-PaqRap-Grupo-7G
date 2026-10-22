@@ -2,9 +2,11 @@ package pe.edu.pucp.paqrap.experimentacion;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -193,6 +195,8 @@ public class ServicioExperimentacion {
         long entregasFueraDePlazoTotales = 0;
         double distanciaTotalKm = 0;
 
+        Map<String, Almacen> almacenActualPorUnidad = new HashMap<>();
+
         for (int s = 0; s < numTurnos; s++) {
             int turnoInicio = minutoInicio + s * duracionTurno;
             int turnoFin = turnoInicio + duracionTurno;
@@ -237,10 +241,16 @@ public class ServicioExperimentacion {
             List<Pedido> pedidosParaTurno = new ArrayList<>(
                     pedidosPendientes.subList(0, Math.min(pedidosPendientes.size(), maximoTurno)));
 
-            // Flota operativa del turno considerando mantenimiento del dia
+            // Flota operativa del turno considerando mantenimiento del dia y ubicacion tras retornos previos
             List<UnidadTransporte> flotaTurno = cargadorEscenario.construirFlota(
                     parametros.cantidadAutos(), parametros.cantidadMotos(), parametros.cantidadBicicletas(),
                     ubicacionCentral);
+            for (UnidadTransporte unidad : flotaTurno) {
+                Almacen almacenDondeEsta = almacenActualPorUnidad.get(unidad.getCodigo());
+                if (almacenDondeEsta != null) {
+                    unidad.setUbicacion(almacenDondeEsta.getUbicacion());
+                }
+            }
             cargadorEscenario.aplicarMantenimiento(flotaTurno, mantenimientos, escenario.conjunto().mes(), diaActual, turnoInicio);
 
             // Averias inyectadas para este turno
@@ -293,6 +303,9 @@ public class ServicioExperimentacion {
                     codigosAtendidos.add(parada.getPedido().getCodigo());
                     pedidosPendientes.remove(parada.getPedido());
                 }
+
+                // La unidad completó su retorno y queda estacionada en su almacenDestino
+                almacenActualPorUnidad.put(ruta.getUnidadTransporte().getCodigo(), ruta.getAlmacenDestino());
             }
 
             // Los pedidos no asignados en este turno se evaluan:
@@ -454,6 +467,8 @@ public class ServicioExperimentacion {
         String fechaHoraColapso = null;
         String motivoColapso = null;
 
+        Map<String, Almacen> almacenActualPorUnidad = new HashMap<>();
+
         for (int s = 0; s < maxTurnos; s++) {
             int turnoInicio = minutoInicio + s * duracionTurno;
             int turnoFin = turnoInicio + duracionTurno;
@@ -513,10 +528,16 @@ public class ServicioExperimentacion {
             List<Pedido> pedidosParaTurno = new ArrayList<>(
                     pedidosPendientes.subList(0, Math.min(pedidosPendientes.size(), maximoTurno)));
 
-            // Flota operativa del turno considerando mantenimiento
+            // Flota operativa del turno considerando mantenimiento y ubicacion tras retornos previos
             List<UnidadTransporte> flotaTurno = cargadorEscenario.construirFlota(
                     parametros.cantidadAutos(), parametros.cantidadMotos(), parametros.cantidadBicicletas(),
                     ubicacionCentral);
+            for (UnidadTransporte unidad : flotaTurno) {
+                Almacen almacenDondeEsta = almacenActualPorUnidad.get(unidad.getCodigo());
+                if (almacenDondeEsta != null) {
+                    unidad.setUbicacion(almacenDondeEsta.getUbicacion());
+                }
+            }
             cargadorEscenario.aplicarMantenimiento(flotaTurno, mantenimientos, escenario.conjunto().mes(), diaActual, turnoInicio);
 
             // Averias inyectadas para este turno
@@ -583,6 +604,9 @@ public class ServicioExperimentacion {
                         riesgosDeColapso.add(motivoColapso);
                     }
                 }
+
+                // La unidad completó su retorno y queda estacionada en su almacenDestino
+                almacenActualPorUnidad.put(ruta.getUnidadTransporte().getCodigo(), ruta.getAlmacenDestino());
             }
 
             // 3. Verificacion post-turno: pedidos no asignados cuyo plazo expira antes o al inicio del proximo turno
@@ -826,11 +850,13 @@ public class ServicioExperimentacion {
                 ruta.getUnidadTransporte().getCodigo(),
                 ruta.getUnidadTransporte().getTipoUnidad().name(),
                 ruta.getAlmacenOrigen().getCodigo(),
+                ruta.getAlmacenDestino() != null ? ruta.getAlmacenDestino().getCodigo() : ruta.getAlmacenOrigen().getCodigo(),
                 ruta.getCargaTotal(),
                 evaluadorCosto.obtenerCapacidad(ruta.getUnidadTransporte().getTipoUnidad()),
                 ruta.getDistanciaKm(),
                 evaluadorCosto.calcularCostoOperativo(ruta),
                 ruta.getMinutoSalidaAlmacen(),
+                ruta.getMinutoInicioRetorno(),
                 ruta.getMinutoFin(),
                 recorrido,
                 ruta.getMinutosPorNodo(),

@@ -50,30 +50,71 @@ const CapaRutas = ({ rutas, posiciones, escala, unidadEnfocada, minutoActual }: 
             ? minutoActual >= ruta.minutoSalida && minutoActual <= ruta.minutoFin
             : true;
 
+        const minutoInicioRetorno = ruta.minutoInicioRetorno ?? ruta.minutoFin;
+        let indiceRetorno = ruta.minutosPorNodo.lastIndexOf(minutoInicioRetorno);
+        if (indiceRetorno === -1) {
+          indiceRetorno = ruta.minutosPorNodo.findIndex((m) => m >= minutoInicioRetorno);
+        }
+        if (indiceRetorno === -1) {
+          indiceRetorno = ruta.recorrido.length - 1;
+        }
+
         let yaRecorrido: string[] = [];
-        let pendiente: string[] = [];
+        let pendienteEntrega: string[] = [];
+        let pendienteRetorno: string[] = [];
 
         if (minutoActual !== undefined && minutoActual < ruta.minutoSalida) {
-          pendiente = recorrido;
+          pendienteEntrega = recorrido.slice(0, indiceRetorno + 1);
+          pendienteRetorno = recorrido.slice(indiceRetorno);
         } else if (minutoActual !== undefined && minutoActual > ruta.minutoFin) {
           yaRecorrido = recorrido;
         } else {
           const corte = posicion?.indiceNodoActual ?? 0;
-          yaRecorrido = recorrido.slice(0, corte + 1);
-          pendiente = recorrido.slice(corte);
+          const puntoActual =
+            posicion && esRutaActiva
+              ? `${escala.aX(posicion.x)},${escala.aY(posicion.y)}`
+              : null;
 
-          if (posicion && esRutaActiva) {
-            const puntoActual = `${escala.aX(posicion.x)},${escala.aY(posicion.y)}`;
-            yaRecorrido.push(puntoActual);
-            pendiente[0] = puntoActual;
+          if (corte < indiceRetorno) {
+            // Fase de entregas
+            yaRecorrido = recorrido.slice(0, corte + 1);
+            if (puntoActual) {
+              yaRecorrido.push(puntoActual);
+            }
+
+            pendienteEntrega = (puntoActual ? [puntoActual] : []).concat(
+              recorrido.slice(corte + 1, indiceRetorno + 1)
+            );
+            pendienteRetorno = recorrido.slice(indiceRetorno);
+          } else {
+            // Fase de retorno al almacén
+            yaRecorrido = recorrido.slice(0, corte + 1);
+            if (puntoActual) {
+              yaRecorrido.push(puntoActual);
+            }
+
+            pendienteEntrega = [];
+            pendienteRetorno = (puntoActual ? [puntoActual] : []).concat(
+              recorrido.slice(corte + 1)
+            );
           }
         }
 
         return (
           <g key={`${ruta.codigoUnidad}-${ruta.minutoSalida}`} opacity={atenuada ? 0.18 : 1}>
-            {pendiente.length > 1 && (
+            {yaRecorrido.length > 1 && (
               <polyline
-                points={pendiente.join(" ")}
+                points={yaRecorrido.join(" ")}
+                fill="none"
+                stroke="var(--color-ruta-recorrida)"
+                strokeWidth={2}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            )}
+            {pendienteEntrega.length > 1 && (
+              <polyline
+                points={pendienteEntrega.join(" ")}
                 fill="none"
                 stroke={COLOR_TIPO_UNIDAD[ruta.tipoUnidad]}
                 strokeWidth={2}
@@ -81,12 +122,12 @@ const CapaRutas = ({ rutas, posiciones, escala, unidadEnfocada, minutoActual }: 
                 strokeLinecap="round"
               />
             )}
-            {yaRecorrido.length > 1 && (
+            {pendienteRetorno.length > 1 && (
               <polyline
-                points={yaRecorrido.join(" ")}
+                points={pendienteRetorno.join(" ")}
                 fill="none"
-                stroke="var(--color-ruta-recorrida)"
-                strokeWidth={2}
+                stroke="var(--color-ruta-retorno)"
+                strokeWidth={2.5}
                 strokeLinejoin="round"
                 strokeLinecap="round"
               />

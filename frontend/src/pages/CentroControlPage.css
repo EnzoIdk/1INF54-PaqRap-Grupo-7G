@@ -113,28 +113,63 @@
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 12px;
 }
 
 .centro-control__paneles {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   min-height: 0;
   padding-right: 2px;
 }
 
-/*
- * Los paneles comparten la columna derecha: cada lista se desplaza dentro
- * de su tarjeta, de modo que ninguna empuje a las demas fuera de la vista.
- */
-.centro-control__paneles .panel-alertas__lista {
-  max-height: 300px;
+.centro-control__seccion-operativa {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.centro-control__paneles .panel-pedidos__lista,
-.centro-control__paneles .panel-flota__lista {
-  max-height: 320px;
+.centro-control__tabs-operacion {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.centro-control__tabs-operacion .tabs {
+  display: flex;
+  width: 100%;
+}
+
+.centro-control__tabs-operacion .tabs__opcion {
+  flex: 1;
+  justify-content: center;
+  height: 34px;
+  font-size: 12.5px;
+}
+
+.centro-control__tabs-operacion .tabs__opcion--activa .tabs__detalle {
+  background-color: var(--color-azul-suave);
+  color: var(--color-azul-accion);
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.centro-control__seccion-operativa .panel-pedidos,
+.centro-control__seccion-operativa .panel-flota {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.centro-control__seccion-operativa .panel-pedidos__lista,
+.centro-control__seccion-operativa .panel-flota__lista {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
 }
 
 .centro-control__sin-plan {
@@ -165,22 +200,5 @@
 
   .centro-control__lienzo {
     min-height: 460px;
-  }
-}
-
-@media (max-width: 980px) {
-  .centro-control__lienzo {
-    flex-direction: column;
-  }
-
-  .leyenda {
-    width: 100%;
-    flex: 0 0 auto;
-  }
-
-  .leyenda__seccion ul {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px 18px;
   }
 }

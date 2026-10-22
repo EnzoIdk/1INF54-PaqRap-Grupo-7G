@@ -17,7 +17,10 @@ public class Ruta {
 
     private final UnidadTransporte unidadTransporte;
     private final Almacen almacenOrigen;
+    private Almacen almacenDestino;
     private final int minutoSalidaAlmacen;
+    private int minutoInicioRetorno;
+    private int minutoLlegadaAlmacen;
     private final List<ParadaRuta> paradas = new ArrayList<>();
     private final List<Nodo> secuenciaNodos = new ArrayList<>();
     private final List<Integer> minutosPorNodo = new ArrayList<>();
@@ -26,12 +29,23 @@ public class Ruta {
     public Ruta(UnidadTransporte unidadTransporte, Almacen almacenOrigen, int minutoSalidaAlmacen) {
         this.unidadTransporte = unidadTransporte;
         this.almacenOrigen = almacenOrigen;
+        this.almacenDestino = almacenOrigen;
         this.minutoSalidaAlmacen = minutoSalidaAlmacen;
+        this.minutoInicioRetorno = minutoSalidaAlmacen;
+        this.minutoLlegadaAlmacen = minutoSalidaAlmacen;
     }
 
     public void agregarParada(ParadaRuta parada) {
         paradas.add(parada);
         distanciaKm += parada.getDistanciaKmDesdeAnterior();
+        this.minutoInicioRetorno = parada.getMinutoSalida();
+    }
+
+    public void definirRetorno(Almacen almacenDestino, double distanciaRetornoKm, int minutoInicioRetorno, int minutoLlegadaAlmacen) {
+        this.almacenDestino = almacenDestino;
+        this.distanciaKm += distanciaRetornoKm;
+        this.minutoInicioRetorno = minutoInicioRetorno;
+        this.minutoLlegadaAlmacen = minutoLlegadaAlmacen;
     }
 
     /**
@@ -57,6 +71,18 @@ public class Ruta {
 
     public Almacen getAlmacenOrigen() {
         return almacenOrigen;
+    }
+
+    public Almacen getAlmacenDestino() {
+        return almacenDestino != null ? almacenDestino : almacenOrigen;
+    }
+
+    public int getMinutoInicioRetorno() {
+        return minutoInicioRetorno;
+    }
+
+    public int getMinutoLlegadaAlmacen() {
+        return minutoLlegadaAlmacen;
     }
 
     public List<ParadaRuta> getParadas() {
@@ -94,9 +120,12 @@ public class Ruta {
         return minutoSalidaAlmacen;
     }
 
-    /** Minuto de simulacion en que la unidad termina su ultima entrega. */
+    /** Minuto de simulacion en que la unidad termina su recorrido al retornar al almacen. */
     public int getMinutoFin() {
-        return paradas.isEmpty() ? minutoSalidaAlmacen : paradas.get(paradas.size() - 1).getMinutoSalida();
+        if (paradas.isEmpty()) {
+            return minutoSalidaAlmacen;
+        }
+        return minutoLlegadaAlmacen > 0 ? minutoLlegadaAlmacen : paradas.get(paradas.size() - 1).getMinutoSalida();
     }
 
     public long contarParadasFueraDePlazo() {

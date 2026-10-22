@@ -15,6 +15,9 @@ export interface PosicionUnidad {
   finalizada: boolean;
   /** La unidad esta detenida entregando un pedido. */
   entregando: boolean;
+  /** La unidad esta en su tramo de retorno hacia un almacen para recargar. */
+  retornando?: boolean;
+  almacenDestino?: string;
   entregasHechas: number;
   entregasTotales: number;
   cargaRestante: number;
@@ -162,6 +165,7 @@ function posicionInmovilizada(unidad: UnidadDto): PosicionUnidad {
     enAlmacen: true,
     finalizada: false,
     entregando: false,
+    retornando: false,
     entregasHechas: 0,
     entregasTotales: 0,
     cargaRestante: 0,
@@ -184,21 +188,23 @@ function calcularPosicion(ruta: RutaDto, minutoActual: number): PosicionUnidad {
     entregasTotales: ruta.paradas.length,
     cargaRestante: ruta.cargaTotal - cargaEntregada,
     cargaTotal: ruta.cargaTotal,
+    almacenDestino: ruta.almacenDestino ?? ruta.almacenOrigen,
   };
 
   if (recorrido.length === 0) {
-    return { ...base, x: 0, y: 0, enAlmacen: true, finalizada: false, entregando: false, indiceNodoActual: 0 };
+    return { ...base, x: 0, y: 0, enAlmacen: true, finalizada: false, entregando: false, retornando: false, indiceNodoActual: 0 };
   }
 
   if (minutoActual <= minutosPorNodo[0]) {
     const [x, y] = recorrido[0];
-    return { ...base, x, y, enAlmacen: true, finalizada: false, entregando: false, indiceNodoActual: 0 };
+    return { ...base, x, y, enAlmacen: true, finalizada: false, entregando: false, retornando: false, indiceNodoActual: 0 };
   }
 
   const ultimo = recorrido.length - 1;
   if (minutoActual >= minutosPorNodo[ultimo]) {
     const [x, y] = recorrido[ultimo];
-    return { ...base, x, y, enAlmacen: false, finalizada: true, entregando: false, indiceNodoActual: ultimo };
+    // Una vez concluido el recorrido, la unidad permanece en el almacen de destino
+    return { ...base, x, y, enAlmacen: true, finalizada: true, entregando: false, retornando: false, indiceNodoActual: ultimo };
   }
 
   const indice = buscarTramo(minutosPorNodo, minutoActual);
@@ -210,8 +216,11 @@ function calcularPosicion(ruta: RutaDto, minutoActual: number): PosicionUnidad {
   const duracion = minutoHasta - minutoDesde;
   const avance = duracion > 0 ? (minutoActual - minutoDesde) / duracion : 1;
 
-  // Nodo repetido: la unidad esta detenida entregando en el domicilio.
-  const entregando = xDesde === xHasta && yDesde === yHasta;
+  const minutoInicioRetorno = ruta.minutoInicioRetorno ?? ruta.minutoFin;
+  const retornando = minutoActual >= minutoInicioRetorno && minutoActual < ruta.minutoFin;
+
+  // Nodo repetido: la unidad esta detenida entregando en el domicilio (solo durante la fase de entregas)
+  const entregando = !retornando && xDesde === xHasta && yDesde === yHasta;
 
   return {
     ...base,
@@ -220,6 +229,7 @@ function calcularPosicion(ruta: RutaDto, minutoActual: number): PosicionUnidad {
     enAlmacen: false,
     finalizada: false,
     entregando,
+    retornando,
     indiceNodoActual: indice,
   };
 }

@@ -1,0 +1,121 @@
+¿Qué son las fallas, averías o similares y cuáles son los tipos de falla?
+En el curso se usará el término avería.
+La avería es la no disponibilidad de una unidad de transporte por un periodo determinado.
+Se tienen 3 tipos de averías:
+- Avería Tipo 1 o menores que implica que el unidad de transporte no está disponible por 2 horas. Ejemplo. Una llanta se desinfla y se soluciona pronto.
+- Avería Tipo 2 o intermedios que implica que el unidad de transporte no está disponible hasta el final del siguiente turno al que se averío, la unidad permanece en el lugar por 4 horas como máximo. Ejemplo. El sistema de transmisión (faja/cadena) se rompe.
+- Avería Tipo 3 o mayores que implica que el unidad de transporte no está disponible por al menos 2 días por mantenimiento y retorna a operación en el turno 15:00 a 23:00.
+-Avería Tipo 3 permanece en el lugar de la avería por 4 horas.
+Las unidades de transporte en las averías 2 y 3, son llevadas de "manera instantanea" (por tema del curso) al almacen central. Además, los paquetes que no han sido trasvasados desde dichas unidades igualmente se llevan al almacen central.
+
+
+¿cuál es el mapa de la ciudad?
+La ciudad es una reticula (rectagular de "x" Km de largo por "y" Km de ancho). Todas las calles son de doble sentido. La ciudad está conceptualizada como nodos (esquinas). No existen calles diagonales. No existen calles curvas. Todos los clientes serán referidos por un ubicación (x,y) que corresponde a un nodo.
+Las dimensiones de la ciudad serán de 70Km de lado x 50Km de lado. Asuma que el eje X, será el de 70Km. La distancia entre nodo y nodo es de 1Km. Se establece que el origen de coordenadas será el punto 0, 0 que se ubicará en la parte inferior izquierda.
+
+
+¿dónde están los almacenes?
+El almacén central está ubicado en la posición X=27, Y=14.
+El almacén intermedio Nor-Oeste está en la posición X= 12, Y= 38.
+El almacén intermedio Este está en la posición X= 57, Y= 27
+
+
+¿Qué son los bloqueos?
+Los bloqueos de las calles son situaciones que ocurren por lo cual no es posible el acceso vehícular en algunos tramos de la pista. 
+Dichos tramos bloqueados están identificado por un par de puntos extremos (nodos). Un nodo (una esquina o un extremo del tramo) bloqueado no se puede atravesar y no se permite girar a los lados. Por ello, si una unidad de transporte llega a un nodo bloqueado, debe regresar por el mismo lugar por el que llegó (media vuelta o vuelta en U).
+
+Para el curso se asumirá que sólo existen bloqueos planificados con antelación. No hay bloqueos fortuitos por ninguna razón (p.e. accidentes, caida de postes, etc). 
+Las calles se bloquean durante un periodo de tiempo planificado por la municipalidad.  Se tendrá un archivo mensual con dicha planificación (aaaamm.bloqueado.txt).
+
+Los bloqueos que se definan pueden ser como un polígono abierto o polígono cerrado. Para el caso de un polígono abierto, se tendrá que siempre es posible llegar a todos los puntos de la poligonal. Para el caso de un polígono cerrado, sólo serán del tipo convexo; por lo que algunos puntos no serán alcanzados.
+Sin embargo, para el curso 1INF54 del 2026-2, se trabajará unicamente con polígonos abiertos.
+
+Archivo de bloqueos
+El nombre del archivo de calles bloqueadas es:
+Nombre: aaaamm.bloqueadas
+donde aaaa = año = 2026, 2027 y 2028
+mm = mes 01 para enero, 02 para febrero, así sucesivamente
+
+Se les entregará, al menos, un año de calles bloquedas. En caso necesario, pueden extender los mismos archivos para el siguiente año.
+
+No se van a considerar otros tipos de bloqueos ni tampoco las generadas por las averías. Esto último punto significa que si una unidad de transporte se averia, la vía sigue habilitada para que otras unidades de transporte circulen sin problemas por ahí.
+
+
+¿Cómo es el archivo histórico de pedidos?
+El archivo histórico y proyectado de envíos es mensual. Se considera histórico a cualquier pedido/envío que sea anterior al instante del tiempo actual. 
+
+El archivo cumple con lo siguiente:
+
+Nombre de archivo : ventas2026mm  mm=mes (01 para enero, 02 para febrero, así sucesivamente)
+
+Registro: ##d##h##m:posx,posY,cIdCliente,qq,hl
+
+Ejemplo: 11d13h31m:45,43,c9167,12,36
+
+##d##h##m es el día, hora y minuto en que el pedido llegó; en el ejemplo es 11d13h31m
+posX,posY es la ubicación de la entrega, en el ejemplo es 45,43
+cIdCliente es el identificador del cliente  c9167
+qq es la cantidad de unidades de producto P, en el caso qq=12
+hl, el número de horas límite de la entrega, en el ejemplo 36
+
+
+¿Todas las unidades de transporte salen del mismo almacen?
+Al inicio de cualquier de los escenarios (fecha-hora), todas las unidades de transporte salén del almacén central. 
+Cualquier unidad de transporte puede recargar en cualquier almacén mientras tengan stock. .
+
+Todos las unidades de transporte ....retornan para recarga a cualquier almacen.
+Las unidades de transporte no pueden regresar a un almance que no tienen stock.
+
+
+¿El tiempo de entrega de 1 hora está dentro o fuera del plazo de 36horas o los plazos priorizados?
+No. El tiempo de entrega (operación/acondicionamiento) dentro de las instalaciones del cliente no se considera dentro del plazo de entrega de 36 horas o los plazos priorizados.
+
+
+¿Cómo se hace con los choferes cuando la ruta asignada trasciende su turno.....?
+El conductor da el alcance a la unidad de transporte en el punto en que cambia de turno.  El tiempo  de cambio del conductor es despreciable.
+
+
+¿Hay entregas parciales?
+Sí.
+
+
+En el caso que se tengan entregas parciales ¿cómo se maneja la hora de acondicionamiento del productop P? 
+El tiempo de acondicionamiento del producto P es de 1 hora por entrega. 
+
+Ejemplo 1. Si en la entrega se dejan 5 productos P, el aconcionamiento de dicha entrega es de 1 hora.
+Ejemplo 2. Si la entrega llega en, al menos, dos unidades, una de 2 productos y otra de 3 productos. El tiempo de acondicionamiento de la 1era entrega (2 productos) es de 1 hora y el tiempo de acondicionamiento de la 2da entrega (3 productos) es de 1 hora.
+
+Entonces por cada entrega parcial, siempre se toma ""solamente"" 1 hora independiente de la cantidad de productos.
+
+
+¿Cuál es el tamaño de la flota?
+Tipo        Cantidad (Unidad)     Capacidad (Productos)
+Autos                  10                             24
+Motos                 15                             08
+Bicicletas            12                             04
+
+
+¿Cómo se identifica la flota?
+Los códigos de las unidades de transporte son:  TTNN
+  donde TT es el tipo y NN es un correlativo.
+  ejemplos:
+       TA01  es la unidad  01 del tipo Autos
+       TB10  es la unidad 10 del tipo Bicicletas
+       TM03 es la unidad 03 del tipo Moto
+
+Recuerde que la flota puede cambiar en cualquier momento, pero NO durante una presentación del software.
+
+
+¿Cuál es el plan de mantenimiento?
+El nombre del archivo de mantenimiento preventido es:
+Nombre: mant.preventivo.m1.m2  donde m1 es el primer mes y m2 el segundo. P.e. 09.10 (setiembre y octubre)
+Registro: aaaammdd:TTNN
+ejemplo:      aaaa = año
+                      mm   = mes (01, 02, 03, ...)
+                      dd   = día (01, 02, 03, ...)
+                      TT   = Tipo (TA, TB, ...)
+                      NN   = Numero (01, 02, ...)
+Nota 1. Una unidad de transporte programado para mantenimiento NO estará disponible para programación de rutas desde las 00:00 hasta las 23:59.
+Nota 2. Si un tanque cisterna está en ruta, al inicio de su mantenimiento, debe retornar de inmediato a las 00:00, incluso si no ha entregado un pedido. En realidad eso deben evitarlo en la planificación.
+
+El archivo está en la zona de datos. Debe generar el resto de archivos para cubrir el siguiente periodo. 01 Ene 2026 hasta 31 Dic 2028.

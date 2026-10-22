@@ -224,12 +224,14 @@ public record ExperimentacionResponse(
      * @param codigoUnidad codigo TTNN de la unidad
      * @param tipoUnidad AUTO, MOTO o BICICLETA
      * @param almacenOrigen nombre del almacen desde el que se abastecio
+     * @param almacenDestino nombre del almacen al que retorna la unidad para recargar
      * @param cargaTotal paquetes a bordo al salir
      * @param capacidad paquetes que admite la unidad
      * @param distanciaKm kilometros del recorrido
      * @param costoSoles costo del recorrido
      * @param minutoSalida minuto de simulacion en que sale del almacen
-     * @param minutoFin minuto de simulacion en que termina la ultima entrega
+     * @param minutoInicioRetorno minuto en que inicia el tramo de retorno hacia el almacen
+     * @param minutoFin minuto de simulacion en que termina la ultima entrega o arriba al almacen
      * @param recorrido nodos por los que pasa la unidad
      * @param minutosPorNodo minuto de simulacion de cada nodo del recorrido
      * @param paradas entregas de la ruta, en orden
@@ -238,15 +240,34 @@ public record ExperimentacionResponse(
             String codigoUnidad,
             String tipoUnidad,
             String almacenOrigen,
+            String almacenDestino,
             int cargaTotal,
             int capacidad,
             double distanciaKm,
             double costoSoles,
             int minutoSalida,
+            int minutoInicioRetorno,
             int minutoFin,
             List<int[]> recorrido,
             List<Integer> minutosPorNodo,
             List<ParadaDto> paradas) {
+
+        public RutaDto(
+                String codigoUnidad,
+                String tipoUnidad,
+                String almacenOrigen,
+                int cargaTotal,
+                int capacidad,
+                double distanciaKm,
+                double costoSoles,
+                int minutoSalida,
+                int minutoFin,
+                List<int[]> recorrido,
+                List<Integer> minutosPorNodo,
+                List<ParadaDto> paradas) {
+            this(codigoUnidad, tipoUnidad, almacenOrigen, almacenOrigen, cargaTotal, capacidad,
+                 distanciaKm, costoSoles, minutoSalida, minutoFin, minutoFin, recorrido, minutosPorNodo, paradas);
+        }
     }
 
     /**

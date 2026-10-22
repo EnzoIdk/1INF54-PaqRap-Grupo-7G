@@ -73,6 +73,12 @@ const LeyendaMapa = ({ almacenCentral }: LeyendaMapaProps) => (
         </li>
         <li>
           <svg width={26} height={8} aria-hidden>
+            <line x1={0} y1={4} x2={26} y2={4} stroke="var(--color-ruta-retorno)" strokeWidth={2.5} />
+          </svg>
+          Ruta de retorno
+        </li>
+        <li>
+          <svg width={26} height={8} aria-hidden>
             <line x1={0} y1={4} x2={26} y2={4} stroke="var(--color-ruta-recorrida)" strokeWidth={2} />
           </svg>
           Ruta ya recorrida

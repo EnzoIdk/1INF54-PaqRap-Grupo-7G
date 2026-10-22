@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Encabezado from "../components/layout/Encabezado";
 import RelojSimulacion from "../components/comunes/RelojSimulacion";
@@ -42,6 +42,8 @@ const CentroControlPage = () => {
   const parametros = useSimulacionStore((estado) => estado.parametros);
   const parametros5D = useSimulacionStore((estado) => estado.parametros5D);
   const parametrosColapso = useSimulacionStore((estado) => estado.parametrosColapso);
+
+  const [tabOperativa, setTabOperativa] = useState<string>("pedidos");
 
   const alternarReproduccion = useSimulacionStore((estado) => estado.alternarReproduccion);
   const reiniciar = useSimulacionStore((estado) => estado.reiniciar);
@@ -136,6 +138,11 @@ const CentroControlPage = () => {
     minutoActual,
     ...umbrales,
   });
+
+  const pedidosActivos = useMemo(
+    () => pedidos.filter((pedido) => pedido.estado !== "ENTREGADO").length,
+    [pedidos],
+  );
 
   const almacenesConStockDinamico = useMemo(() => {
     if (!escenario) return [];
@@ -252,6 +259,8 @@ const CentroControlPage = () => {
               </div>
             )}
 
+            <LeyendaMapa almacenCentral={almacenCentral} />
+
             <div className="centro-control__lienzo">
               <MapaCiudad
                 almacenes={almacenesConStockDinamico}
@@ -267,29 +276,52 @@ const CentroControlPage = () => {
                 umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
                 umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
               />
-              <LeyendaMapa almacenCentral={almacenCentral} />
             </div>
           </section>
 
           <aside className="centro-control__paneles desplazable">
             <PanelAlertas alertas={alertas} onEnfocarUnidad={enfocarUnidad} />
-            <PanelSeguimientoPedidos
-              pedidos={pedidos}
-              minutoActual={minutoActual}
-              onEnfocarUnidad={enfocarUnidad}
-            />
-            <PanelFlota
-              unidades={unidades}
-              unidadesAveriadas={unidadesAveriadas}
-              unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
-              unidadEnfocada={unidadEnfocada}
-              onEnfocar={enfocarUnidad}
-            />
             <PanelAlmacenes
               almacenes={almacenesConStockDinamico}
               umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
               umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
             />
+            <div className="centro-control__seccion-operativa">
+              <div className="centro-control__tabs-operacion">
+                <Tabs
+                  opciones={[
+                    {
+                      id: "pedidos",
+                      etiqueta: "Pedidos",
+                      detalle: String(pedidosActivos),
+                    },
+                    {
+                      id: "flota",
+                      etiqueta: "Flota",
+                      detalle: String(unidades.length),
+                    },
+                  ]}
+                  activa={tabOperativa}
+                  onCambiar={setTabOperativa}
+                />
+              </div>
+
+              {tabOperativa === "pedidos" ? (
+                <PanelSeguimientoPedidos
+                  pedidos={pedidos}
+                  minutoActual={minutoActual}
+                  onEnfocarUnidad={enfocarUnidad}
+                />
+              ) : (
+                <PanelFlota
+                  unidades={unidades}
+                  unidadesAveriadas={unidadesAveriadas}
+                  unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
+                  unidadEnfocada={unidadEnfocada}
+                  onEnfocar={enfocarUnidad}
+                />
+              )}
+            </div>
           </aside>
         </div>
       )}
