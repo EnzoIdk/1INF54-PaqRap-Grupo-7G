@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
-import { BarChart3, Map, Package, Play, Settings, User } from "lucide-react";
+import { BarChart3, LogOut, Map, Package, Play, Settings, User, UserRoundCog } from "lucide-react";
+import { useAuth } from "../../auth/AuthContext";
 import "./Navside.css";
 
 const MODULOS = [
@@ -14,8 +15,15 @@ const MODULOS = [
  * Barra lateral de navegacion: elemento de navegacion principal del sistema
  * (STD 2.6.1).
  */
-const Navside = () => (
-  <nav className="navside">
+const Navside = () => {
+  const { usuario, cerrarSesion } = useAuth();
+
+  const modulos = usuario?.rol === "ADMIN"
+    ? [...MODULOS, { ruta: "/usuarios", etiqueta: "Usuarios", Icono: UserRoundCog, exacto: false }]
+    : MODULOS;
+
+  return (
+    <nav className="navside">
     <div className="navside__marca">
       <span className="navside__logo">P</span>
       <span>
@@ -27,7 +35,7 @@ const Navside = () => (
     <div className="navside__separador" />
 
     <ul className="navside__modulos">
-      {MODULOS.map(({ ruta, etiqueta, Icono, exacto }) => (
+      {modulos.map(({ ruta, etiqueta, Icono, exacto }) => (
         <li key={ruta}>
           <NavLink
             to={ruta}
@@ -48,11 +56,21 @@ const Navside = () => (
         <User size={16} aria-hidden />
       </span>
       <span>
-        <span className="navside__nombre navside__nombre--usuario">Equipo 7G</span>
-        <span className="navside__lema">Supervisor logístico</span>
+        <span className="navside__nombre navside__nombre--usuario">{usuario?.username}</span>
+        <span className="navside__lema">{usuario?.rol === "ADMIN" ? "Administrador" : "Usuario"}</span>
       </span>
+      <button
+        className="navside__salir"
+        type="button"
+        aria-label="Cerrar sesión"
+        title="Cerrar sesión"
+        onClick={() => void cerrarSesion()}
+      >
+        <LogOut size={16} aria-hidden />
+      </button>
     </div>
   </nav>
-);
+  );
+};
 
 export default Navside;
