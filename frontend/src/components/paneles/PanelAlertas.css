@@ -81,7 +81,7 @@
 }
 
 .panel-alertas__alerta--informativa .panel-alertas__icono {
-  color: var(--color-azul-accion);
+  color: var(--color-enlace);
 }
 
 .panel-alertas__icono {

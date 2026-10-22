@@ -3,7 +3,6 @@ package pe.edu.pucp.paqrap.planificador.iaco;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.config.ParametrosPlanificador;
 import pe.edu.pucp.paqrap.model.Almacen;
 import pe.edu.pucp.paqrap.model.Averia;
@@ -18,6 +17,7 @@ import pe.edu.pucp.paqrap.planificador.comun.ContextoPlanificacion;
 import pe.edu.pucp.paqrap.planificador.comun.EnsambladorPlan;
 import pe.edu.pucp.paqrap.planificador.comun.EvaluadorCosto;
 import pe.edu.pucp.paqrap.planificador.comun.GeneradorAleatorio;
+import pe.edu.pucp.paqrap.planificador.comun.RelojRuta;
 import pe.edu.pucp.paqrap.planificador.comun.RestriccionesPlanificacion;
 import pe.edu.pucp.paqrap.planificador.comun.SelectorAlmacenDespacho;
 
@@ -303,15 +303,14 @@ public class PlanificadorIACO implements Planificador {
             AsignacionUnidad asignacion = new AsignacionUnidad(unidad, almacenOrigen);
 
             int carga = 0;
-            double reloj = contexto.minutoPlanificacion();
-            double minutosTrabajados = 0.0;
+            RelojRuta reloj = new RelojRuta(contexto.minutoDisponible(unidad));
             Nodo posicion = almacenOrigen.getUbicacion();
             int indicePuntoActual = contexto.almacenes().indexOf(almacenOrigen);
 
             while (true) {
                 int indicePedido = seleccionarSiguientePedido(contexto, feromonas, aleatorio, atendido,
                         indicePuntoActual, posicion, unidad, almacenOrigen, despachadoPorAlmacen,
-                        carga, reloj, minutosTrabajados);
+                        carga, reloj);
                 if (indicePedido < 0) {
                     break; // ninguna transicion factible
                 }
@@ -329,9 +328,7 @@ public class PlanificadorIACO implements Planificador {
 
                 // La llegada define el cumplimiento del plazo; la hora de entrega
                 // se suma despues, porque ocupa a la unidad pero no cuenta en el plazo.
-                double minutoLlegada = reloj + minutosViaje;
-                reloj = minutoLlegada + ConstantesPaqrap.MINUTOS_ENTREGA_DESTINATARIO;
-                minutosTrabajados += minutosViaje + ConstantesPaqrap.MINUTOS_ENTREGA_DESTINATARIO;
+                reloj.agregar(pedido, minutosViaje);
 
                 posicion = pedido.getUbicacion();
                 indicePuntoActual = desplazamiento + indicePedido;
@@ -357,8 +354,7 @@ public class PlanificadorIACO implements Planificador {
                                            Almacen almacenOrigen,
                                            Map<Almacen, Integer> despachadoPorAlmacen,
                                            int carga,
-                                           double reloj,
-                                           double minutosTrabajados) {
+                                           RelojRuta reloj) {
         List<Integer> candidatos = new ArrayList<>();
         List<Double> pesos = new ArrayList<>();
         double sumaPesos = 0.0;
@@ -370,7 +366,7 @@ public class PlanificadorIACO implements Planificador {
             }
             Pedido pedido = contexto.pedidos().get(i);
             if (!esPedidoAsignable(contexto, pedido, unidad, almacenOrigen, despachadoPorAlmacen,
-                    posicion, carga, reloj, minutosTrabajados)) {
+                    posicion, carga, reloj)) {
                 continue;
             }
 
@@ -379,7 +375,7 @@ public class PlanificadorIACO implements Planificador {
 
             double feromona = feromonas[indicePuntoActual][desplazamiento + i];
             double heuristicaCosto = 1.0 / (costoTramo + EPSILON);
-            double urgencia = calcularUrgencia(pedido, reloj);
+            double urgencia = calcularUrgencia(pedido, reloj.getMinuto());
 
             double peso = Math.pow(feromona + EPSILON, parametrosPlanificador.pesoFeromona())
                     * Math.pow(heuristicaCosto, parametrosPlanificador.pesoHeuristicaCosto())
@@ -413,8 +409,10 @@ public class PlanificadorIACO implements Planificador {
 
     /**
      * Restricciones duras del caso: capacidad de la unidad, stock del
-     * almacen de despacho, plazo comprometido -sin la hora de entrega- y
-     * jornada de 8 horas con su pausa de alimentacion.
+     * almacen de despacho, plazo comprometido -sin la hora de entrega-,
+     * ninguna entrega antes del registro del pedido -que puede postergar la
+     * salida sin dejar fuera de plazo las paradas ya aceptadas- y jornada de
+     * 8 horas con su pausa de alimentacion.
      */
     private boolean esPedidoAsignable(ContextoPlanificacion contexto,
                                       Pedido pedido,
@@ -423,8 +421,7 @@ public class PlanificadorIACO implements Planificador {
                                       Map<Almacen, Integer> despachadoPorAlmacen,
                                       Nodo posicion,
                                       int carga,
-                                      double reloj,
-                                      double minutosTrabajados) {
+                                      RelojRuta reloj) {
         if (!restricciones.cabeEnLaUnidad(unidad.getTipoUnidad(), carga, pedido.getCantidadProducto())) {
             return false;
         }
@@ -435,10 +432,13 @@ public class PlanificadorIACO implements Planificador {
         double distanciaKm = contexto.grafo().distanciaKm(posicion, pedido.getUbicacion());
         double minutosViaje = evaluadorCosto.minutosDeViaje(unidad.getTipoUnidad(), distanciaKm);
 
-        if (!restricciones.cumpleElPlazo(pedido, reloj + minutosViaje)) {
+        if (!reloj.admitePostergacion(pedido)) {
             return false;
         }
-        return restricciones.cabeEnLaJornada(minutosTrabajados, minutosViaje);
+        if (!restricciones.cumpleElPlazo(pedido, reloj.llegadaA(pedido, minutosViaje))) {
+            return false;
+        }
+        return restricciones.cabeEnLaJornada(reloj.getMinutosTrabajados(), minutosViaje);
     }
 
     private List<AsignacionUnidad> copiar(List<AsignacionUnidad> solucion) {

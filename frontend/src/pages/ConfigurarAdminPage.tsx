@@ -3,6 +3,7 @@ import { LockKeyhole, UserRound } from "lucide-react";
 import { Link, Navigate } from "react-router-dom";
 import type { FormEvent } from "react";
 import { mensajeErrorAuth, useAuth } from "../auth/AuthContext";
+import BotonTema from "../components/comunes/BotonTema";
 import "./AuthPage.css";
 
 const ConfigurarAdminPage = () => {
@@ -36,6 +37,7 @@ const ConfigurarAdminPage = () => {
 
   return (
     <main className="auth auth--configuracion">
+      <BotonTema ubicacion="flotante" />
       <section className="auth__tarjeta">
         <div className="auth__marca">
           <span className="auth__logo">P</span>

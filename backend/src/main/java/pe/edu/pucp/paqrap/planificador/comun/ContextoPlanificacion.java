@@ -57,6 +57,15 @@ public record ContextoPlanificacion(
     }
 
     /**
+     * Primer minuto en que la unidad puede salir del almacen: el inicio de la
+     * planificacion o, si aun recorre la ruta de un turno anterior, su regreso.
+     * La salida efectiva de cada ruta la fija {@link RelojRuta}.
+     */
+    public int minutoDisponible(UnidadTransporte unidad) {
+        return Math.max(minutoPlanificacion, unidad.getMinutoLibreDesde());
+    }
+
+    /**
      * Averias que caen dentro del turno planificado: la unidad sale del
      * almacen, pero queda fuera de servicio antes de terminar su ruta.
      */

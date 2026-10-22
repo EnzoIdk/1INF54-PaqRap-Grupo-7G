@@ -28,7 +28,7 @@ const CapaPedidos = ({ pedidos, escala, unidadEnfocada }: CapaPedidosProps) => (
           cy={escala.aY(pedido.y)}
           r={3.5}
           fill={COLOR_ESTADO_PEDIDO[pedido.estado]}
-          stroke="#ffffff"
+          stroke="var(--color-fondo)"
           strokeWidth={1.5}
           opacity={atenuado ? 0.25 : 1}
         >

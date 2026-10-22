@@ -5,10 +5,40 @@ Registro de las versiones entregadas del proyecto PaqRap, conforme a la sección
 ## [Unreleased]
 
 ### Fixed
+- Ninguna entrega ocurre antes de que su pedido se registre (RF-04). Antes cada turno
+  salía a su hora de inicio con todos los pedidos de la ventana y llegaba a clientes cuyo
+  pedido aún no existía. Ahora la unidad sale del almacén cuando ya existen todos los
+  pedidos de su ruta, y un pedido posterior solo se agrega si las paradas ya aceptadas
+  siguen en plazo. La regla vive en `RelojRuta` (`planificador.comun`) y la usan por igual
+  el I-ACO, el AGA-ES-TW, la función objetivo y el ensamblado del plan, de modo que la
+  comparación entre los dos algoritmos se mantiene.
+- En las simulaciones de 5 días y hasta el colapso, una unidad ya no sale con una ruta
+  nueva antes de volver al almacén de la anterior (`UnidadTransporte.ocuparHasta`).
+- `ConstructorRutas` acumula el reloj en minutos exactos, como la función objetivo, y solo
+  redondea lo que muestra. Antes los redondeos sumados podían correr una entrega un minuto
+  más allá del plazo que el algoritmo había evaluado como cumplido; así colapsaba el
+  AGA-ES-TW el 12/06/2026 en la simulación hasta el colapso.
+- Hora de alimentación: si la unidad espera en el almacén el registro de sus pedidos, el
+  conductor come durante la espera sin retrasar entregas; y la ventana (RF-27) se evalúa en
+  el turno en que cae la pausa, porque en una ruta que cruza el cambio de turno el conductor
+  siguiente toma la unidad en ese punto (Q&A 12).
 - Ubicación de los almacenes según la respuesta "CAMBIO" del Q&A: central (27,14),
   Nor-Oeste (12,38) y Este (57,27).
 
 ### Added
+- Modo oscuro en todo el visualizador: botón sol/luna en la barra lateral y en las
+  pantallas de acceso; respeta la preferencia del sistema operativo la primera vez y
+  recuerda la elección. Todos los colores salen de los tokens de `tokens.css` (el tema
+  oscuro los redefine bajo `[data-tema="oscuro"]`), con contraste de al menos 4.5:1 en
+  textos y estados.
+- Reinicio de datos antes de un nuevo escenario (RF-50): la Consola de Simulación descarta
+  el plan, el reloj, las averías inyectadas y los pedidos registrados, previa confirmación.
+- Validación del formulario de averías en los tres escenarios (RF-64): el código de unidad
+  debe tener la forma TTNN (TA01, TM03, TB10) y la hora estar entre 0 y 23; si no, se
+  indica el error junto al campo y no se permite agregar la avería.
+- Uso desde tabletas y celulares (RF-36): bajo 860 px la barra lateral pasa a una barra
+  superior compacta que conserva la sesión, el tema y el cierre de sesión, y los
+  encabezados envuelven sus acciones en lugar de desbordar.
 - Escenario **Día a día** en tiempo real (RF-44): turno vigente según la hora de Lima,
   reloj sincronizado con la hora real y planificación automática del turno siguiente.
 - Pedidos registrados por el usuario, uno a uno o desde un archivo con el formato de

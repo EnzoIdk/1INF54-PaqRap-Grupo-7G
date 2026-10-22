@@ -43,26 +43,32 @@ public class ConstructorRutas {
     public Ruta construir(UnidadTransporte unidad,
                           Almacen almacenOrigen,
                           List<Pedido> pedidosEnOrden,
-                          int minutoPlanificacion,
+                          int minutoDisponible,
                           Grafo grafo) {
-        return construir(unidad, almacenOrigen, pedidosEnOrden, minutoPlanificacion, grafo, List.of(almacenOrigen));
+        return construir(unidad, almacenOrigen, pedidosEnOrden, minutoDisponible, grafo, List.of(almacenOrigen));
     }
 
+    /**
+     * @param minutoDisponible primer minuto en que la unidad puede salir; la
+     *                         salida real espera ademas el registro del ultimo
+     *                         de sus pedidos (RF-04, {@link RelojRuta})
+     */
     public Ruta construir(UnidadTransporte unidad,
                           Almacen almacenOrigen,
                           List<Pedido> pedidosEnOrden,
-                          int minutoPlanificacion,
+                          int minutoDisponible,
                           Grafo grafo,
                           List<Almacen> almacenesDisponibles) {
-        Ruta ruta = new Ruta(unidad, almacenOrigen, minutoPlanificacion);
+        int minutoSalidaAlmacen = RelojRuta.minutoSalida(minutoDisponible, pedidosEnOrden);
+        Ruta ruta = new Ruta(unidad, almacenOrigen, minutoSalidaAlmacen);
 
         Nodo posicion = almacenOrigen.getUbicacion();
-        double reloj = minutoPlanificacion;
+        double reloj = minutoSalidaAlmacen;
 
         List<Nodo> recorrido = new ArrayList<>();
         List<Integer> minutos = new ArrayList<>();
         recorrido.add(posicion);
-        minutos.add(minutoPlanificacion);
+        minutos.add(minutoSalidaAlmacen);
 
         List<ParadaRuta> paradas = new ArrayList<>();
         // Posicion, dentro del recorrido, del nodo con el que la unidad deja cada parada.
@@ -86,7 +92,10 @@ public class ConstructorRutas {
             minutos.add(minutoSalida);
             nodoDeSalida.add(recorrido.size() - 1);
 
-            reloj = minutoSalida;
+            // El reloj sigue en minutos exactos, como en EnsambladorPlan: solo se
+            // redondea lo que se muestra. Acumular redondeos llegaba a correr una
+            // entrega un minuto mas alla del plazo que el algoritmo evaluo cumplido.
+            reloj = minutoLlegadaExacto + ConstantesPaqrap.MINUTOS_ENTREGA_DESTINATARIO;
             posicion = destino;
         }
 
@@ -104,7 +113,7 @@ public class ConstructorRutas {
         }
 
         ProgramadorAlimentacion.Programacion pausa = programadorAlimentacion.programar(
-                paradas, minutoPlanificacion, (int) Math.round(minutosViajeRetorno));
+                paradas, minutoSalidaAlmacen, (int) Math.round(minutosViajeRetorno), minutoDisponible);
         if (pausa != null && pausa.desplazaParadas()) {
             intercalarPausa(pausa, paradas, nodoDeSalida, recorrido, minutos);
             // Todo lo que sigue a la pausa, incluido el retorno, se corre una hora.

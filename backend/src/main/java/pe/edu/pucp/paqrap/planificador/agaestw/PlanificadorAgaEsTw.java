@@ -3,7 +3,6 @@ package pe.edu.pucp.paqrap.planificador.agaestw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import pe.edu.pucp.paqrap.config.ConstantesPaqrap;
 import pe.edu.pucp.paqrap.config.ParametrosPlanificador;
 import pe.edu.pucp.paqrap.model.Almacen;
 import pe.edu.pucp.paqrap.model.Averia;
@@ -18,6 +17,7 @@ import pe.edu.pucp.paqrap.planificador.comun.ContextoPlanificacion;
 import pe.edu.pucp.paqrap.planificador.comun.EnsambladorPlan;
 import pe.edu.pucp.paqrap.planificador.comun.EvaluadorCosto;
 import pe.edu.pucp.paqrap.planificador.comun.GeneradorAleatorio;
+import pe.edu.pucp.paqrap.planificador.comun.RelojRuta;
 import pe.edu.pucp.paqrap.planificador.comun.RestriccionesPlanificacion;
 import pe.edu.pucp.paqrap.planificador.comun.SelectorAlmacenDespacho;
 
@@ -182,7 +182,8 @@ public class PlanificadorAgaEsTw implements Planificador {
 
     /**
      * Genera un cromosoma factible: respeta la capacidad de la unidad, el
-     * stock del almacen de despacho, el plazo comprometido y la jornada
+     * stock del almacen de despacho, el plazo comprometido, el registro de
+     * cada pedido -ninguna entrega antes de que exista- y la jornada
      * laboral. El limite de 1 000 unidades del almacen intermedio se
      * verifica durante la construccion y no se multa despues.
      */
@@ -203,8 +204,7 @@ public class PlanificadorAgaEsTw implements Planificador {
             AsignacionUnidad asignacion = new AsignacionUnidad(unidad, almacenOrigen);
 
             int carga = 0;
-            double reloj = contexto.minutoPlanificacion();
-            double minutosTrabajados = 0.0;
+            RelojRuta reloj = new RelojRuta(contexto.minutoDisponible(unidad));
             Nodo posicion = almacenOrigen.getUbicacion();
 
             Iterator<Pedido> iterador = sinAsignar.iterator();
@@ -222,10 +222,13 @@ public class PlanificadorAgaEsTw implements Planificador {
                 double distanciaKm = contexto.grafo().distanciaKm(posicion, pedido.getUbicacion());
                 double minutosViaje = evaluadorCosto.minutosDeViaje(unidad.getTipoUnidad(), distanciaKm);
 
-                if (!restricciones.cumpleElPlazo(pedido, reloj + minutosViaje)) {
+                if (!reloj.admitePostergacion(pedido)) {
                     continue;
                 }
-                if (!restricciones.cabeEnLaJornada(minutosTrabajados, minutosViaje)) {
+                if (!restricciones.cumpleElPlazo(pedido, reloj.llegadaA(pedido, minutosViaje))) {
+                    continue;
+                }
+                if (!restricciones.cabeEnLaJornada(reloj.getMinutosTrabajados(), minutosViaje)) {
                     continue;
                 }
 
@@ -235,8 +238,7 @@ public class PlanificadorAgaEsTw implements Planificador {
                     despachadoPorAlmacen.merge(almacenOrigen, pedido.getCantidadProducto(), Integer::sum);
                 }
 
-                reloj += minutosViaje + ConstantesPaqrap.MINUTOS_ENTREGA_DESTINATARIO;
-                minutosTrabajados += minutosViaje + ConstantesPaqrap.MINUTOS_ENTREGA_DESTINATARIO;
+                reloj.agregar(pedido, minutosViaje);
                 posicion = pedido.getUbicacion();
                 iterador.remove();
             }

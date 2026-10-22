@@ -31,7 +31,7 @@ const LeyendaMapa = ({ almacenCentral }: LeyendaMapaProps) => (
       <ul>
         <li>
           <span className="leyenda__cuadro leyenda__cuadro--central">
-            <Warehouse size={9} color="#ffffff" />
+            <Warehouse size={9} color="var(--color-texto-sobre-color)" />
           </span>
           Almacén central
           {almacenCentral && (
@@ -43,7 +43,7 @@ const LeyendaMapa = ({ almacenCentral }: LeyendaMapaProps) => (
         </li>
         <li>
           <span className="leyenda__cuadro leyenda__cuadro--intermedio">
-            <Warehouse size={8} color="#ffffff" />
+            <Warehouse size={8} color="var(--color-texto-sobre-color)" />
           </span>
           Almacén intermedio
         </li>

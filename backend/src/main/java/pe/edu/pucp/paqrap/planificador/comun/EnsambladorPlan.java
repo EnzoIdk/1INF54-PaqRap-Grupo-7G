@@ -64,8 +64,10 @@ public class EnsambladorPlan {
 
     /**
      * Costo mas multas de una sola asignacion, sin construir la ruta. El
-     * reloj avanza igual que en {@link ConstructorRutas}: la llegada define
-     * el cumplimiento del plazo y la hora de entrega se suma despues.
+     * reloj avanza igual que en {@link ConstructorRutas}: la unidad sale
+     * cuando ya existen todos sus pedidos ({@link RelojRuta#minutoSalida}),
+     * la llegada define el cumplimiento del plazo y la hora de entrega se
+     * suma despues.
      */
     public double evaluarAsignacion(AsignacionUnidad asignacion, ContextoPlanificacion contexto) {
         if (asignacion.estaVacia()) {
@@ -75,7 +77,8 @@ public class EnsambladorPlan {
         double costoPorKm = evaluadorCosto.obtenerCostoPorKm(asignacion.getUnidad().getTipoUnidad());
         double distanciaKm = 0.0;
         double multas = 0.0;
-        double reloj = contexto.minutoPlanificacion();
+        double reloj = RelojRuta.minutoSalida(
+                contexto.minutoDisponible(asignacion.getUnidad()), asignacion.getPedidos());
         Nodo posicion = asignacion.getAlmacenOrigen().getUbicacion();
 
         for (Pedido pedido : asignacion.getPedidos()) {
@@ -124,7 +127,7 @@ public class EnsambladorPlan {
                     asignacion.getUnidad(),
                     asignacion.getAlmacenOrigen(),
                     asignacion.getPedidos(),
-                    contexto.minutoPlanificacion(),
+                    contexto.minutoDisponible(asignacion.getUnidad()),
                     contexto.grafo(),
                     contexto.almacenes());
             ruta.getParadas().stream()

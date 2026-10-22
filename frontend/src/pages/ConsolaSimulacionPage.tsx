@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, CirclePlay, FileText, Plus, TriangleAlert, Trash2 } from "lucide-react";
+import { Calendar, CirclePlay, FileText, Plus, RotateCcw, TriangleAlert, Trash2 } from "lucide-react";
 import Encabezado from "../components/layout/Encabezado";
 import Boton from "../components/comunes/Boton";
 import Indicador from "../components/comunes/Indicador";
@@ -52,6 +52,25 @@ const OPCIONES_MODO: OpcionTab[] = [
   { id: "5D", etiqueta: "Simulación 5 días", detalle: "15 turnos consecutivos · 120 h" },
   { id: "COLAPSO", etiqueta: "Simulación hasta el colapso", detalle: "Continuo hasta ruptura del servicio" },
 ];
+
+/** Codigo de unidad TTNN: TA (auto), TM (moto) o TB (bicicleta) y un correlativo (Q&A 18). */
+const PATRON_CODIGO_UNIDAD = /^T[AMB]\d{2}$/;
+
+type ErroresAveria = { codigoUnidad?: string; hora?: string };
+
+/** Errores del formulario de una avería; vacío cuando se puede agregar (RF-64). */
+function validarAveria(codigoUnidad: string, hora: number): ErroresAveria {
+  const errores: ErroresAveria = {};
+  if (!codigoUnidad.trim()) {
+    errores.codigoUnidad = "Obligatorio";
+  } else if (!PATRON_CODIGO_UNIDAD.test(codigoUnidad.trim())) {
+    errores.codigoUnidad = "Use la forma TA01, TM03 o TB10";
+  }
+  if (!Number.isInteger(hora) || hora < 0 || hora > 23) {
+    errores.hora = "Entre 0 y 23";
+  }
+  return errores;
+}
 
 /**
  * Consola de la experimentacion numerica: permite configurar y lanzar
@@ -108,6 +127,26 @@ const ConsolaSimulacionPage = () => {
   const quitarAveria = useSimulacionStore((estado) => estado.quitarAveria);
   const escenario = useSimulacionStore((estado) => estado.escenario);
   const ejecuciones = useSimulacionStore((estado) => estado.ejecuciones);
+  const reiniciarDatos = useSimulacionStore((estado) => estado.reiniciarDatos);
+  const pedidosAdicionales = useSimulacionStore((estado) => estado.pedidosAdicionales);
+  const hayDatosQueReiniciar =
+    escenario !== null ||
+    pedidosAdicionales.length > 0 ||
+    (parametros.averias?.length ?? 0) > 0 ||
+    (parametros5D.averias?.length ?? 0) > 0 ||
+    (parametrosColapso.averias?.length ?? 0) > 0;
+
+  // Reinicio de datos antes de un nuevo escenario (RF-50): pide confirmacion
+  // porque descarta el plan que se esta reproduciendo.
+  const handleReiniciarDatos = () => {
+    if (
+      window.confirm(
+        "Se descartarán el plan actual, las averías inyectadas y los pedidos registrados. ¿Desea continuar?",
+      )
+    ) {
+      reiniciarDatos();
+    }
+  };
 
   const [nuevaAveria, setNuevaAveria] = useState({
     codigoUnidad: "TA01",
@@ -128,6 +167,10 @@ const ConsolaSimulacionPage = () => {
     dia: parametrosColapso.diaInicio,
     hora: 10,
   });
+
+  const erroresAveria = validarAveria(nuevaAveria.codigoUnidad, nuevaAveria.hora);
+  const erroresAveria5D = validarAveria(nuevaAveria5D.codigoUnidad, nuevaAveria5D.hora);
+  const erroresAveriaColapso = validarAveria(nuevaAveriaColapso.codigoUnidad, nuevaAveriaColapso.hora);
 
   // Mantener sincronizado el dia de nuevaAveria5D si cambia el diaInicio
   useEffect(() => {
@@ -194,6 +237,16 @@ const ConsolaSimulacionPage = () => {
               : "Experimentación numérica sobre los archivos de ventas, bloqueos y mantenimiento del cliente"
         }
         acciones={
+          <>
+          <Boton
+            variante="secundario"
+            onClick={handleReiniciarDatos}
+            disabled={cargando || !hayDatosQueReiniciar}
+            icono={<RotateCcw size={16} />}
+            title="Descarta el plan, las averías y los pedidos registrados antes de un nuevo escenario"
+          >
+            Reiniciar datos
+          </Boton>
           <Boton
             variante="accion"
             onClick={handleEjecutar}
@@ -218,6 +271,7 @@ const ConsolaSimulacionPage = () => {
                   ? "Ejecutar simulación 5 días"
                   : "Ejecutar planificación"}
           </Boton>
+          </>
         }
       />
 
@@ -392,6 +446,7 @@ const ConsolaSimulacionPage = () => {
                     etiqueta="Unidad"
                     value={nuevaAveria.codigoUnidad}
                     placeholder="TA01"
+                    error={erroresAveria.codigoUnidad}
                     onChange={(evento) =>
                       setNuevaAveria({ ...nuevaAveria, codigoUnidad: evento.target.value.toUpperCase() })
                     }
@@ -408,11 +463,13 @@ const ConsolaSimulacionPage = () => {
                     min={0}
                     max={23}
                     value={nuevaAveria.hora}
+                    error={erroresAveria.hora}
                     onChange={(evento) => setNuevaAveria({ ...nuevaAveria, hora: Number(evento.target.value) })}
                   />
                   <Boton
                     variante="secundario"
                     icono={<Plus size={15} />}
+                    disabled={Object.keys(erroresAveria).length > 0}
                     onClick={() =>
                       agregarAveria({
                         codigoUnidad: nuevaAveria.codigoUnidad,
@@ -622,6 +679,7 @@ const ConsolaSimulacionPage = () => {
                     etiqueta="Unidad"
                     value={nuevaAveria5D.codigoUnidad}
                     placeholder="TA01"
+                    error={erroresAveria5D.codigoUnidad}
                     onChange={(evento) =>
                       setNuevaAveria5D({
                         ...nuevaAveria5D,
@@ -643,6 +701,7 @@ const ConsolaSimulacionPage = () => {
                     min={0}
                     max={23}
                     value={nuevaAveria5D.hora}
+                    error={erroresAveria5D.hora}
                     onChange={(evento) =>
                       setNuevaAveria5D({ ...nuevaAveria5D, hora: Number(evento.target.value) })
                     }
@@ -650,6 +709,7 @@ const ConsolaSimulacionPage = () => {
                   <Boton
                     variante="secundario"
                     icono={<Plus size={15} />}
+                    disabled={Object.keys(erroresAveria5D).length > 0}
                     onClick={() =>
                       agregarAveria5D({
                         codigoUnidad: nuevaAveria5D.codigoUnidad,
@@ -866,6 +926,7 @@ const ConsolaSimulacionPage = () => {
                     etiqueta="Unidad"
                     value={nuevaAveriaColapso.codigoUnidad}
                     placeholder="TA01"
+                    error={erroresAveriaColapso.codigoUnidad}
                     onChange={(evento) =>
                       setNuevaAveriaColapso({
                         ...nuevaAveriaColapso,
@@ -887,6 +948,7 @@ const ConsolaSimulacionPage = () => {
                     min={0}
                     max={23}
                     value={nuevaAveriaColapso.hora}
+                    error={erroresAveriaColapso.hora}
                     onChange={(evento) =>
                       setNuevaAveriaColapso({ ...nuevaAveriaColapso, hora: Number(evento.target.value) })
                     }
@@ -894,6 +956,7 @@ const ConsolaSimulacionPage = () => {
                   <Boton
                     variante="secundario"
                     icono={<Plus size={15} />}
+                    disabled={Object.keys(erroresAveriaColapso).length > 0}
                     onClick={() =>
                       agregarAveriaColapso({
                         codigoUnidad: nuevaAveriaColapso.codigoUnidad,

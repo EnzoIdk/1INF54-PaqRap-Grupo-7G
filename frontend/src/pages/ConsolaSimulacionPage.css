@@ -62,7 +62,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: var(--color-primario);
+  color: var(--color-enlace);
 }
 
 .consola__info-5d-desc {
@@ -78,7 +78,7 @@
   gap: 6px;
   padding: 12px 14px;
   background-color: rgba(239, 68, 68, 0.1);
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid var(--color-semaforo-rojo);
   border-radius: 6px;
   color: var(--color-texto);
   font-size: 12.5px;
@@ -89,7 +89,7 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #ef4444;
+  color: var(--color-semaforo-rojo);
 }
 
 .consola__info-colapso-desc {

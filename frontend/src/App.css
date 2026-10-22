@@ -21,6 +21,11 @@
   color: var(--color-texto-tenue);
 }
 
+/*
+ * Tabletas y celulares (RF-36): la barra lateral pasa a ser una barra
+ * superior compacta -marca y sesion arriba, modulos en una fila que se
+ * desliza- y los encabezados envuelven sus acciones en lugar de desbordar.
+ */
 @media (max-width: 860px) {
   .aplicacion {
     flex-direction: column;
@@ -29,18 +34,94 @@
   }
 
   .navside {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "marca usuario"
+      "modulos modulos";
+    align-items: center;
+    gap: 10px 12px;
     width: 100%;
     flex: 0 0 auto;
-    padding: 12px 14px;
+    padding: 10px 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-navside-borde);
+  }
+
+  .navside__marca {
+    grid-area: marca;
+    padding: 0;
+  }
+
+  .navside__separador {
+    display: none;
+  }
+
+  .navside__usuario {
+    grid-area: usuario;
+    justify-self: end;
+    gap: 8px;
+    padding: 0;
   }
 
   .navside__modulos {
+    grid-area: modulos;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .navside__usuario,
-  .navside__separador:last-of-type {
+  .navside__modulos::-webkit-scrollbar {
+    display: none;
+  }
+
+  .navside__enlace {
+    height: 34px;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
+  /* La marca del modulo activo pasa al borde inferior. */
+  .navside__enlace--activo::before {
+    top: auto;
+    right: 10px;
+    bottom: 0;
+    left: 10px;
+    width: auto;
+    height: 3px;
+    border-radius: 2px 2px 0 0;
+  }
+
+  .encabezado {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .encabezado__identidad {
+    flex: 1 1 100%;
+  }
+
+  .encabezado__titulo {
+    white-space: normal;
+  }
+
+  .encabezado__extremo {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .encabezado__busqueda {
+    flex: 1 1 220px;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  /* En un celular solo quedan el avatar y los botones de tema y salida. */
+  .navside__usuario > span:nth-child(2),
+  .navside__lema {
     display: none;
   }
 }

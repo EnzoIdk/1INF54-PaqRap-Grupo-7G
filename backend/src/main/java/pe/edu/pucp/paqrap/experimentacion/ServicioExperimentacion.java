@@ -202,6 +202,9 @@ public class ServicioExperimentacion {
         double distanciaTotalKm = 0;
 
         Map<String, Almacen> almacenActualPorUnidad = new HashMap<>();
+        // Minuto en que cada unidad vuelve de su ultima ruta: una salida postergada
+        // hasta el registro de sus pedidos puede pasar al turno siguiente.
+        Map<String, Integer> libreDesdePorUnidad = new HashMap<>();
 
         for (int s = 0; s < numTurnos; s++) {
             int turnoInicio = minutoInicio + s * duracionTurno;
@@ -255,6 +258,10 @@ public class ServicioExperimentacion {
                 Almacen almacenDondeEsta = almacenActualPorUnidad.get(unidad.getCodigo());
                 if (almacenDondeEsta != null) {
                     unidad.setUbicacion(almacenDondeEsta.getUbicacion());
+                }
+                Integer libreDesde = libreDesdePorUnidad.get(unidad.getCodigo());
+                if (libreDesde != null) {
+                    unidad.ocuparHasta(libreDesde);
                 }
             }
             cargadorEscenario.aplicarMantenimiento(flotaTurno, mantenimientos, escenario.conjunto().mes(), diaActual, turnoInicio);
@@ -312,6 +319,7 @@ public class ServicioExperimentacion {
 
                 // La unidad completó su retorno y queda estacionada en su almacenDestino
                 almacenActualPorUnidad.put(ruta.getUnidadTransporte().getCodigo(), ruta.getAlmacenDestino());
+                libreDesdePorUnidad.put(ruta.getUnidadTransporte().getCodigo(), ruta.getMinutoFin());
             }
 
             // Los pedidos no asignados en este turno se evaluan:
@@ -474,6 +482,9 @@ public class ServicioExperimentacion {
         String motivoColapso = null;
 
         Map<String, Almacen> almacenActualPorUnidad = new HashMap<>();
+        // Minuto en que cada unidad vuelve de su ultima ruta: una salida postergada
+        // hasta el registro de sus pedidos puede pasar al turno siguiente.
+        Map<String, Integer> libreDesdePorUnidad = new HashMap<>();
 
         for (int s = 0; s < maxTurnos; s++) {
             int turnoInicio = minutoInicio + s * duracionTurno;
@@ -542,6 +553,10 @@ public class ServicioExperimentacion {
                 Almacen almacenDondeEsta = almacenActualPorUnidad.get(unidad.getCodigo());
                 if (almacenDondeEsta != null) {
                     unidad.setUbicacion(almacenDondeEsta.getUbicacion());
+                }
+                Integer libreDesde = libreDesdePorUnidad.get(unidad.getCodigo());
+                if (libreDesde != null) {
+                    unidad.ocuparHasta(libreDesde);
                 }
             }
             cargadorEscenario.aplicarMantenimiento(flotaTurno, mantenimientos, escenario.conjunto().mes(), diaActual, turnoInicio);
@@ -613,6 +628,7 @@ public class ServicioExperimentacion {
 
                 // La unidad completó su retorno y queda estacionada en su almacenDestino
                 almacenActualPorUnidad.put(ruta.getUnidadTransporte().getCodigo(), ruta.getAlmacenDestino());
+                libreDesdePorUnidad.put(ruta.getUnidadTransporte().getCodigo(), ruta.getMinutoFin());
             }
 
             // 3. Verificacion post-turno: pedidos no asignados cuyo plazo expira antes o al inicio del proximo turno

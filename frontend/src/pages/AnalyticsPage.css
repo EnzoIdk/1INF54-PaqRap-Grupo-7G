@@ -34,7 +34,7 @@
 }
 
 .analytics__veredicto svg {
-  color: var(--color-azul-accion);
+  color: var(--color-enlace);
   flex: 0 0 auto;
 }
 
@@ -163,13 +163,13 @@
 
 .badge-colapso.colapsado {
   background-color: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--color-semaforo-rojo);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .badge-colapso.estable {
   background-color: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--color-semaforo-verde);
   border: 1px solid rgba(34, 197, 94, 0.3);
 }
 
@@ -191,7 +191,7 @@
   padding: 8px;
   background-color: var(--color-fondo);
   border-radius: 4px;
-  border-left: 3px solid #ef4444;
+  border-left: 3px solid var(--color-semaforo-rojo);
 }
 
 .colapso-motivo p {

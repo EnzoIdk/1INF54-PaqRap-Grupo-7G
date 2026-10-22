@@ -145,8 +145,8 @@ const PlazosReales = ({ porPlazo, anticipadas }: { porPlazo: ResumenPlazo[]; ant
       </p>
       {anticipadas > 0 && (
         <p className="plazo--critica reportes__nota">
-          {anticipadas} entrega(s) quedaron planificadas antes de que su pedido se registrara (cuentan como 0 h): el
-          turno sale a su hora de inicio con todos los pedidos de la ventana.
+          {anticipadas} entrega(s) quedaron planificadas antes de que su pedido se registrara (cuentan como 0 h).
+          El planificador no debería producirlas: revise la versión del backend.
         </p>
       )}
     </div>

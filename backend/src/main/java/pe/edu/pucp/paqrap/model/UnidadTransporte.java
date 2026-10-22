@@ -51,6 +51,13 @@ public class UnidadTransporte {
     @Transient
     private TipoAveria averiaActiva;
 
+    /**
+     * Minuto en que la unidad vuelve al almacen de la ruta que ya tiene en
+     * curso. Esta operativa, pero no puede salir con otra carga antes.
+     */
+    @Transient
+    private int minutoLibreDesde = Integer.MIN_VALUE;
+
     protected UnidadTransporte() {
     }
 
@@ -83,6 +90,15 @@ public class UnidadTransporte {
         this.averiaActiva = tipo;
         this.minutoDisponibleDesde = minutoDisponibleDesde;
         this.estado = EstadoUnidad.AVERIADA;
+    }
+
+    /** La unidad tiene una ruta en curso que termina en el minuto dado. */
+    public void ocuparHasta(int minutoFinRuta) {
+        this.minutoLibreDesde = minutoFinRuta;
+    }
+
+    public int getMinutoLibreDesde() {
+        return minutoLibreDesde;
     }
 
     public Long getId() {

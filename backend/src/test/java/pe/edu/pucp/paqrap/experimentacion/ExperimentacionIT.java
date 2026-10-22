@@ -7,7 +7,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import pe.edu.pucp.paqrap.dto.ExperimentacionResponse;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -149,6 +152,38 @@ class ExperimentacionIT {
             assertNotNull(ejecucion.motivoColapso());
             assertTrue(ejecucion.fechaHoraColapso().contains("Día"));
             assertTrue(ejecucion.motivoColapso().length() > 10);
+        }
+    }
+
+    @Test
+    @DisplayName("Ninguna entrega ocurre antes del registro del pedido ni una unidad recorre dos rutas a la vez")
+    void ningunaEntregaAntesDelRegistro() {
+        ExperimentacionResponse unTurno = servicioExperimentacion.ejecutar(parametrosDePrueba("ventas.202601.txt", 1, 12));
+        ExperimentacionResponse cincoDias = servicioExperimentacion.ejecutarCincoDias(new ParametrosCincoDias(
+                "ventas.202601.txt", 1, 7, 60, "AMBOS", 20260917L, null, null, null, List.of()));
+
+        for (ExperimentacionResponse respuesta : List.of(unTurno, cincoDias)) {
+            for (ExperimentacionResponse.EjecucionDto ejecucion : respuesta.ejecuciones()) {
+                assertTrue(ejecucion.metricas().pedidosAtendidos() > 0, ejecucion.algoritmo() + " debe atender pedidos");
+                ejecucion.rutas().forEach(ruta -> ruta.paradas().forEach(parada -> {
+                    assertTrue(parada.minutoLlegada() >= parada.minutoRegistro(),
+                            ejecucion.algoritmo() + ": " + parada.codigoPedido() + " llega antes de registrarse");
+                    assertTrue(ruta.minutoSalida() >= parada.minutoRegistro(),
+                            ejecucion.algoritmo() + ": " + ruta.codigoUnidad() + " sale sin tener " + parada.codigoPedido());
+                }));
+
+                Map<String, List<ExperimentacionResponse.RutaDto>> rutasPorUnidad = ejecucion.rutas().stream()
+                        .collect(Collectors.groupingBy(ExperimentacionResponse.RutaDto::codigoUnidad));
+                rutasPorUnidad.forEach((unidad, rutas) -> {
+                    List<ExperimentacionResponse.RutaDto> ordenadas = rutas.stream()
+                            .sorted(Comparator.comparingInt(ExperimentacionResponse.RutaDto::minutoSalida))
+                            .toList();
+                    for (int i = 1; i < ordenadas.size(); i++) {
+                        assertTrue(ordenadas.get(i).minutoSalida() >= ordenadas.get(i - 1).minutoFin(),
+                                ejecucion.algoritmo() + ": " + unidad + " sale antes de volver de su ruta anterior");
+                    }
+                });
+            }
         }
     }
 

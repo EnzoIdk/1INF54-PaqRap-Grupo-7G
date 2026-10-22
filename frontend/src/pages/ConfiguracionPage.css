@@ -62,7 +62,7 @@
 .configuracion__valor {
   text-align: right;
   font-weight: 600;
-  color: var(--color-azul-accion);
+  color: var(--color-enlace);
 }
 
 @media (max-width: 900px) {

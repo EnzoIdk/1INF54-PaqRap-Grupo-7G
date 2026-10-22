@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { BarChart3, LogOut, Map, Package, Play, Settings, User, UserRoundCog } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
+import BotonTema from "../comunes/BotonTema";
 import "./Navside.css";
 
 const MODULOS = [
@@ -59,6 +60,7 @@ const Navside = () => {
         <span className="navside__nombre navside__nombre--usuario">{usuario?.username}</span>
         <span className="navside__lema">{usuario?.rol === "ADMIN" ? "Administrador" : "Usuario"}</span>
       </span>
+      <BotonTema />
       <button
         className="navside__salir"
         type="button"

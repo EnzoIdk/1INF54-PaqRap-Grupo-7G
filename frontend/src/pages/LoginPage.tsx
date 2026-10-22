@@ -3,6 +3,7 @@ import { ArrowRight, LockKeyhole, UserRound } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { FormEvent } from "react";
 import { mensajeErrorAuth, useAuth } from "../auth/AuthContext";
+import BotonTema from "../components/comunes/BotonTema";
 import "./AuthPage.css";
 
 const LoginPage = () => {
@@ -36,6 +37,7 @@ const LoginPage = () => {
 
   return (
     <main className="auth">
+      <BotonTema ubicacion="flotante" />
       <section className="auth__tarjeta">
         <div className="auth__marca">
           <span className="auth__logo">P</span>

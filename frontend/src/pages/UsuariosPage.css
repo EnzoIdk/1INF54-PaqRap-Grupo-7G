@@ -63,7 +63,7 @@
   border: 0;
   border-radius: var(--radio);
   background: var(--color-azul-accion);
-  color: white;
+  color: var(--color-texto-sobre-color);
   font-weight: 600;
   cursor: pointer;
 }
@@ -82,12 +82,12 @@
 
 .usuarios__aviso--error {
   background: var(--color-rojo-suave);
-  color: #991b1b;
+  color: var(--color-texto-error);
 }
 
 .usuarios__aviso--ok {
   background: var(--color-verde-suave);
-  color: #166534;
+  color: var(--color-texto-exito);
 }
 
 .usuarios__contador {
@@ -140,7 +140,7 @@
 
 .usuarios__estado--activo {
   background: var(--color-verde-suave);
-  color: #166534;
+  color: var(--color-texto-exito);
 }
 
 .usuarios__accion {
@@ -148,7 +148,7 @@
   border: 0;
   border-radius: 5px;
   background: transparent;
-  color: var(--color-azul-accion);
+  color: var(--color-enlace);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;

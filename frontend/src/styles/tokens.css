@@ -2,12 +2,42 @@
  * Paleta y escalas del documento "STD - Estandares de Interfaz Grafica de
  * Usuario" (secciones 2.1 a 2.5). Se declaran una sola vez: ningun
  * componente debe escribir un color literal (STD 5.6).
+ *
+ * El tema claro es el de :root; el oscuro redefine los mismos tokens bajo
+ * [data-tema="oscuro"], de modo que los componentes no saben en que tema
+ * estan. El atributo lo fija index.html antes de pintar y useTema al
+ * alternarlo.
  */
 :root {
+  color-scheme: light;
+
   /* --- Colores de marca (STD 2.1) --- */
   --color-azul-paqrap: #0e2a47;
   --color-azul-accion: #2563eb;
   --color-cian-apoyo: #0891b2;
+  /* Alias usado por la consola para el acento principal. */
+  --color-primario: var(--color-azul-accion);
+  /* Texto de enlace o resaltado en azul sobre una superficie. */
+  --color-enlace: #2563eb;
+  /* Nombre de la marca escrito sobre la superficie (login). */
+  --color-marca: #0e2a47;
+
+  /* --- Superficies de apoyo --- */
+  --color-navside: #0e2a47;
+  --color-navside-borde: transparent;
+  --color-texto-sobre-color: #ffffff;
+  --color-velo: rgba(255, 255, 255, 0.92);
+
+  /* --- Estados de los botones (STD 2.5.1) --- */
+  --color-primario-hover: #14375c;
+  --color-accion-hover: #1d4ed8;
+  --color-destructivo: #dc2626;
+  --color-destructivo-hover: #b91c1c;
+
+  /* --- Mensajes de error y de exito --- */
+  --color-texto-error: #991b1b;
+  --color-borde-error: #fecaca;
+  --color-texto-exito: #166534;
 
   /* --- Neutros (STD 2.1) --- */
   --color-texto: #111827;
@@ -72,4 +102,80 @@
   --sombra-tarjeta: 0 1px 2px rgba(17, 24, 39, 0.04);
   --sombra-flotante: 0 8px 24px rgba(17, 24, 39, 0.12);
   --anillo-foco: 0 0 0 2px rgba(37, 99, 235, 0.4);
+}
+
+/*
+ * Tema oscuro. Cada par texto/fondo conserva al menos 4.5:1 de contraste
+ * (texto 13.8:1, secundario 7.9:1, tenue 5.6:1, badges de estado >= 5.7:1);
+ * los colores de estado y de tipo de unidad se aclaran para seguir
+ * distinguiendose sobre el fondo oscuro.
+ */
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+
+  /* --- Marca --- */
+  --color-azul-paqrap: #2f5d8f;
+  --color-azul-accion: #2563eb;
+  --color-cian-apoyo: #22d3ee;
+  --color-enlace: #7aa7ff;
+  --color-marca: #dbe7ff;
+
+  /* --- Superficies de apoyo --- */
+  --color-navside: #0a1019;
+  --color-navside-borde: #222c3b;
+  --color-velo: rgba(14, 20, 31, 0.9);
+
+  /* --- Botones --- */
+  --color-primario-hover: #3a6ca3;
+  --color-accion-hover: #3b74f0;
+
+  /* --- Mensajes --- */
+  --color-texto-error: #fca5a5;
+  --color-borde-error: #7f1d1d;
+  --color-texto-exito: #86efac;
+
+  /* --- Neutros --- */
+  --color-texto: #e6e9ef;
+  --color-texto-secundario: #aab3c2;
+  --color-texto-tenue: #8b96a8;
+  --color-borde: #2e394b;
+  --color-superficie: #0e141f;
+  --color-fondo: #161e2b;
+  --color-fila-par: #1a2331;
+
+  /* --- Semaforo --- */
+  --color-semaforo-verde: #22c55e;
+  --color-semaforo-ambar: #f59e0b;
+  --color-semaforo-rojo: #f87171;
+
+  --color-verde-suave: #11321f;
+  --color-ambar-suave: #3a2a0a;
+  --color-rojo-suave: #3d1619;
+  --color-azul-suave: #15284a;
+  --color-morado-suave: #261f47;
+  --color-gris-suave: #1f2937;
+
+  /* --- Estados del pedido --- */
+  --color-estado-pendiente: #9aa8bc;
+  --color-estado-asignado: #6ea2ff;
+  --color-estado-en-ruta: #b49bff;
+  --color-estado-entregado: #4ade80;
+  --color-estado-reasignado: #fbbf24;
+  --color-estado-incumplido: #f87171;
+
+  /* --- Tipos de unidad --- */
+  --color-tipo-auto: #6ea2ff;
+  --color-tipo-moto: #22d3ee;
+  --color-tipo-bicicleta: #34d399;
+
+  /* --- Mapa --- */
+  --color-reticula-menor: #1f2a3c;
+  --color-reticula-mayor: #2e3a4f;
+  --color-ruta-recorrida: #5b6576;
+  --color-ruta-retorno: #22c55e;
+
+  /* --- Sombras y foco --- */
+  --sombra-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --sombra-flotante: 0 10px 28px rgba(0, 0, 0, 0.55);
+  --anillo-foco: 0 0 0 2px rgba(110, 162, 255, 0.55);
 }

@@ -15,7 +15,8 @@ import java.util.List;
  * <p>Se decide despues de que el algoritmo eligio la ruta, para no alterar
  * su decision. La pausa se toma, en este orden de preferencia: al terminar
  * la ruta si eso cae dentro de la ventana; en el primer minuto de la ventana
- * si la ruta termina antes; o entre dos entregas, eligiendo el ultimo punto
+ * si la ruta termina antes; en el almacen, mientras la unidad espera el
+ * registro de sus pedidos; o entre dos entregas, eligiendo el ultimo punto
  * de la ventana que no deja fuera de plazo ninguna entrega que lo cumplia.
  * Si ninguna opcion respeta la ventana sin perjudicar una entrega, la pausa
  * se toma al final de la ruta y se informa como fuera de ventana.</p>
@@ -50,34 +51,73 @@ public class ProgramadorAlimentacion {
      *                       tomarse la pausa con la unidad estacionada
      */
     public Programacion programar(List<ParadaRuta> paradas, int minutoSalidaAlmacen, int minutosRetorno) {
+        return programar(paradas, minutoSalidaAlmacen, minutosRetorno, minutoSalidaAlmacen);
+    }
+
+    /**
+     * @param minutoDisponible minuto desde el que la unidad espera en el almacen.
+     *                         Si sale despues, porque espera el registro de sus
+     *                         pedidos (RF-04), el conductor puede comer durante
+     *                         esa espera sin retrasar ninguna entrega.
+     */
+    public Programacion programar(List<ParadaRuta> paradas, int minutoSalidaAlmacen, int minutosRetorno,
+                                  int minutoDisponible) {
         if (paradas.isEmpty()) {
             return null;
         }
-        int inicioTurno = inicioDelTurno(minutoSalidaAlmacen);
-        int ventanaDesde = inicioTurno + ConstantesPaqrap.MINUTOS_POR_HORA;
-        int ventanaHasta = inicioTurno + ConstantesPaqrap.MINUTOS_DURACION_TURNO
-                - ConstantesPaqrap.MINUTOS_POR_HORA - ConstantesPaqrap.MINUTOS_PAUSA_ALIMENTACION;
         int ultima = paradas.size() - 1;
         int finRuta = paradas.get(ultima).getMinutoSalida() + Math.max(0, minutosRetorno);
 
-        if (finRuta >= ventanaDesde && finRuta <= ventanaHasta) {
+        if (enVentana(finRuta)) {
             return new Programacion(ultima, finRuta, true, false);
         }
-        if (finRuta < ventanaDesde) {
-            return new Programacion(ultima, ventanaDesde, true, false);
+        int aperturaTrasLaRuta = primerMinutoEnVentana(finRuta);
+        if (aperturaTrasLaRuta < inicioDelTurno(finRuta) + ConstantesPaqrap.MINUTOS_DURACION_TURNO) {
+            // La ruta termina antes de que abra la ventana de su turno: se come al abrirse.
+            return new Programacion(ultima, aperturaTrasLaRuta, true, false);
+        }
+        int enLaEspera = primerMinutoEnVentana(minutoDisponible);
+        if (enLaEspera + ConstantesPaqrap.MINUTOS_PAUSA_ALIMENTACION <= minutoSalidaAlmacen) {
+            return new Programacion(EN_EL_ALMACEN, enLaEspera, true, false);
         }
         // Pausar despues de la ultima entrega solo retrasa el retorno al almacen,
         // de modo que ninguna entrega se ve afectada.
         for (int k = ultima; k >= EN_EL_ALMACEN; k--) {
             int minutoPausa = k == EN_EL_ALMACEN ? minutoSalidaAlmacen : paradas.get(k).getMinutoSalida();
-            if (minutoPausa < ventanaDesde || minutoPausa > ventanaHasta) {
-                continue;
-            }
-            if (noPerjudicaEntregas(paradas, k)) {
+            if (enVentana(minutoPausa) && noPerjudicaEntregas(paradas, k)) {
                 return new Programacion(k, minutoPausa, true, true);
             }
         }
         return new Programacion(ultima, finRuta, false, false);
+    }
+
+    /**
+     * La pausa respeta la ventana del turno en que cae: si la ruta cruza un
+     * cambio de turno, el conductor siguiente toma la unidad en ese punto
+     * (Q&A 12) y come dentro de su propia ventana.
+     */
+    static boolean enVentana(int minutoInicioPausa) {
+        int inicioTurno = inicioDelTurno(minutoInicioPausa);
+        return minutoInicioPausa >= inicioTurno + ConstantesPaqrap.MINUTOS_POR_HORA
+                && minutoInicioPausa <= ultimoInicioDeVentana(inicioTurno);
+    }
+
+    /** Primer minuto, desde el dado, en que puede empezar una pausa dentro de ventana. */
+    private static int primerMinutoEnVentana(int desde) {
+        int inicioTurno = inicioDelTurno(desde);
+        if (desde < inicioTurno + ConstantesPaqrap.MINUTOS_POR_HORA) {
+            return inicioTurno + ConstantesPaqrap.MINUTOS_POR_HORA;
+        }
+        if (desde <= ultimoInicioDeVentana(inicioTurno)) {
+            return desde;
+        }
+        return inicioTurno + ConstantesPaqrap.MINUTOS_DURACION_TURNO + ConstantesPaqrap.MINUTOS_POR_HORA;
+    }
+
+    /** La pausa debe terminar al menos una hora antes del siguiente cambio de turno. */
+    private static int ultimoInicioDeVentana(int inicioTurno) {
+        return inicioTurno + ConstantesPaqrap.MINUTOS_DURACION_TURNO
+                - ConstantesPaqrap.MINUTOS_POR_HORA - ConstantesPaqrap.MINUTOS_PAUSA_ALIMENTACION;
     }
 
     private static boolean noPerjudicaEntregas(List<ParadaRuta> paradas, int despuesDe) {

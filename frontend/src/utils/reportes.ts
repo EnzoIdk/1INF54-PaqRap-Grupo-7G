@@ -158,7 +158,7 @@ export function calcularIndicadores(ejecucion: EjecucionDto): IndicadoresEjecuci
 
   const porPlazo: ResumenPlazo[] = PLAZOS_HORAS.map((plazo) => {
     const delPlazo = paradas.filter((parada) => parada.plazoHoras === plazo);
-    // Una llegada anterior al registro (limitación del modelo por turnos) cuenta como 0 h.
+    // El planificador no entrega antes del registro (RF-04); si ocurriera, la espera cuenta como 0 h.
     const horas = delPlazo.map((parada) => Math.max(0, parada.minutoLlegada - parada.minutoRegistro) / 60);
     return {
       plazoHoras: plazo,

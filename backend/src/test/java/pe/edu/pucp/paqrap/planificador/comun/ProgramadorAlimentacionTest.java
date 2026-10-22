@@ -90,6 +90,31 @@ class ProgramadorAlimentacionTest {
     }
 
     @Test
+    void siLaUnidadEsperaElRegistroDeSusPedidosSeComeDuranteLaEspera() {
+        // Disponible a las 15:00, sale a las 17:30 porque su pedido se registra entonces;
+        // termina a las 22:00, fuera de la ventana 16:00-21:00 del turno de las 15:00.
+        int quince = 15 * 60;
+        var paradas = List.of(parada(quince + 180, 36, quince + 150));
+        var pausa = programador.programar(paradas, quince + 150, 180, quince);
+        assertEquals(ProgramadorAlimentacion.EN_EL_ALMACEN, pausa.despuesDeParada());
+        assertEquals(quince + 60, pausa.minutoInicio());
+        assertTrue(pausa.dentroDeVentana());
+        assertFalse(pausa.desplazaParadas(), "comer mientras espera no retrasa ninguna entrega");
+    }
+
+    @Test
+    void siLaRutaCruzaElCambioDeTurnoComeElConductorSiguienteEnSuVentana() {
+        // Sale a las 13:30 y vuelve a las 19:00: el conductor del turno de las 15:00
+        // toma la unidad (Q&A 12) y come al llegar, dentro de su ventana 16:00-21:00.
+        int salida = 13 * 60 + 30;
+        var paradas = List.of(parada(14 * 60 + 30, 36, salida), parada(17 * 60, 36, salida));
+        var pausa = programador.programar(paradas, salida, 60);
+        assertEquals(19 * 60, pausa.minutoInicio());
+        assertTrue(pausa.dentroDeVentana());
+        assertFalse(pausa.desplazaParadas());
+    }
+
+    @Test
     void nuncaVuelveTardiaUnaEntregaQueCumplia() {
         // La segunda entrega llega 10 minutos antes de su limite: retrasarla una hora la incumpliria.
         int limite = SIETE + 370;

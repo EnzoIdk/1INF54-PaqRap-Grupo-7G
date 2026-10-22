@@ -36,7 +36,7 @@
   font-weight: 600;
   text-anchor: middle;
   paint-order: stroke;
-  stroke: #ffffff;
+  stroke: var(--color-fondo);
   stroke-width: 3px;
   stroke-linejoin: round;
 }
@@ -78,7 +78,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: var(--color-velo);
   color: var(--color-texto-tenue);
   text-align: center;
 }

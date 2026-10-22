@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PaqRap - Centro de Control</title>
+    <script>
+      // Fija el tema antes de pintar para no mostrar un destello claro en modo oscuro.
+      (function () {
+        var tema = null;
+        try {
+          tema = localStorage.getItem("paqrap.tema");
+        } catch (e) {}
+        if (tema !== "claro" && tema !== "oscuro") {
+          tema = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
+        }
+        document.documentElement.dataset.tema = tema;
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

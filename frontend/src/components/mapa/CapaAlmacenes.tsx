@@ -72,12 +72,12 @@ const MarcadorAlmacen = ({ almacen, escala, umbralAmbarPorcentaje, umbralRojoPor
             L ${cx + lado * 0.26} ${cy - lado * 0.04}
             L ${cx + lado * 0.26} ${cy + lado * 0.24} Z`}
         fill="none"
-        stroke="#ffffff"
+        stroke="var(--color-texto-sobre-color)"
         strokeWidth={1.4}
         strokeLinejoin="round"
       />
       {!esCentral && (
-        <circle cx={cx + lado / 2} cy={cy - lado / 2} r={3.5} fill={semaforo.colorCss} stroke="#ffffff" strokeWidth={1.2} />
+        <circle cx={cx + lado / 2} cy={cy - lado / 2} r={3.5} fill={semaforo.colorCss} stroke="var(--color-texto-sobre-color)" strokeWidth={1.2} />
       )}
       <title>
         {`${almacen.codigo} (${almacen.posX}, ${almacen.posY})\n` +

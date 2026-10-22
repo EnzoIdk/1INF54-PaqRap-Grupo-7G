@@ -125,6 +125,8 @@ interface SimulacionState {
   alternarReproduccion: () => void;
   detener: () => void;
   reiniciar: () => void;
+  /** Descarta la corrida anterior y los datos inyectados antes de un nuevo escenario (RF-50). */
+  reiniciarDatos: () => void;
   setMinutosPorSegundo: (minutosPorSegundo: number) => void;
   enfocarUnidad: (codigoUnidad: string | null) => void;
 }
@@ -335,6 +337,25 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
     set((estado) => ({
       minutoActual: estado.escenario?.minutoInicio ?? 0,
       segundosReales: 0,
+    })),
+
+  // Conserva el archivo, el dia y la flota elegidos: solo se descarta lo que
+  // la corrida anterior dejo (plan, reloj, averias y pedidos registrados).
+  reiniciarDatos: () =>
+    set((estado) => ({
+      pedidosAdicionales: [],
+      parametros: { ...estado.parametros, averias: [] },
+      parametros5D: { ...estado.parametros5D, averias: [] },
+      parametrosColapso: { ...estado.parametrosColapso, averias: [] },
+      escenario: null,
+      ejecuciones: [],
+      algoritmoVisible: null,
+      error: null,
+      minutoActual: 0,
+      reproduciendo: false,
+      tiempoReal: false,
+      segundosReales: 0,
+      unidadEnfocada: null,
     })),
 
   // Elegir una velocidad abandona el seguimiento de la hora real.

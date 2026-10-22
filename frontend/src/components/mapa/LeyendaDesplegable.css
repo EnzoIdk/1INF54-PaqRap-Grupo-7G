@@ -33,7 +33,7 @@
 .leyenda-desplegable__boton:hover,
 .leyenda-desplegable__boton--abierta {
   border-color: var(--color-azul-accion);
-  color: var(--color-azul-accion);
+  color: var(--color-enlace);
 }
 
 .leyenda-desplegable__boton:focus-visible {

@@ -32,20 +32,20 @@
 
 .boton--primario {
   background-color: var(--color-azul-paqrap);
-  color: #ffffff;
+  color: var(--color-texto-sobre-color);
 }
 
 .boton--primario:hover:not(:disabled) {
-  background-color: #14375c;
+  background-color: var(--color-primario-hover);
 }
 
 .boton--accion {
   background-color: var(--color-azul-accion);
-  color: #ffffff;
+  color: var(--color-texto-sobre-color);
 }
 
 .boton--accion:hover:not(:disabled) {
-  background-color: #1d4ed8;
+  background-color: var(--color-accion-hover);
 }
 
 .boton--secundario {
@@ -59,12 +59,12 @@
 }
 
 .boton--destructivo {
-  background-color: var(--color-semaforo-rojo);
-  color: #ffffff;
+  background-color: var(--color-destructivo);
+  color: var(--color-texto-sobre-color);
 }
 
 .boton--destructivo:hover:not(:disabled) {
-  background-color: #b91c1c;
+  background-color: var(--color-destructivo-hover);
 }
 
 .boton--fantasma {
