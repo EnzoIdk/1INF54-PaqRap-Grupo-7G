@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Award, Clock, Coins, FileDown, FileSpreadsheet, Route, Timer, TriangleAlert } from "lucide-react";
 import ReportesDesempeno from "../components/reportes/ReportesDesempeno";
+import ResumenEjecutivo from "../components/reportes/ResumenEjecutivo";
 import { useAveriasDeLaCorrida } from "../hooks/useAveriasDeLaCorrida";
 import {
   descargarItinerario,
@@ -185,6 +186,8 @@ const AnalyticsPage = () => {
             </span>
           </div>
         )}
+
+        <ResumenEjecutivo escenario={escenario} ejecuciones={ejecuciones} />
 
         {(modoSimulacion === "COLAPSO" || ejecuciones.some((e) => e.colapsoOcurrido)) && (
           <section className="tarjeta">

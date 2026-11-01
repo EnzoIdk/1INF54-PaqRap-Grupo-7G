@@ -11,7 +11,8 @@ const PASO_MAYOR_KM = 10;
 
 /**
  * Retícula de la ciudad: lineas de guia cada 5 km y cada 10 km, con
- * rotulos numericos en los bordes inferior e izquierdo (STD 2.6.3).
+ * rotulos numericos y el titulo de cada eje en los bordes inferior e
+ * izquierdo (STD 2.6.3).
  */
 const CapaReticula = ({ escala }: CapaReticulaProps) => {
   const verticales = [];
@@ -76,6 +77,7 @@ const CapaReticula = ({ escala }: CapaReticulaProps) => {
         width={escala.anchoUtil}
         height={escala.altoUtil}
         fill="var(--color-fondo)"
+        className="mapa__fondo"
       />
       {verticales}
       {horizontales}
@@ -96,6 +98,14 @@ const CapaReticula = ({ escala }: CapaReticulaProps) => {
         className="mapa__rotulo-eje mapa__rotulo-eje--titulo"
       >
         Eje X (km)
+      </text>
+      <text
+        x={escala.aX(0) - 36}
+        y={escala.aY(ALTO_MAPA_KM / 2)}
+        transform={`rotate(-90 ${escala.aX(0) - 36} ${escala.aY(ALTO_MAPA_KM / 2)})`}
+        className="mapa__rotulo-eje mapa__rotulo-eje--titulo"
+      >
+        Eje Y (km)
       </text>
     </g>
   );

@@ -16,12 +16,14 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import pe.edu.pucp.paqrap.dto.UsuarioResponse;
 import pe.edu.pucp.paqrap.model.Usuario;
 import pe.edu.pucp.paqrap.repository.UsuarioRepository;
+import pe.edu.pucp.paqrap.service.LimitadorIntentosLogin;
 
 import java.io.IOException;
 import java.util.Map;
@@ -29,6 +31,8 @@ import java.util.Map;
 @Configuration
 @EnableWebSecurity
 public class SeguridadConfig {
+
+    private static final String RUTA_LOGIN = "/api/auth/login";
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -47,7 +51,8 @@ public class SeguridadConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             ObjectMapper objectMapper,
-                                            UsuarioRepository usuarioRepository) throws Exception {
+                                            UsuarioRepository usuarioRepository,
+                                            LimitadorIntentosLogin limitador) throws Exception {
         CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
         CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
         csrfHandler.setCsrfRequestAttributeName(null);
@@ -61,20 +66,33 @@ public class SeguridadConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**", "/ws-paqrap/**").authenticated()
                         .anyRequest().permitAll())
+                // Limite de intentos (fuerza bruta): un usuario o IP bloqueados no llegan a probar la clave.
+                .addFilterBefore(new FiltroIntentosLogin(limitador, objectMapper, RUTA_LOGIN),
+                        UsernamePasswordAuthenticationFilter.class)
                 .formLogin(form -> form
-                        .loginProcessingUrl("/api/auth/login")
+                        .loginProcessingUrl(RUTA_LOGIN)
                         .usernameParameter("username")
                         .passwordParameter("password")
                         .successHandler((request, response, authentication) -> {
+                            limitador.registrarExito(authentication.getName());
                             Usuario usuario = usuarioRepository.findByUsername(authentication.getName())
                                     .orElseThrow();
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
                             objectMapper.writeValue(response.getWriter(), UsuarioResponse.desde(usuario));
                         })
-                        .failureHandler((request, response, exception) ->
-                                escribirError(objectMapper, response, HttpStatus.UNAUTHORIZED,
-                                        "Usuario o contraseña incorrectos")))
+                        .failureHandler((request, response, exception) -> {
+                            int restantes = limitador.registrarFallo(
+                                    request.getParameter("username"), request.getRemoteAddr());
+                            if (restantes == 0) {
+                                FiltroIntentosLogin.responderBloqueo(objectMapper, response, limitador.getBloqueo());
+                                return;
+                            }
+                            escribirError(objectMapper, response, HttpStatus.UNAUTHORIZED,
+                                    "Usuario o contraseña incorrectos. "
+                                            + (restantes == 1 ? "Te queda 1 intento" : "Te quedan " + restantes + " intentos")
+                                            + " antes del bloqueo temporal.");
+                        }))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
                         .invalidateHttpSession(true)

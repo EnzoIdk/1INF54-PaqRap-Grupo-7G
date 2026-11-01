@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, CirclePlay, FileText, Plus, RotateCcw, TriangleAlert, Trash2 } from "lucide-react";
 import Encabezado from "../components/layout/Encabezado";
+import SimulacionesCompartidas from "../components/consola/SimulacionesCompartidas";
 import Boton from "../components/comunes/Boton";
 import Indicador from "../components/comunes/Indicador";
 import Tabs, { type OpcionTab } from "../components/comunes/Tabs";
@@ -283,6 +284,8 @@ const ConsolaSimulacionPage = () => {
             onCambiar={(id) => setModoSimulacion(id as ModoSimulacion)}
           />
         </div>
+
+        <SimulacionesCompartidas />
 
         {error && (
           <div className="consola__error">

@@ -41,3 +41,17 @@
   line-height: 1.2;
   white-space: nowrap;
 }
+
+
+.reloj__bloque {
+  height: auto;
+  min-height: var(--alto-control);
+  padding-top: 3px;
+  padding-bottom: 3px;
+}
+
+.reloj__valor--chico {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--color-texto-secundario);
+}

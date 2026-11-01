@@ -4,7 +4,62 @@ Registro de las versiones entregadas del proyecto PaqRap, conforme a la sección
 
 ## [Unreleased]
 
+### Security
+- Límite de intentos en el inicio de sesión: 5 fallos por usuario o 20 por IP en 15 minutos
+  bloquean el acceso 15 minutos (`429` con `Retry-After`); antes del bloqueo el mensaje dice
+  cuántos intentos quedan. Configurable en `paqrap.seguridad.login`.
+- Política de contraseña segura al crear el administrador inicial y cada cuenta: 12 a 72
+  caracteres con minúscula, mayúscula, número y símbolo, sin el nombre de usuario, sin
+  palabras comunes y sin 4 caracteres iguales seguidos. El frontend muestra las reglas y un
+  medidor mientras se escribe.
+- La sesión expira tras 30 minutos sin uso; la cookie es `HttpOnly` y `SameSite=Lax`.
+- Pruebas: `PoliticaContrasenaTest`, `LimitadorIntentosLoginTest` y `SeguridadLoginIT`
+  (MockMvc sobre la cadena de filtros real).
+
+### Added
+- Mapa a pantalla completa: zoom con la rueda, botones +/− y doble clic; arrastre para
+  desplazarse; ajuste al mapa completo y centrado en la unidad seleccionada. Los paneles de
+  monitoreo empiezan contraídos en un riel con contadores (rúbrica E01), la barra lateral
+  se contrae a iconos y el botón "Pantalla completa" deja solo el Centro de Control.
+- Íconos propios de auto, moto y bicicleta que apuntan hacia donde avanza la unidad
+  (derecha, izquierda, arriba o abajo), con tamaños distintos por tipo.
+- El mapa se aleja hasta 50 % y queda siempre pegado a los bordes izquierdo y superior;
+  muestra el título de los dos ejes. Los almacenes (40 y 34 px) son claramente más grandes
+  que los vehículos (19, 17 y 15 px). Cuando varias unidades coinciden en un punto, una
+  insignia «+N» lo indica y al pasar el cursor una ficha las lista todas (con un resumen por
+  situación si son muchas); cada fila selecciona esa unidad.
+- Los indicadores globales y los avisos de entregas van apilados bajo Filtros y Leyenda,
+  fuera del área del mapa cuando hay espacio, y la leyenda se despliega completa, sin barras
+  de desplazamiento. Con zoom, el mapa se arrastra en cualquier dirección.
+- Semáforo + vacío de ocupación en cada unidad (anillo de color; discontinuo si va vacía) y
+  en los almacenes; filtros del mapa por tipo y por nivel, compartidos con el panel de flota;
+  indicadores globales de ocupación de la flota y del stock de almacenes (G01-G04).
+- Averías con color e insignia por tipo, visibles solo mientras duran según su tipo (D10-D13).
+- Selección bidireccional mapa-panel de unidades y almacenes (F01, F05). El panel de flota
+  ordena por ocupación, busca por código y muestra los envíos y productos de cada unidad; el
+  de almacenes muestra envíos en camino, por salir en 4 h y entregados en las últimas 4 h.
+- Reloj con los cuatro tiempos: fecha y hora simuladas, tiempo simulado transcurrido, fecha
+  y hora actuales de Lima y tiempo real transcurrido.
+- Reporte de la última planificación estable al terminar el periodo, al llegar al colapso o
+  al cerrar la operación día a día (G08-G10), con impresión y exportación.
+- Simulaciones compartidas (C05, C06, G06): cada plan queda disponible para que otros
+  navegadores lo abran desde la Consola y lo reproduzcan con su propio reloj y filtros, sin
+  volver a ejecutar el planificador. `LimitadorPlanificador` acota las corridas simultáneas
+  (una por núcleo) y responde `503` si la espera se alarga.
+- Analytics: resumen ejecutivo con hallazgos priorizados (crítico, atención, en orden) y una
+  recomendación para cada uno; evolución por día o por franja de 2 h y distribución del
+  margen con que llegan las entregas.
+- Pruebas de carga y estrés (`pruebas/rendimiento/prueba_carga.py`) y sus resultados en
+  `docs/pruebas-rendimiento.md`; diagramas de consumo por bloques y de varios navegadores en
+  `docs/arquitectura-simulacion.md` (A22, A23).
+
 ### Fixed
+- `/api/auth/me` sin sesión responde 401 en vez de 500.
+- Los errores con estado explícito (usuario repetido, contraseña débil, sin sesión) llegan
+  con su mensaje en lugar de un cuerpo vacío.
+- El panel de flota distingue una entrega en curso ("descargando") de una por llegar.
+
+### Fixed (anteriores)
 - Ninguna entrega ocurre antes de que su pedido se registre (RF-04). Antes cada turno
   salía a su hora de inicio con todos los pedidos de la ventana y llegaba a clientes cuyo
   pedido aún no existía. Ahora la unidad sale del almacén cuando ya existen todos los

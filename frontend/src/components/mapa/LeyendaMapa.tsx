@@ -1,15 +1,28 @@
-import { Bike, Car, Motorbike, TriangleAlert, Warehouse } from "lucide-react";
+import { Warehouse } from "lucide-react";
+import type { TipoUnidad } from "../../types/Experimentacion";
 import {
   COLOR_ESTADO_PEDIDO,
   COLOR_TIPO_UNIDAD,
   ETIQUETA_ESTADO_PEDIDO,
   type EstadoPedidoVisual,
 } from "../../utils/constants";
+import { COLOR_NIVEL, ETIQUETA_NIVEL, NIVELES_SEMAFORO } from "../../utils/semaforo";
+import { COLOR_TIPO_AVERIA, ETIQUETA_TIPO_AVERIA } from "../../utils/averias";
+import IconoVehiculo from "./IconoVehiculo";
 import "./LeyendaMapa.css";
 
 interface LeyendaMapaProps {
   almacenCentral?: { posX: number; posY: number };
 }
+
+const TIPOS_AVERIA = ["TIPO_1", "TIPO_2", "TIPO_3"] as const;
+
+/** El mismo icono que se dibuja en el mapa, mirando a la derecha. */
+const MuestraVehiculo = ({ tipo }: { tipo: TipoUnidad }) => (
+  <svg width={20} height={20} viewBox="0 0 24 24" aria-hidden>
+    <IconoVehiculo tipoUnidad={tipo} cx={12} cy={12} rumbo="E" color={COLOR_TIPO_UNIDAD[tipo]} />
+  </svg>
+);
 
 const ESTADOS: EstadoPedidoVisual[] = [
   "PENDIENTE",
@@ -48,17 +61,15 @@ const LeyendaMapa = ({ almacenCentral }: LeyendaMapaProps) => (
           Almacén intermedio
         </li>
         <li>
-          <Car size={16} color={COLOR_TIPO_UNIDAD.AUTO} /> Auto (TA) en ruta
+          <MuestraVehiculo tipo="AUTO" /> Auto (TA)
         </li>
         <li>
-          <Motorbike size={16} color={COLOR_TIPO_UNIDAD.MOTO} /> Moto (TM) en ruta
+          <MuestraVehiculo tipo="MOTO" /> Moto (TM)
         </li>
         <li>
-          <Bike size={16} color={COLOR_TIPO_UNIDAD.BICICLETA} /> Bicicleta (TB) en ruta
+          <MuestraVehiculo tipo="BICICLETA" /> Bicicleta (TB)
         </li>
-        <li>
-          <TriangleAlert size={16} color="var(--color-semaforo-rojo)" /> Unidad averiada
-        </li>
+        <li className="texto-tenue">El icono apunta hacia donde avanza la unidad</li>
         <li>
           <svg width={26} height={8} aria-hidden>
             <line x1={0} y1={4} x2={26} y2={4} stroke="var(--color-semaforo-rojo)" strokeWidth={3} strokeDasharray="6 4" />
@@ -82,6 +93,57 @@ const LeyendaMapa = ({ almacenCentral }: LeyendaMapaProps) => (
             <line x1={0} y1={4} x2={26} y2={4} stroke="var(--color-ruta-recorrida)" strokeWidth={2} />
           </svg>
           Ruta ya recorrida
+        </li>
+      </ul>
+    </div>
+
+    <div className="leyenda__seccion">
+      <h3 className="rotulo">Ocupación (anillo)</h3>
+      <ul>
+        {NIVELES_SEMAFORO.map((nivel) => (
+          <li key={nivel}>
+            <svg width={16} height={16} aria-hidden>
+              <circle
+                cx={8}
+                cy={8}
+                r={6}
+                fill="none"
+                stroke={COLOR_NIVEL[nivel]}
+                strokeWidth={2.5}
+                strokeDasharray={nivel === "VACIO" ? "3 2" : undefined}
+              />
+            </svg>
+            {ETIQUETA_NIVEL[nivel]}
+          </li>
+        ))}
+        <li className="texto-tenue">Igual para el stock de los almacenes</li>
+      </ul>
+    </div>
+
+    <div className="leyenda__seccion">
+      <h3 className="rotulo">Averías (solo mientras duran)</h3>
+      <ul>
+        {TIPOS_AVERIA.map((tipo, indice) => (
+          <li key={tipo}>
+            <svg width={16} height={16} aria-hidden>
+              <circle cx={8} cy={8} r={7} fill={COLOR_TIPO_AVERIA[tipo]} />
+              <text x={8} y={11.5} textAnchor="middle" fontSize={10} fontWeight={700} fill="#ffffff">
+                {indice + 1}
+              </text>
+            </svg>
+            {ETIQUETA_TIPO_AVERIA[tipo]}
+          </li>
+        ))}
+        <li>
+          <svg width={16} height={16} aria-hidden>
+            <circle cx={8} cy={8} r={6} fill="url(#trama-leyenda)" stroke="var(--color-texto-tenue)" strokeWidth={1.5} />
+            <defs>
+              <pattern id="trama-leyenda" width="3" height="3" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+                <line x1={0} y1={0} x2={0} y2={3} stroke="var(--color-texto-tenue)" strokeWidth={1.2} />
+              </pattern>
+            </defs>
+          </svg>
+          En mantenimiento
         </li>
       </ul>
     </div>

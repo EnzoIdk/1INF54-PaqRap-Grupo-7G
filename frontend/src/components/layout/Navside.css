@@ -141,3 +141,75 @@
   border-radius: 50%;
   color: rgba(255, 255, 255, 0.75);
 }
+
+/* Boton para contraer el menu a solo iconos. */
+.navside__contraer {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radio);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.navside__contraer:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-texto-sobre-color);
+}
+
+.navside__contraer:focus-visible,
+.navside__enlace:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
+}
+
+/* Solo en escritorio: en tabletas y celulares la barra ya es superior (App.css). */
+@media (min-width: 861px) {
+  .navside--contraida {
+    width: 64px;
+    flex-basis: 64px;
+    padding: 18px 10px;
+  }
+
+  .navside--contraida .navside__texto {
+    display: none;
+  }
+
+  .navside--contraida .navside__marca {
+    flex-direction: column;
+    gap: 10px;
+    padding: 0;
+  }
+
+  .navside--contraida .navside__contraer {
+    margin-left: 0;
+  }
+
+  .navside--contraida .navside__enlace {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .navside--contraida .navside__usuario {
+    flex-direction: column;
+    gap: 8px;
+    padding: 0;
+  }
+
+  /* Tema y salida centrados bajo el avatar, como los demas iconos. */
+  .navside--contraida .navside__salir,
+  .navside--contraida .boton-tema--navside,
+  .navside--contraida .boton-tema--navside + .navside__salir {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .navside__contraer {
+    display: none;
+  }
+}

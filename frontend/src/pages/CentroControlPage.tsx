@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { Bell, FileText, Maximize, Minimize, Package, PanelRightClose, PanelRightOpen, Truck, Warehouse } from "lucide-react";
 import Encabezado from "../components/layout/Encabezado";
 import RelojSimulacion from "../components/comunes/RelojSimulacion";
 import ControlesSimulacion from "../components/comunes/ControlesSimulacion";
@@ -8,6 +9,9 @@ import Tabs from "../components/comunes/Tabs";
 import Boton from "../components/comunes/Boton";
 import MapaCiudad from "../components/mapa/MapaCiudad";
 import LeyendaDesplegable from "../components/mapa/LeyendaDesplegable";
+import FiltrosMapa from "../components/mapa/FiltrosMapa";
+import IndicadoresGlobales from "../components/mapa/IndicadoresGlobales";
+import ReporteFinal, { type SolicitudReporte } from "../components/reportes/ReporteFinal";
 import PanelSeguimientoPedidos from "../components/paneles/PanelSeguimientoPedidos";
 import PanelAlertas from "../components/paneles/PanelAlertas";
 import PanelFlota from "../components/paneles/PanelFlota";
@@ -19,12 +23,16 @@ import { useRelojSimulacion } from "../hooks/useRelojSimulacion";
 import { useEjecucionVisible, useExperimentacion } from "../hooks/useExperimentacion";
 import { calcularMinutoFinal, useSimulacionStore } from "../store/simulacionStore";
 import { formatearMotivoColapso, formatearSoles } from "../utils/formatters";
+import { averiasVigentes } from "../utils/averias";
+import { nivelUnidad } from "../utils/semaforo";
+import type { AveriaSolicitada } from "../types/Experimentacion";
 import "./CentroControlPage.css";
 
 /**
  * Vista principal: el mapa de la ciudad con el movimiento de la flota en
  * tiempo simulado, acompañado de los paneles laterales de monitoreo
- * (STD 2.6.3 y 2.6.5).
+ * (STD 2.6.3 y 2.6.5). Los paneles empiezan contraídos (rúbrica E01) para
+ * que el mapa ocupe todo el ancho, y la vista admite pantalla completa.
  */
 const CentroControlPage = () => {
   const navegar = useNavigate();
@@ -45,6 +53,11 @@ const CentroControlPage = () => {
   const parametrosColapso = useSimulacionStore((estado) => estado.parametrosColapso);
 
   const [tabOperativa, setTabOperativa] = useState<string>("pedidos");
+  const [panelesAbiertos, setPanelesAbiertos] = useState(false);
+  const [pantallaCompleta, setPantallaCompleta] = useState(false);
+  const [reporteManual, setReporteManual] = useState<SolicitudReporte | null>(null);
+  const [reporteDescartado, setReporteDescartado] = useState<string | null>(null);
+  const raizRef = useRef<HTMLDivElement>(null);
 
   const alternarReproduccion = useSimulacionStore((estado) => estado.alternarReproduccion);
   const reiniciar = useSimulacionStore((estado) => estado.reiniciar);
@@ -53,6 +66,9 @@ const CentroControlPage = () => {
   const setMinutoActual = useSimulacionStore((estado) => estado.setMinutoActual);
   const enfocarUnidad = useSimulacionStore((estado) => estado.enfocarUnidad);
   const tiposVisibles = useSimulacionStore((estado) => estado.tiposVisibles);
+  const nivelesVisibles = useSimulacionStore((estado) => estado.nivelesVisibles);
+  const almacenEnfocado = useSimulacionStore((estado) => estado.almacenEnfocado);
+  const setAlmacenEnfocado = useSimulacionStore((estado) => estado.setAlmacenEnfocado);
   const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
 
   useRelojSimulacion();
@@ -75,7 +91,7 @@ const CentroControlPage = () => {
     colapsoOcurrido && minutoColapso !== null && minutoColapso !== undefined && minutoActual >= minutoColapso,
   );
 
-  const listaAverias = useMemo(() => {
+  const listaAverias = useMemo<AveriaSolicitada[]>(() => {
     if (modoSimulacion === "COLAPSO") {
       return (parametrosColapso.averias ?? []).map((a) => ({
         codigoUnidad: a.codigoUnidad,
@@ -97,13 +113,9 @@ const CentroControlPage = () => {
     }));
   }, [modoSimulacion, esCincoDias, parametros.averias, parametros5D.averias, parametrosColapso.averias]);
 
-  const unidadesAveriadas = useMemo(
-    () =>
-      listaAverias
-        .filter((averia) => averia.minutoSimulacion <= minutoActual)
-        .map((averia) => averia.codigoUnidad),
-    [listaAverias, minutoActual],
-  );
+  // Una avería solo se muestra mientras dura según su tipo (rúbrica D13).
+  const averiasActivas = useMemo(() => averiasVigentes(listaAverias, minutoActual), [listaAverias, minutoActual]);
+  const unidadesAveriadas = useMemo(() => averiasActivas.map((averia) => averia.codigoUnidad), [averiasActivas]);
 
   // Unidades cuyo mantenimiento preventivo esta realmente vigente en el minutoActual
   const unidadesEnMantenimientoVigentes = useMemo(() => {
@@ -177,15 +189,89 @@ const CentroControlPage = () => {
 
   const almacenCentral = escenario?.almacenes.find((almacen) => almacen.tipo === "CENTRAL");
 
-  // El filtro por tipo del panel de flota también se aplica al mapa (RF-59).
+  // Los filtros por tipo y por semáforo + vacío se aplican igual al mapa y al panel de flota (RF-59, D06).
+  const { umbralAmbarPorcentaje, umbralRojoPorcentaje } = umbrales;
   const unidadesEnMapa = useMemo(
-    () => unidades.filter((unidad) => tiposVisibles.includes(unidad.tipoUnidad)),
-    [unidades, tiposVisibles],
+    () =>
+      unidades.filter(
+        (unidad) =>
+          tiposVisibles.includes(unidad.tipoUnidad) &&
+          nivelesVisibles.includes(
+            nivelUnidad(unidad.cargaRestante, unidad.capacidad, { umbralAmbarPorcentaje, umbralRojoPorcentaje }),
+          ),
+      ),
+    [unidades, tiposVisibles, nivelesVisibles, umbralAmbarPorcentaje, umbralRojoPorcentaje],
   );
-  const rutasEnMapa = useMemo(
-    () => (ejecucion?.rutas ?? []).filter((ruta) => tiposVisibles.includes(ruta.tipoUnidad)),
-    [ejecucion, tiposVisibles],
+  const rutasEnMapa = useMemo(() => {
+    const visibles = new Set(unidadesEnMapa.map((unidad) => unidad.codigoUnidad));
+    return (ejecucion?.rutas ?? []).filter((ruta) => visibles.has(ruta.codigoUnidad));
+  }, [ejecucion, unidadesEnMapa]);
+
+  // Enlace mapa -> panel (rúbrica F01, F05): elegir en el mapa abre el panel con la selección.
+  const abrirPanelEn = useCallback((tab: string) => {
+    setTabOperativa(tab);
+    setPanelesAbiertos(true);
+  }, []);
+  const enfocarDesdeMapa = useCallback(
+    (codigoUnidad: string | null) => {
+      enfocarUnidad(codigoUnidad);
+      if (codigoUnidad) {
+        abrirPanelEn("flota");
+      }
+    },
+    [enfocarUnidad, abrirPanelEn],
   );
+  const seleccionarAlmacenDesdeMapa = useCallback(
+    (codigoAlmacen: string | null) => {
+      setAlmacenEnfocado(codigoAlmacen);
+      if (codigoAlmacen) {
+        abrirPanelEn("almacenes");
+      }
+    },
+    [setAlmacenEnfocado, abrirPanelEn],
+  );
+
+  // Pantalla completa del Centro de Control: el mapa ocupa todo el monitor.
+  useEffect(() => {
+    const alCambiar = () => setPantallaCompleta(document.fullscreenElement === raizRef.current);
+    document.addEventListener("fullscreenchange", alCambiar);
+    return () => document.removeEventListener("fullscreenchange", alCambiar);
+  }, []);
+  const alternarPantallaCompleta = () => {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+    } else {
+      void raizRef.current?.requestFullscreen?.().catch(() => undefined);
+    }
+  };
+
+  // Reporte de la última planificación estable (rúbrica G08-G10).
+  const claveEjecucion = escenario
+    ? `${escenario.archivoVentas}-${escenario.minutoInicio}-${escenario.semilla}-${ejecucion?.algoritmo ?? ""}`
+    : "";
+  const claveFin = `${claveEjecucion}@${minutoActual}`;
+  const finAlcanzado =
+    Boolean(ejecucion) &&
+    !tiempoReal &&
+    !reproduciendo &&
+    segundosReales > 0 &&
+    (esColapsoAlcanzado || minutoActual >= minutoFinal);
+  const reporte: SolicitudReporte | null =
+    reporteManual ??
+    (finAlcanzado && reporteDescartado !== claveFin
+      ? { motivo: esColapsoAlcanzado || modoEfectivo === "COLAPSO" ? "COLAPSO" : "FIN_PERIODO", minutoCorte: minutoActual }
+      : null);
+  const cerrarReporte = useCallback(() => {
+    setReporteManual(null);
+    setReporteDescartado(claveFin);
+  }, [claveFin]);
+  const detenerOperacion = () => {
+    // Cerrar la operación día a día deja su reporte (G09) antes de volver al inicio.
+    if (tiempoReal && ejecucion) {
+      setReporteManual({ motivo: "CIERRE_DIA_A_DIA", minutoCorte: minutoActual });
+    }
+    detener();
+  };
 
   const contextoBase = escenario
     ? modoSimulacion === "COLAPSO"
@@ -201,12 +287,18 @@ const CentroControlPage = () => {
   const contexto = tiempoReal ? `Operación día a día · hora de Lima · ${contextoBase}` : contextoBase;
 
   return (
-    <div className="centro-control">
+    <div className="centro-control" ref={raizRef}>
       <Encabezado
         titulo="Centro de Control"
         contexto={contexto}
         extremo={
-          <RelojSimulacion minutoSimulacionActual={minutoActual} segundosRealesTranscurridos={segundosReales} />
+          <RelojSimulacion
+            minutoSimulacionActual={minutoActual}
+            segundosRealesTranscurridos={segundosReales}
+            minutoInicio={escenario?.minutoInicio}
+            anio={escenario?.anio}
+            mes={escenario?.mes}
+          />
         }
         acciones={
           <ControlesSimulacion
@@ -216,7 +308,7 @@ const CentroControlPage = () => {
             modoSimulacion={modoEfectivo}
             onAlternar={alternarReproduccion}
             onReiniciar={reiniciar}
-            onDetener={detener}
+            onDetener={detenerOperacion}
             onCambiarVelocidad={setMinutosPorSegundo}
           />
         }
@@ -255,6 +347,29 @@ const CentroControlPage = () => {
                 habilitado
                 onCambiar={setMinutoActual}
               />
+              <div className="centro-control__acciones-vista">
+                {ejecucion && (
+                  <button
+                    type="button"
+                    className="centro-control__boton-vista"
+                    title="Reporte de la planificación en curso"
+                    onClick={() => setReporteManual({ motivo: "CONSULTA", minutoCorte: minutoActual })}
+                  >
+                    <FileText size={15} aria-hidden />
+                    Reporte
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="centro-control__boton-vista"
+                  aria-pressed={pantallaCompleta}
+                  title={pantallaCompleta ? "Salir de pantalla completa (Esc)" : "Ver el mapa en pantalla completa"}
+                  onClick={alternarPantallaCompleta}
+                >
+                  {pantallaCompleta ? <Minimize size={15} aria-hidden /> : <Maximize size={15} aria-hidden />}
+                  {pantallaCompleta ? "Salir" : "Pantalla completa"}
+                </button>
+              </div>
             </div>
 
             {esColapsoAlcanzado && (
@@ -280,82 +395,173 @@ const CentroControlPage = () => {
                 rutas={rutasEnMapa}
                 unidades={unidadesEnMapa}
                 pedidos={pedidos}
-                unidadesAveriadas={unidadesAveriadas}
+                averias={averiasActivas}
                 unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
                 unidadEnfocada={unidadEnfocada}
-                onEnfocar={enfocarUnidad}
+                onEnfocar={enfocarDesdeMapa}
+                almacenEnfocado={almacenEnfocado}
+                onSeleccionarAlmacen={seleccionarAlmacenDesdeMapa}
                 minutoActual={minutoActual}
-                umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
-                umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
-              />
-              {/* La leyenda se despliega sobre el mapa para no quitarle espacio. */}
-              <LeyendaDesplegable almacenCentral={almacenCentral} />
-              <NotificacionesEntregas
-                pedidos={pedidos}
-                claveEjecucion={`${escenario.archivoVentas}-${escenario.minutoInicio}-${escenario.semilla}-${ejecucion?.algoritmo ?? ""}`}
-              />
+                umbralAmbarPorcentaje={umbralAmbarPorcentaje}
+                umbralRojoPorcentaje={umbralRojoPorcentaje}
+              >
+                {/* Columna derecha: filtros y leyenda, indicadores globales y avisos de entregas. */}
+                <div className="mapa__lateral">
+                  <div className="mapa__herramientas">
+                    <FiltrosMapa />
+                    <LeyendaDesplegable almacenCentral={almacenCentral} />
+                  </div>
+                  <IndicadoresGlobales unidades={unidades} almacenes={almacenesConStockDinamico} umbrales={umbrales} />
+                  <NotificacionesEntregas pedidos={pedidos} claveEjecucion={claveEjecucion} />
+                </div>
+              </MapaCiudad>
             </div>
           </section>
 
-          <aside className="centro-control__paneles">
-            <PanelAlertas alertas={alertas} onEnfocarUnidad={enfocarUnidad} />
-            <div className="centro-control__seccion-operativa">
-              <div className="centro-control__tabs-operacion">
-                <Tabs
-                  opciones={[
-                    {
-                      id: "pedidos",
-                      etiqueta: "Pedidos",
-                      detalle: String(pedidosActivos),
-                    },
-                    {
-                      id: "flota",
-                      etiqueta: "Flota",
-                      detalle: String(unidades.length),
-                    },
-                    {
-                      id: "almacenes",
-                      etiqueta: "Almacenes",
-                      detalle: String(almacenesConStockDinamico.length),
-                    },
-                  ]}
-                  activa={tabOperativa}
-                  onCambiar={setTabOperativa}
+          <aside
+            className={`centro-control__paneles ${panelesAbiertos ? "" : "centro-control__paneles--contraidos"}`}
+            aria-label="Paneles de monitoreo"
+          >
+            {panelesAbiertos ? (
+              <>
+                <div className="centro-control__paneles-cabecera">
+                  <span className="rotulo">Monitoreo</span>
+                  <button
+                    type="button"
+                    className="centro-control__boton-riel"
+                    aria-label="Contraer paneles"
+                    title="Contraer paneles: el mapa ocupa todo el ancho"
+                    onClick={() => setPanelesAbiertos(false)}
+                  >
+                    <PanelRightClose size={17} aria-hidden />
+                  </button>
+                </div>
+                <PanelAlertas alertas={alertas} onEnfocarUnidad={enfocarUnidad} />
+                <div className="centro-control__seccion-operativa">
+                  <div className="centro-control__tabs-operacion">
+                    <Tabs
+                      opciones={[
+                        { id: "pedidos", etiqueta: "Pedidos", detalle: String(pedidosActivos) },
+                        { id: "flota", etiqueta: "Flota", detalle: String(unidades.length) },
+                        { id: "almacenes", etiqueta: "Almacenes", detalle: String(almacenesConStockDinamico.length) },
+                      ]}
+                      activa={tabOperativa}
+                      onCambiar={setTabOperativa}
+                    />
+                  </div>
+
+                  {tabOperativa === "pedidos" ? (
+                    <PanelSeguimientoPedidos
+                      pedidos={pedidos}
+                      minutoActual={minutoActual}
+                      onEnfocarUnidad={enfocarUnidad}
+                    />
+                  ) : tabOperativa === "flota" ? (
+                    <PanelFlota
+                      unidades={unidades}
+                      unidadesAveriadas={unidadesAveriadas}
+                      unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
+                      unidadEnfocada={unidadEnfocada}
+                      onEnfocar={enfocarUnidad}
+                      rutas={ejecucion?.rutas ?? []}
+                      minutoActual={minutoActual}
+                      escenario={escenario}
+                      umbrales={umbrales}
+                    />
+                  ) : (
+                    <div className="centro-control__tab-almacenes desplazable">
+                      <PanelAlmacenes
+                        almacenes={almacenesConStockDinamico}
+                        umbralAmbarPorcentaje={umbralAmbarPorcentaje}
+                        umbralRojoPorcentaje={umbralRojoPorcentaje}
+                        rutas={ejecucion?.rutas ?? []}
+                        minutoActual={minutoActual}
+                        almacenEnfocado={almacenEnfocado}
+                        onSeleccionar={setAlmacenEnfocado}
+                      />
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="centro-control__riel">
+                <BotonRiel
+                  icono={<PanelRightOpen size={17} aria-hidden />}
+                  etiqueta="Abrir paneles"
+                  onClick={() => setPanelesAbiertos(true)}
+                />
+                <span className="centro-control__riel-separador" />
+                <BotonRiel
+                  icono={<Bell size={17} aria-hidden />}
+                  etiqueta="Alertas"
+                  contador={alertas.length}
+                  urgente={alertas.some((alerta) => alerta.gravedad === "roja")}
+                  onClick={() => setPanelesAbiertos(true)}
+                />
+                <BotonRiel
+                  icono={<Package size={17} aria-hidden />}
+                  etiqueta="Pedidos"
+                  contador={pedidosActivos}
+                  onClick={() => abrirPanelEn("pedidos")}
+                />
+                <BotonRiel
+                  icono={<Truck size={17} aria-hidden />}
+                  etiqueta="Flota"
+                  contador={unidades.length}
+                  onClick={() => abrirPanelEn("flota")}
+                />
+                <BotonRiel
+                  icono={<Warehouse size={17} aria-hidden />}
+                  etiqueta="Almacenes"
+                  contador={almacenesConStockDinamico.length}
+                  onClick={() => abrirPanelEn("almacenes")}
                 />
               </div>
-
-              {tabOperativa === "pedidos" ? (
-                <PanelSeguimientoPedidos
-                  pedidos={pedidos}
-                  minutoActual={minutoActual}
-                  onEnfocarUnidad={enfocarUnidad}
-                />
-              ) : tabOperativa === "flota" ? (
-                <PanelFlota
-                  unidades={unidades}
-                  unidadesAveriadas={unidadesAveriadas}
-                  unidadesEnMantenimiento={unidadesEnMantenimientoVigentes}
-                  unidadEnfocada={unidadEnfocada}
-                  onEnfocar={enfocarUnidad}
-                  rutas={ejecucion?.rutas ?? []}
-                  minutoActual={minutoActual}
-                  escenario={escenario}
-                />
-              ) : (
-                <div className="centro-control__tab-almacenes desplazable">
-                  <PanelAlmacenes
-                    almacenes={almacenesConStockDinamico}
-                    umbralAmbarPorcentaje={umbrales.umbralAmbarPorcentaje}
-                    umbralRojoPorcentaje={umbrales.umbralRojoPorcentaje}
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </aside>
         </div>
+      )}
+
+      {reporte && escenario && ejecucion && (
+        <ReporteFinal
+          solicitud={reporte}
+          escenario={escenario}
+          ejecucion={ejecucion}
+          ejecuciones={ejecuciones}
+          averias={listaAverias}
+          segundosReales={segundosReales}
+          colapso={esColapsoAlcanzado ? { fechaHora: fechaHoraColapso, motivo: motivoColapso } : null}
+          onCerrar={cerrarReporte}
+        />
       )}
     </div>
   );
 };
+
+interface BotonRielProps {
+  icono: ReactNode;
+  etiqueta: string;
+  contador?: number;
+  urgente?: boolean;
+  onClick: () => void;
+}
+
+/** Acceso del riel de paneles contraídos: icono, cantidad y nombre al pasar el cursor. */
+const BotonRiel = ({ icono, etiqueta, contador, urgente = false, onClick }: BotonRielProps) => (
+  <button
+    type="button"
+    className="centro-control__boton-riel"
+    aria-label={contador === undefined ? etiqueta : `${etiqueta} (${contador})`}
+    title={etiqueta}
+    onClick={onClick}
+  >
+    {icono}
+    {contador !== undefined && contador > 0 && (
+      <span className={`centro-control__contador ${urgente ? "centro-control__contador--urgente" : ""}`}>
+        {contador > 99 ? "99+" : contador}
+      </span>
+    )}
+  </button>
+);
 
 export default CentroControlPage;

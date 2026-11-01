@@ -17,7 +17,8 @@
 .usuarios__formulario {
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 0.8fr auto;
-  align-items: end;
+  /* Arriba: las reglas de contrasena crecen debajo de su campo sin desalinear el resto. */
+  align-items: start;
   gap: 14px;
   padding: 16px;
 }
@@ -56,6 +57,7 @@
 .usuarios__crear {
   display: flex;
   height: 38px;
+  margin-top: 20px;
   align-items: center;
   justify-content: center;
   gap: 8px;

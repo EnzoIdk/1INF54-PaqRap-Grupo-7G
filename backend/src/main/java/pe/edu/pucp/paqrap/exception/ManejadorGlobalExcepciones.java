@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -73,11 +74,30 @@ public class ManejadorGlobalExcepciones {
                 ex.getMessage() != null ? ex.getMessage() : "Argumento invalido");
     }
 
+    /**
+     * Errores con estado explicito (409 usuario repetido, 400 contrasena
+     * debil, 401 sin sesion...): el motivo llega al usuario en vez de un
+     * cuerpo vacio. Se repite en "message", la clave que lee el login.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Object> manejarEstado(ResponseStatusException ex) {
+        HttpStatus estado = HttpStatus.resolve(ex.getStatusCode().value());
+        String mensaje = ex.getReason() != null ? ex.getReason()
+                : estado != null ? estado.getReasonPhrase() : "Error";
+        Map<String, Object> cuerpo = Map.of(
+                "instante", LocalDateTime.now().toString(),
+                "estado", ex.getStatusCode().value(),
+                "mensaje", mensaje,
+                "message", mensaje);
+        return ResponseEntity.status(ex.getStatusCode()).body(cuerpo);
+    }
+
     private ResponseEntity<Object> construirRespuesta(HttpStatus estado, String mensaje) {
         Map<String, Object> cuerpo = Map.of(
                 "instante", LocalDateTime.now().toString(),
                 "estado", estado.value(),
-                "mensaje", mensaje);
+                "mensaje", mensaje,
+                "message", mensaje);
         return ResponseEntity.status(estado).body(cuerpo);
     }
 }

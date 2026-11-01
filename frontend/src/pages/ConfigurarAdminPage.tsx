@@ -4,6 +4,8 @@ import { Link, Navigate } from "react-router-dom";
 import type { FormEvent } from "react";
 import { mensajeErrorAuth, useAuth } from "../auth/AuthContext";
 import BotonTema from "../components/comunes/BotonTema";
+import ReglasContrasena from "../components/comunes/ReglasContrasena";
+import { contrasenaEsSegura } from "../utils/politicaContrasena";
 import "./AuthPage.css";
 
 const ConfigurarAdminPage = () => {
@@ -21,6 +23,10 @@ const ConfigurarAdminPage = () => {
   const enviar = async (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
     setError("");
+    if (!contrasenaEsSegura(username, password)) {
+      setError("La contraseña todavía no cumple todas las reglas de seguridad.");
+      return;
+    }
     if (password !== confirmacion) {
       setError("Las contraseñas no coinciden.");
       return;
@@ -67,7 +73,7 @@ const ConfigurarAdminPage = () => {
             </span>
           </label>
           <label className="auth__campo">
-            <span>Contraseña <small>(mínimo 12 caracteres)</small></span>
+            <span>Contraseña</span>
             <span className="auth__entrada">
               <LockKeyhole size={17} aria-hidden />
               <input
@@ -81,6 +87,7 @@ const ConfigurarAdminPage = () => {
                 placeholder="Crea una contraseña segura"
               />
             </span>
+            <ReglasContrasena usuario={username} contrasena={password} />
           </label>
           <label className="auth__campo">
             <span>Confirma la contraseña</span>

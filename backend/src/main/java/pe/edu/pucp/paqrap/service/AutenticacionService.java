@@ -43,6 +43,7 @@ public class AutenticacionService {
         }
 
         String username = credenciales.username().trim();
+        PoliticaContrasena.exigir(username, credenciales.password());
         if (usuarioRepository.existsByUsername(username)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese usuario ya existe");
         }

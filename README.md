@@ -114,10 +114,30 @@ siguiente, sin retrasar ninguna entrega que cumplía su plazo.
 | `POST` | `/api/experimentacion/ejecutar-colapso` | Simulación continua hasta el colapso logístico |
 | `PUT` | `/api/admin/parametros` | (ADMIN) Cambia en caliente flota y almacenes |
 | `POST` | `/api/admin/parametros/restablecer` | (ADMIN) Vuelve a los valores de `application.yml` |
+| `GET` | `/api/simulaciones-compartidas` | Planes recientes que otros navegadores pueden abrir |
+| `GET` | `/api/simulaciones-compartidas/{id}` | Plan completo de una simulación compartida |
+| `GET` | `/api/simulaciones-compartidas/estado` | Corridas del planificador en curso y en espera |
 
 Las tres ejecuciones aceptan `pedidosAdicionales`: pedidos registrados por el usuario
 (`clienteId`, `posX`, `posY`, `cantidadProducto`, `plazoHoras`, `dia`, `hora`, `minuto`).
-Toda la API, salvo `/api/auth/**`, exige sesión iniciada.
+Toda la API, salvo `/api/auth/**`, exige sesión iniciada. Cada ejecución devuelve en la
+cabecera `X-Simulacion-Id` el identificador con el que otros navegadores abren ese plan.
+
+### Seguridad y pruebas
+
+- Inicio de sesión con límite de intentos (5 por usuario o 20 por IP en 15 min, luego
+  bloqueo de 15 min) y contraseñas seguras (12+ caracteres, mayúscula, minúscula, número y
+  símbolo). Detalle en [docs/arquitectura-simulacion.md](docs/arquitectura-simulacion.md).
+- `mvn test` en `backend/` ejecuta las pruebas unitarias y de integración, incluidas las de
+  seguridad del login (`SeguridadLoginIT`) y de accesos simultáneos (`LimitadorPlanificadorTest`).
+- Pruebas de carga y estrés contra un backend levantado (credenciales de una cuenta de
+  prueba por variables de entorno):
+
+  ```bash
+  PAQRAP_USUARIO=... PAQRAP_CLAVE=... python -I pruebas/rendimiento/prueba_carga.py --url http://localhost:8080 --escenario todos
+  ```
+
+  Resultados de referencia en [docs/pruebas-rendimiento.md](docs/pruebas-rendimiento.md).
 
 ```bash
 curl -X POST http://localhost:8080/api/experimentacion/ejecutar \

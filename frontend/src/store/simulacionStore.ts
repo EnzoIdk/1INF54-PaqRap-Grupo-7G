@@ -21,6 +21,7 @@ export type ModoSimulacion = "1D" | "5D" | "COLAPSO" | "DIA";
 /** Velocidad del modo día a día: un segundo real es un segundo simulado. */
 export const MINUTOS_POR_SEGUNDO_TIEMPO_REAL = 1 / 60;
 import { VELOCIDADES_REPRODUCCION } from "../utils/constants";
+import { NIVELES_SEMAFORO, type NivelSemaforo } from "../utils/semaforo";
 
 /** Parametros por defecto del lanzador de la experimentacion numerica. */
 const PARAMETROS_INICIALES: ParametrosEjecucion = {
@@ -74,6 +75,10 @@ interface SimulacionState {
   parametrosVigentes: ParametrosVigentes | null;
   // --- Tipos de unidad visibles en el mapa (RF-59) ---
   tiposVisibles: TipoUnidad[];
+  // --- Niveles de semaforo + vacio visibles (rubrica D06, F16) ---
+  nivelesVisibles: NivelSemaforo[];
+  // --- Almacen seleccionado en el mapa o en el panel (rubrica F05) ---
+  almacenEnfocado: string | null;
 
   // --- Catalogo y parametros de entrada ---
   conjuntos: ConjuntoDatos[];
@@ -104,6 +109,8 @@ interface SimulacionState {
   limpiarPedidosAdicionales: () => void;
   setParametrosVigentes: (parametros: ParametrosVigentes) => void;
   alternarTipoVisible: (tipo: TipoUnidad) => void;
+  alternarNivelVisible: (nivel: NivelSemaforo) => void;
+  setAlmacenEnfocado: (codigoAlmacen: string | null) => void;
   setConjuntos: (conjuntos: ConjuntoDatos[]) => void;
   actualizarParametros: (cambios: Partial<ParametrosEjecucion>) => void;
   actualizarParametros5D: (cambios: Partial<ParametrosCincoDias>) => void;
@@ -145,6 +152,8 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   pedidosAdicionales: [],
   parametrosVigentes: null,
   tiposVisibles: ["AUTO", "MOTO", "BICICLETA"],
+  nivelesVisibles: [...NIVELES_SEMAFORO],
+  almacenEnfocado: null,
   conjuntos: [],
   parametros: PARAMETROS_INICIALES,
   parametros5D: PARAMETROS_5D_INICIALES,
@@ -188,6 +197,13 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
     set((estado) => ({ pedidosAdicionales: estado.pedidosAdicionales.filter((_, i) => i !== indice) })),
   limpiarPedidosAdicionales: () => set({ pedidosAdicionales: [] }),
   setParametrosVigentes: (parametrosVigentes) => set({ parametrosVigentes }),
+  alternarNivelVisible: (nivel) =>
+    set((estado) => ({
+      nivelesVisibles: estado.nivelesVisibles.includes(nivel)
+        ? estado.nivelesVisibles.filter((candidato) => candidato !== nivel)
+        : [...estado.nivelesVisibles, nivel],
+    })),
+  setAlmacenEnfocado: (almacenEnfocado) => set({ almacenEnfocado }),
   alternarTipoVisible: (tipo) =>
     set((estado) => ({
       tiposVisibles: estado.tiposVisibles.includes(tipo)

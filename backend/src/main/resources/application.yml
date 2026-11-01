@@ -1,5 +1,12 @@
 server:
   port: 8080
+  servlet:
+    session:
+      # Una sesion inactiva expira a los 30 minutos; la cookie no es legible desde JavaScript.
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   application:
@@ -20,6 +27,20 @@ spring:
 # debe escribirse en el codigo; todo valor configurable se lee desde aqui
 # (STD 2.3).
 paqrap:
+  seguridad:
+    login:
+      # Limite de intentos fallidos de inicio de sesion (fuerza bruta).
+      maximo-intentos-usuario: 5
+      maximo-intentos-ip: 20
+      ventana-minutos: 15
+      bloqueo-minutos: 15
+  concurrencia:
+    # Corridas del planificador que se resuelven a la vez (0 = una por nucleo);
+    # las demas esperan su turno hasta este limite y luego reciben 503.
+    ejecuciones-simultaneas: 0
+    espera-maxima-segundos: 120
+    # Planes recientes que otros navegadores pueden abrir (rubrica G06).
+    simulaciones-compartidas: 6
   planificador:
     algoritmo-activo: IACO
     semilla-aleatoria: 20220954

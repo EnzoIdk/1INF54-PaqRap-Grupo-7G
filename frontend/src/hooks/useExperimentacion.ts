@@ -118,7 +118,7 @@ export function useExperimentacion() {
           algoritmo,
           averias: [],
           pedidosAdicionales: actual.pedidosAdicionales,
-        });
+        }, "DIA_A_DIA");
         registrarResultado(resultado);
         activarTiempoReal(minutoDelMes(ahoraEnLima()));
         return resultado;

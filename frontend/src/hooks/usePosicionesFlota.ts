@@ -2,6 +2,9 @@ import { useMemo } from "react";
 import type { EjecucionDto, RutaDto, TipoUnidad, UnidadDto } from "../types/Experimentacion";
 import type { EstadoPedidoVisual } from "../utils/constants";
 
+/** Hacia donde avanza la unidad: este, oeste, norte o sur (las calles no tienen diagonales). */
+export type Rumbo = "E" | "O" | "N" | "S";
+
 /** Situacion de una unidad de transporte en un instante de la simulacion. */
 export interface PosicionUnidad {
   codigoUnidad: string;
@@ -22,6 +25,12 @@ export interface PosicionUnidad {
   entregasTotales: number;
   cargaRestante: number;
   cargaTotal: number;
+  /** Paquetes que admite la unidad: con la carga a bordo da su ocupacion. */
+  capacidad: number;
+  /** Direccion del ultimo desplazamiento, para orientar el icono en el mapa. */
+  rumbo: Rumbo;
+  /** La unidad no tiene ninguna ruta asignada en esta ejecucion. */
+  sinAsignacion?: boolean;
   /** Tramo del recorrido ya ejecutado, para dibujarlo en gris. */
   indiceNodoActual: number;
 }
@@ -98,14 +107,16 @@ export function usePosicionesFlota(
       }
     });
 
+    // Toda la flota aparece, aunque no tenga rutas: las averiadas o en
+    // mantenimiento y tambien las que quedaron disponibles sin asignacion.
     const conRuta = new Set(unidades.map((unidad) => unidad.codigoUnidad));
-    unidadesInmovilizadas
-      .filter((codigo) => !conRuta.has(codigo))
-      .forEach((codigo) => {
-        const unidad = flota.find((candidata) => candidata.codigo === codigo);
-        if (unidad) {
-          unidades.push(posicionInmovilizada(unidad));
-        }
+    flota
+      .filter((unidad) => !conRuta.has(unidad.codigo))
+      .forEach((unidad) => {
+        unidades.push({
+          ...posicionInmovilizada(unidad),
+          sinAsignacion: !unidadesInmovilizadas.includes(unidad.codigo),
+        });
       });
 
     const pedidos: EstadoPedidoEnMapa[] = [];
@@ -175,6 +186,8 @@ function posicionInmovilizada(unidad: UnidadDto): PosicionUnidad {
     entregasTotales: 0,
     cargaRestante: 0,
     cargaTotal: 0,
+    capacidad: unidad.capacidad,
+    rumbo: "E",
     indiceNodoActual: 0,
   };
 }
@@ -193,23 +206,24 @@ function calcularPosicion(ruta: RutaDto, minutoActual: number): PosicionUnidad {
     entregasTotales: ruta.paradas.length,
     cargaRestante: ruta.cargaTotal - cargaEntregada,
     cargaTotal: ruta.cargaTotal,
+    capacidad: ruta.capacidad,
     almacenDestino: ruta.almacenDestino ?? ruta.almacenOrigen,
   };
 
   if (recorrido.length === 0) {
-    return { ...base, x: 0, y: 0, enAlmacen: true, finalizada: false, entregando: false, retornando: false, indiceNodoActual: 0 };
+    return { ...base, x: 0, y: 0, rumbo: "E", enAlmacen: true, finalizada: false, entregando: false, retornando: false, indiceNodoActual: 0 };
   }
 
   if (minutoActual <= minutosPorNodo[0]) {
     const [x, y] = recorrido[0];
-    return { ...base, x, y, enAlmacen: true, finalizada: false, entregando: false, retornando: false, indiceNodoActual: 0 };
+    return { ...base, x, y, rumbo: rumboDesde(recorrido, 0), enAlmacen: true, finalizada: false, entregando: false, retornando: false, indiceNodoActual: 0 };
   }
 
   const ultimo = recorrido.length - 1;
   if (minutoActual >= minutosPorNodo[ultimo]) {
     const [x, y] = recorrido[ultimo];
     // Una vez concluido el recorrido, la unidad permanece en el almacen de destino
-    return { ...base, x, y, enAlmacen: true, finalizada: true, entregando: false, retornando: false, indiceNodoActual: ultimo };
+    return { ...base, x, y, rumbo: rumboDesde(recorrido, ultimo - 1), enAlmacen: true, finalizada: true, entregando: false, retornando: false, indiceNodoActual: ultimo };
   }
 
   const indice = buscarTramo(minutosPorNodo, minutoActual);
@@ -231,12 +245,46 @@ function calcularPosicion(ruta: RutaDto, minutoActual: number): PosicionUnidad {
     ...base,
     x: xDesde + (xHasta - xDesde) * avance,
     y: yDesde + (yHasta - yDesde) * avance,
+    rumbo: rumboDesde(recorrido, indice),
     enAlmacen: false,
     finalizada: false,
     entregando,
     retornando,
     indiceNodoActual: indice,
   };
+}
+
+/**
+ * Rumbo del tramo que empieza en el nodo indicado. Si la unidad esta quieta
+ * (nodo repetido: entrega, pausa o espera) conserva el rumbo con el que
+ * llego; antes de moverse por primera vez, el del primer tramo que recorrera.
+ */
+function rumboDesde(recorrido: [number, number][], indice: number): Rumbo {
+  for (let i = Math.min(indice, recorrido.length - 2); i >= 0; i--) {
+    const rumbo = rumboEntre(recorrido[i], recorrido[i + 1]);
+    if (rumbo) {
+      return rumbo;
+    }
+  }
+  for (let i = Math.max(0, indice + 1); i < recorrido.length - 1; i++) {
+    const rumbo = rumboEntre(recorrido[i], recorrido[i + 1]);
+    if (rumbo) {
+      return rumbo;
+    }
+  }
+  return "E";
+}
+
+function rumboEntre(desde: [number, number], hasta: [number, number]): Rumbo | null {
+  const dx = hasta[0] - desde[0];
+  const dy = hasta[1] - desde[1];
+  if (dx === 0 && dy === 0) {
+    return null;
+  }
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx > 0 ? "E" : "O";
+  }
+  return dy > 0 ? "N" : "S";
 }
 
 /** Busqueda binaria del tramo que contiene al minuto pedido. */

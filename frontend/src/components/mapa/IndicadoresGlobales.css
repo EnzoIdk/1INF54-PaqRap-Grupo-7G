@@ -1,0 +1,71 @@
+/* Indicadores globales sobre el mapa (rubrica G01-G04). */
+
+/* Apilados bajo los botones de filtros y leyenda (columna derecha del mapa). */
+.indicadores-globales {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.indicadores-globales__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  background-color: var(--color-superficie);
+  box-shadow: var(--sombra-flotante);
+}
+
+.indicadores-globales__cabecera {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+
+.indicadores-globales__valor {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.indicadores-globales__valor strong {
+  font-size: 16px;
+  color: var(--color-texto);
+}
+
+.indicadores-globales__punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.indicadores-globales__nivel {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.indicadores-globales__barra {
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--color-borde);
+  overflow: hidden;
+}
+
+.indicadores-globales__barra span {
+  display: block;
+  height: 100%;
+  transition: width 0.3s linear;
+}
+
+.indicadores-globales__detalle {
+  font-size: 10px;
+  color: var(--color-texto-secundario);
+}
+

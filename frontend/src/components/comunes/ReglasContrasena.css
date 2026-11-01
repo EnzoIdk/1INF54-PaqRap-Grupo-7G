@@ -1,0 +1,75 @@
+/* Reglas de contrasena segura mientras se escribe. */
+
+.reglas-contrasena {
+  display: grid;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--color-texto-secundario);
+}
+
+.reglas-contrasena__barra {
+  height: 5px;
+  border-radius: 3px;
+  background-color: var(--color-borde);
+  overflow: hidden;
+}
+
+.reglas-contrasena__barra span {
+  display: block;
+  height: 100%;
+  background-color: var(--color-semaforo-rojo);
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.reglas-contrasena__barra[data-nivel="2"] span,
+.reglas-contrasena__barra[data-nivel="3"] span {
+  background-color: var(--color-semaforo-ambar);
+}
+
+.reglas-contrasena__barra[data-nivel="4"] span {
+  background-color: var(--color-semaforo-verde);
+}
+
+.reglas-contrasena ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reglas-contrasena li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.reglas-contrasena li svg {
+  flex: 0 0 auto;
+  color: var(--color-semaforo-rojo);
+}
+
+.reglas-contrasena__regla--ok {
+  color: var(--color-texto-exito);
+}
+
+.reglas-contrasena li.reglas-contrasena__regla--ok svg {
+  color: var(--color-semaforo-verde);
+}
+
+.reglas-contrasena .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .reglas-contrasena ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -4,6 +4,8 @@ import axios from "axios";
 import type { FormEvent } from "react";
 import Encabezado from "../components/layout/Encabezado";
 import { mensajeErrorAuth } from "../auth/AuthContext";
+import ReglasContrasena from "../components/comunes/ReglasContrasena";
+import { contrasenaEsSegura } from "../utils/politicaContrasena";
 import "./UsuariosPage.css";
 
 interface Usuario {
@@ -38,6 +40,10 @@ const UsuariosPage = () => {
     evento.preventDefault();
     setError("");
     setMensaje("");
+    if (!contrasenaEsSegura(username, password)) {
+      setError("La contraseña todavía no cumple todas las reglas de seguridad.");
+      return;
+    }
     setEnviando(true);
     try {
       await axios.post("/api/admin/users", { username, password, rol });
@@ -86,7 +92,7 @@ const UsuariosPage = () => {
               />
             </label>
             <label>
-              <span>Contraseña <small>(mínimo 12 caracteres)</small></span>
+              <span>Contraseña</span>
               <input
                 type="password"
                 autoComplete="new-password"
@@ -96,6 +102,7 @@ const UsuariosPage = () => {
                 value={password}
                 onChange={(evento) => setPassword(evento.target.value)}
               />
+              {password && <ReglasContrasena usuario={username} contrasena={password} />}
             </label>
             <label>
               <span>Rol</span>

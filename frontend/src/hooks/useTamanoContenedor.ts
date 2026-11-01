@@ -21,6 +21,15 @@ export function useTamanoContenedor<T extends HTMLElement>(): [RefObject<T>, Tam
       return;
     }
 
+    // Primera medida inmediata: el observador avisa recién en el siguiente cuadro
+    // pintado, y en una pestaña en segundo plano eso puede no ocurrir.
+    const estilo = window.getComputedStyle(elemento);
+    const ancho = elemento.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
+    const alto = elemento.clientHeight - parseFloat(estilo.paddingTop) - parseFloat(estilo.paddingBottom);
+    if (ancho > 0 && alto > 0) {
+      setTamano({ ancho, alto });
+    }
+
     const observador = new ResizeObserver((entradas) => {
       const caja = entradas[0]?.contentRect;
       if (caja) {

@@ -1,4 +1,5 @@
 import { useSemaforoAlmacen } from "../../hooks/useSemaforoAlmacen";
+import { ETIQUETA_NIVEL } from "../../utils/semaforo";
 import "./SemaforoStock.css";
 
 interface SemaforoStockProps {
@@ -23,7 +24,9 @@ const SemaforoStock = ({ stockActual, stockMaximo, ...umbrales }: SemaforoStockP
         <span className="cifra semaforo__cifra">
           {stockActual} / {stockMaximo} u
         </span>
-        <span className="texto-tenue">{Math.round(semaforo.porcentajeDisponible * 100)} % disponible</span>
+        <span className="texto-tenue">
+          {Math.round(semaforo.porcentajeDisponible * 100)} % disponible · {ETIQUETA_NIVEL[semaforo.color]}
+        </span>
       </div>
       <div className="semaforo__barra">
         <span

@@ -1,0 +1,148 @@
+/* Resumen ejecutivo del Analytics: hallazgos, evolucion y holgura. */
+
+.resumen-ejecutivo .tarjeta__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.resumen-ejecutivo__cuerpo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.resumen-ejecutivo__hallazgos {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hallazgo {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-borde);
+  border-left-width: 4px;
+  border-radius: var(--radio);
+  background-color: var(--color-fondo);
+}
+
+.hallazgo--critico {
+  border-left-color: var(--color-semaforo-rojo);
+}
+
+.hallazgo--atencion {
+  border-left-color: var(--color-semaforo-ambar);
+}
+
+.hallazgo--bien {
+  border-left-color: var(--color-semaforo-verde);
+}
+
+.hallazgo__icono {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.hallazgo--critico .hallazgo__icono {
+  color: var(--color-semaforo-rojo);
+}
+
+.hallazgo--atencion .hallazgo__icono {
+  color: var(--color-semaforo-ambar);
+}
+
+.hallazgo--bien .hallazgo__icono {
+  color: var(--color-semaforo-verde);
+}
+
+.hallazgo__gravedad {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+
+.hallazgo__titulo {
+  display: block;
+  font-size: 13.5px;
+  color: var(--color-texto);
+}
+
+.hallazgo__detalle,
+.hallazgo__recomendacion {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--color-texto-secundario);
+}
+
+.hallazgo__recomendacion {
+  color: var(--color-texto);
+  font-weight: 500;
+}
+
+.resumen-ejecutivo__graficos {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.resumen-ejecutivo__bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.resumen-ejecutivo__grafico {
+  width: 100%;
+  height: auto;
+}
+
+.resumen-ejecutivo__holgura {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+}
+
+.resumen-ejecutivo__holgura li {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 80px;
+  align-items: center;
+  gap: 10px;
+}
+
+.resumen-ejecutivo__holgura small {
+  color: var(--color-texto-tenue);
+}
+
+.resumen-ejecutivo__pista {
+  height: 10px;
+  border-radius: 5px;
+  background-color: var(--color-superficie);
+  overflow: hidden;
+}
+
+.resumen-ejecutivo__pista span {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+}
+
+@media (max-width: 1100px) {
+  .resumen-ejecutivo__cuerpo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

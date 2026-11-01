@@ -2,6 +2,7 @@ package pe.edu.pucp.paqrap.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,8 +47,13 @@ public class AutenticacionController {
 
     @GetMapping("/me")
     public UsuarioResponse usuarioActual(Authentication authentication) {
+        // /api/auth/** es publico: sin sesion llega nulo o anonimo y se responde 401, no 500.
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken
+                || !authentication.isAuthenticated()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay una sesión activa");
+        }
         Usuario usuario = usuarioRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "No hay una sesión activa"));
         return UsuarioResponse.desde(usuario);
     }
 

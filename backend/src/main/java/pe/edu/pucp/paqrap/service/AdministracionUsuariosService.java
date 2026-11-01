@@ -31,6 +31,7 @@ public class AdministracionUsuariosService {
     @Transactional
     public Usuario crear(CrearUsuarioRequest request) {
         String username = request.username().trim();
+        PoliticaContrasena.exigir(username, request.password());
         if (usuarioRepository.existsByUsername(username)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese usuario ya existe");
         }

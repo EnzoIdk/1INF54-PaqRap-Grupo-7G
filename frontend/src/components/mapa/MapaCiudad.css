@@ -82,3 +82,196 @@
   color: var(--color-texto-tenue);
   text-align: center;
 }
+
+/* Zoom y desplazamiento (rubrica C08). */
+.mapa__lienzo {
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+
+.mapa__lienzo:active {
+  cursor: grabbing;
+}
+
+.mapa__almacen {
+  cursor: pointer;
+}
+
+.mapa__etiqueta-almacen {
+  fill: var(--color-texto);
+  font-family: var(--fuente-mono);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-fondo);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.mapa__insignia-averia {
+  fill: #ffffff;
+  font-family: var(--fuente-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.mapa__zoom {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  background-color: var(--color-superficie);
+  box-shadow: var(--sombra-flotante);
+}
+
+.mapa__zoom button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 7px;
+  background: none;
+  color: var(--color-texto);
+  cursor: pointer;
+}
+
+.mapa__zoom button:hover:not(:disabled) {
+  background-color: var(--color-azul-suave);
+  color: var(--color-azul-accion);
+}
+
+.mapa__zoom button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.mapa__zoom button:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
+}
+
+.mapa__zoom-valor {
+  font-size: 10px;
+  color: var(--color-texto-secundario);
+}
+
+/* Varias unidades en el mismo punto: insignia "+N" (se listan al pasar el cursor). */
+.mapa__insignia-grupo rect {
+  fill: var(--color-texto);
+  stroke: var(--color-fondo);
+  stroke-width: 1.5px;
+}
+
+.mapa__insignia-grupo text {
+  fill: var(--color-fondo);
+  font-family: var(--fuente-mono);
+  font-size: 9px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* Ficha de las unidades bajo el cursor. */
+.mapa__sugerencia {
+  position: absolute;
+  z-index: 8;
+  max-height: min(360px, calc(100% - 16px));
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-flotante);
+  font-size: 12px;
+}
+
+.mapa__sugerencia-titulo {
+  margin: 0 4px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-texto-tenue);
+}
+
+.mapa__sugerencia ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mapa__sugerencia button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mapa__sugerencia button:hover,
+.mapa__sugerencia button:focus-visible {
+  outline: none;
+  background-color: var(--color-superficie);
+}
+
+.mapa__sugerencia-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mapa__sugerencia-punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.mapa__sugerencia-nivel {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mapa__sugerencia-detalle {
+  padding-left: 14px;
+  font-size: 11.5px;
+  color: var(--color-texto-secundario);
+}
+
+.mapa__sugerencia .mapa__sugerencia-resumen {
+  margin: 0 4px 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 11.5px;
+  color: var(--color-texto-secundario);
+}
+
+.mapa__sugerencia-lista--compacta button {
+  padding: 4px 6px;
+}

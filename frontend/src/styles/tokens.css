@@ -52,6 +52,11 @@
   --color-semaforo-verde: #16a34a;
   --color-semaforo-ambar: #f59e0b;
   --color-semaforo-rojo: #dc2626;
+  /* Semaforo + vacio y tipos de averia (rubrica C27, D10-D12). */
+  --color-semaforo-vacio: #94a3b8;
+  --color-averia-1: #f59e0b;
+  --color-averia-2: #ea580c;
+  --color-averia-3: #b91c1c;
 
   /* Fondos suaves de los mismos colores, para badges y alertas */
   --color-verde-suave: #dcfce7;
@@ -147,6 +152,10 @@
   --color-semaforo-verde: #22c55e;
   --color-semaforo-ambar: #f59e0b;
   --color-semaforo-rojo: #f87171;
+  --color-semaforo-vacio: #64748b;
+  --color-averia-1: #fbbf24;
+  --color-averia-2: #fb923c;
+  --color-averia-3: #f87171;
 
   --color-verde-suave: #11321f;
   --color-ambar-suave: #3a2a0a;

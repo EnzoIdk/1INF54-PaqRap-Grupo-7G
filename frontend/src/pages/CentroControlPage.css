@@ -11,9 +11,14 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   padding: 14px 16px;
+}
+
+/* En pantalla completa el Centro de Control ocupa todo el monitor. */
+.centro-control:fullscreen {
+  background-color: var(--color-fondo);
 }
 
 .centro-control__columna-mapa {
@@ -120,9 +125,119 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 380px;
   min-height: 0;
   overflow: hidden;
   padding-right: 2px;
+}
+
+/* Paneles contraidos (rubrica E01): un riel con accesos y contadores. */
+.centro-control__paneles--contraidos {
+  width: 44px;
+  padding-right: 0;
+}
+
+.centro-control__paneles-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.centro-control__paneles-cabecera .rotulo {
+  margin: 0;
+}
+
+.centro-control__riel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.centro-control__riel-separador {
+  width: 24px;
+  height: 1px;
+  background-color: var(--color-borde);
+}
+
+.centro-control__boton-riel {
+  position: relative;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radio);
+  background: none;
+  color: var(--color-texto-secundario);
+  cursor: pointer;
+}
+
+.centro-control__boton-riel:hover {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+}
+
+.centro-control__boton-riel:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
+}
+
+.centro-control__contador {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background-color: var(--color-azul-accion);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 17px;
+  text-align: center;
+}
+
+.centro-control__contador--urgente {
+  background-color: var(--color-semaforo-rojo);
+}
+
+.centro-control__acciones-vista {
+  display: flex;
+  gap: 6px;
+}
+
+.centro-control__boton-vista {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background-color: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.centro-control__boton-vista:hover,
+.centro-control__boton-vista[aria-pressed="true"] {
+  border-color: var(--color-azul-accion);
+  color: var(--color-enlace);
+}
+
+.centro-control__boton-vista:focus-visible {
+  outline: none;
+  box-shadow: var(--anillo-foco);
 }
 
 /* Las alertas no crecen mas alla de su lista acotada: el resto es para las pestanas. */
@@ -216,7 +331,19 @@
   }
 
   .centro-control__paneles {
+    width: auto;
     overflow: visible;
+  }
+
+  .centro-control__riel {
+    flex-direction: row;
+    justify-content: center;
+    padding: 4px 6px;
+  }
+
+  .centro-control__riel-separador {
+    width: 1px;
+    height: 24px;
   }
 
   .centro-control__seccion-operativa {

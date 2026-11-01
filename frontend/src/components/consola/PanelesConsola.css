@@ -60,3 +60,97 @@
   color: var(--color-semaforo-verde);
   background: var(--color-verde-suave);
 }
+
+/* Simulaciones compartidas entre navegadores (rubrica C05, C06, G06). */
+.compartidas .tarjeta__titulo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compartidas__estado {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compartidas__carga {
+  padding: 2px 9px;
+  border-radius: 10px;
+  background-color: var(--color-verde-suave);
+  color: var(--color-texto-exito);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.compartidas__carga--llena {
+  background-color: var(--color-ambar-suave);
+  color: var(--color-texto);
+}
+
+.compartidas__vacio,
+.compartidas__error {
+  margin: 0;
+  padding: 0 16px 14px;
+  font-size: 12.5px;
+}
+
+.compartidas__error {
+  color: var(--color-texto-error);
+}
+
+.compartidas__lista {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 16px 12px;
+  list-style: none;
+}
+
+.compartidas__lista li {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--color-borde);
+  font-size: 12.5px;
+}
+
+.compartidas__modo {
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background-color: var(--color-azul-suave);
+  color: var(--color-enlace);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.compartidas__detalle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compartidas__colapso {
+  color: var(--color-semaforo-rojo);
+  font-weight: 600;
+}
+
+.compartidas__autor {
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .compartidas__lista li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .compartidas__detalle {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+}

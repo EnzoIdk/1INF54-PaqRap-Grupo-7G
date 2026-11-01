@@ -1,153 +1,165 @@
-import { memo } from "react";
-import { Bike, Car, Motorbike, TriangleAlert } from "lucide-react";
+import { memo, useMemo } from "react";
 import type { PosicionUnidad } from "../../hooks/usePosicionesFlota";
-import type { TipoUnidad } from "../../types/Experimentacion";
 import { COLOR_TIPO_UNIDAD, ETIQUETA_TIPO_UNIDAD } from "../../utils/constants";
-import { formatearTiempoSimulado } from "../../utils/formatters";
 import type { EscalaMapa } from "../../utils/coordenadas";
-
-const ICONO_POR_TIPO = {
-  AUTO: Car,
-  MOTO: Motorbike,
-  BICICLETA: Bike,
-} as const;
-
-const LADO_ICONO = 18;
+import { COLOR_TIPO_AVERIA, type AveriaVigente } from "../../utils/averias";
+import { COLOR_NIVEL, ETIQUETA_NIVEL, type UmbralesSemaforo } from "../../utils/semaforo";
+import IconoVehiculo, { LADO_VEHICULO } from "./IconoVehiculo";
+import { agruparSuperpuestas, describirSituacion, estadoUnidad } from "./estadoUnidad";
 
 interface CapaUnidadesProps {
   unidades: PosicionUnidad[];
   escala: EscalaMapa;
-  /** Codigos de las unidades averiadas en este instante. */
-  unidadesAveriadas: string[];
+  /** Averías activas en este instante, con su tipo y su fin (rúbrica D10-D13). */
+  averias: AveriaVigente[];
   /** Codigos de las unidades inmovilizadas por mantenimiento preventivo. */
   unidadesEnMantenimiento: string[];
   unidadEnfocada: string | null;
   onEnfocar: (codigoUnidad: string | null) => void;
-  minutoActual: number;
+  umbrales: UmbralesSemaforo;
+  /** Cursor sobre una unidad: todas las que comparten ese punto y dónde mostrarlas. */
+  onSobrevolar?: (codigos: string[], x: number, y: number) => void;
+  onDejarDeSobrevolar?: () => void;
 }
 
 /**
- * Unidades de transporte sobre el mapa, animadas segun la ruta que el
- * algoritmo encontro (STD 2.6.4).
+ * Unidades de transporte sobre el mapa, animadas según la ruta que el
+ * algoritmo encontró (STD 2.6.4).
  *
- * <ul>
- *   <li>Operativa en ruta: icono a color pleno.</li>
- *   <li>En el almacen: icono al 55 % de opacidad.</li>
- *   <li>Averiada: anillo rojo pulsante con icono de advertencia.</li>
- * </ul>
+ * - El icono es la silueta del tipo de unidad, orientada según su rumbo.
+ * - El anillo que lo rodea es el semáforo + vacío de su ocupación (C27).
+ * - Una avería cambia el anillo al color de su tipo y muestra el número del
+ *   tipo, solo mientras dura (D10-D13).
+ * - En el almacén o con la ruta terminada, el icono se atenúa.
+ * - Si varias unidades coinciden en un punto, una insignia «+N» lo indica y
+ *   al pasar el cursor se listan todas.
  */
 const CapaUnidades = ({
   unidades,
   escala,
-  unidadesAveriadas,
+  averias,
   unidadesEnMantenimiento,
   unidadEnfocada,
   onEnfocar,
-  minutoActual,
-}: CapaUnidadesProps) => (
-  <g>
-    <defs>
-      {/* Trama diagonal de una unidad en mantenimiento (STD 2.6.4). */}
-      <pattern id="trama-mantenimiento" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-        <rect width="4" height="4" fill="var(--color-superficie)" />
-        <line x1="0" y1="0" x2="0" y2="4" stroke="var(--color-texto-tenue)" strokeWidth="1.6" />
-      </pattern>
-    </defs>
-    {unidades.map((unidad) => {
-      const Icono = ICONO_POR_TIPO[unidad.tipoUnidad as TipoUnidad];
-      const cx = escala.aX(unidad.x);
-      const cy = escala.aY(unidad.y);
-      const averiada = unidadesAveriadas.includes(unidad.codigoUnidad);
-      const enMantenimiento =
-        !averiada &&
-        unidadesEnMantenimiento.includes(unidad.codigoUnidad) &&
-        unidad.enAlmacen &&
-        !unidad.entregando &&
-        unidad.entregasHechas === 0;
-      const enfocada = unidadEnfocada === unidad.codigoUnidad;
-      const atenuada = unidadEnfocada !== null && !enfocada;
+  umbrales,
+  onSobrevolar,
+  onDejarDeSobrevolar,
+}: CapaUnidadesProps) => {
+  const grupos = useMemo(() => agruparSuperpuestas(unidades, escala.aX, escala.aY), [unidades, escala]);
+  // La unidad seleccionada se dibuja al final para que quede encima de las demás.
+  const ordenadas = useMemo(
+    () =>
+      unidadEnfocada === null
+        ? unidades
+        : [
+            ...unidades.filter((unidad) => unidad.codigoUnidad !== unidadEnfocada),
+            ...unidades.filter((unidad) => unidad.codigoUnidad === unidadEnfocada),
+          ],
+    [unidades, unidadEnfocada],
+  );
+  // Una insignia por grupo, sobre la unidad que queda arriba.
+  const encimaDeGrupo = new Map<string, string>();
+  ordenadas.forEach((unidad) => {
+    const grupo = grupos.get(unidad.codigoUnidad);
+    if (grupo && grupo.length > 1) {
+      encimaDeGrupo.set(grupo[0], unidad.codigoUnidad);
+    }
+  });
 
-      const opacidad = atenuada ? 0.2 : unidad.enAlmacen || unidad.finalizada ? 0.55 : 1;
+  return (
+    <g>
+      <defs>
+        {/* Trama diagonal de una unidad en mantenimiento (STD 2.6.4). */}
+        <pattern id="trama-mantenimiento" width="4" height="4" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+          <rect width="4" height="4" fill="var(--color-superficie)" />
+          <line x1="0" y1="0" x2="0" y2="4" stroke="var(--color-texto-tenue)" strokeWidth="1.6" />
+        </pattern>
+      </defs>
+      {ordenadas.map((unidad) => {
+        const cx = escala.aX(unidad.x);
+        const cy = escala.aY(unidad.y);
+        const { averia, enMantenimiento, nivel, ocupacion } = estadoUnidad(
+          unidad,
+          averias,
+          unidadesEnMantenimiento,
+          umbrales,
+        );
+        const enfocada = unidadEnfocada === unidad.codigoUnidad;
+        const atenuada = unidadEnfocada !== null && !enfocada;
+        const radio = LADO_VEHICULO[unidad.tipoUnidad] / 2 + 3;
+        const colorAnillo = averia ? COLOR_TIPO_AVERIA[averia.tipo] : COLOR_NIVEL[nivel];
+        const opacidad = atenuada ? 0.2 : unidad.enAlmacen || unidad.finalizada ? 0.6 : 1;
+        const grupo = grupos.get(unidad.codigoUnidad) ?? [unidad.codigoUnidad];
+        const conInsignia = grupo.length > 1 && encimaDeGrupo.get(grupo[0]) === unidad.codigoUnidad;
 
-      return (
-        <g
-          key={unidad.codigoUnidad}
-          className="mapa__unidad"
-          opacity={opacidad}
-          onClick={() => onEnfocar(enfocada ? null : unidad.codigoUnidad)}
-        >
-          {enfocada && <circle cx={cx} cy={cy} r={16} fill="var(--color-azul-suave)" opacity={0.85} />}
+        return (
+          <g
+            key={unidad.codigoUnidad}
+            className="mapa__unidad"
+            opacity={opacidad}
+            data-unidad={unidad.codigoUnidad}
+            role="button"
+            aria-label={
+              `${unidad.codigoUnidad}, ${ETIQUETA_TIPO_UNIDAD[unidad.tipoUnidad]}, ocupación ${Math.round(ocupacion * 100)} % ` +
+              `(${ETIQUETA_NIVEL[nivel]}), ${describirSituacion(unidad, enMantenimiento)}`
+            }
+            onClick={(evento) => {
+              evento.stopPropagation();
+              onEnfocar(enfocada ? null : unidad.codigoUnidad);
+            }}
+            onPointerEnter={() => onSobrevolar?.(grupo, cx, cy)}
+            onPointerLeave={() => onDejarDeSobrevolar?.()}
+          >
+            {enfocada && <circle cx={cx} cy={cy} r={radio + 6} fill="var(--color-azul-suave)" opacity={0.85} />}
 
-          {enMantenimiento && (
-            <circle cx={cx} cy={cy} r={9} fill="url(#trama-mantenimiento)" stroke="var(--color-texto-tenue)" strokeWidth={1.2} />
-          )}
+            <circle
+              cx={cx}
+              cy={cy}
+              r={radio}
+              fill={enMantenimiento ? "url(#trama-mantenimiento)" : "var(--color-superficie)"}
+              fillOpacity={0.94}
+              stroke={enMantenimiento ? "var(--color-texto-tenue)" : colorAnillo}
+              strokeWidth={averia ? 2.8 : 2.2}
+              strokeDasharray={!averia && nivel === "VACIO" ? "3 2" : undefined}
+              className={averia ? "mapa__anillo-averia" : undefined}
+            />
 
-          {averiada && (
-            <>
-              <circle
-                cx={cx}
-                cy={cy}
-                r={9}
-                fill="var(--color-rojo-suave)"
-                stroke="var(--color-semaforo-rojo)"
-                strokeWidth={1.5}
-                className="mapa__anillo-averia"
-              />
-              <TriangleAlert
-                x={cx + 4}
-                y={cy - 14}
-                width={11}
-                height={11}
-                color="var(--color-semaforo-rojo)"
-                strokeWidth={2.5}
-              />
-            </>
-          )}
+            <IconoVehiculo
+              tipoUnidad={unidad.tipoUnidad}
+              cx={cx}
+              cy={cy}
+              rumbo={unidad.rumbo}
+              color={enMantenimiento ? "var(--color-texto-tenue)" : COLOR_TIPO_UNIDAD[unidad.tipoUnidad]}
+            />
 
-          <Icono
-            x={cx - LADO_ICONO / 2}
-            y={cy - LADO_ICONO / 2}
-            width={LADO_ICONO}
-            height={LADO_ICONO}
-            color={enMantenimiento ? "var(--color-texto-tenue)" : COLOR_TIPO_UNIDAD[unidad.tipoUnidad]}
-            strokeWidth={2}
-          />
+            {averia && (
+              <g>
+                <circle cx={cx + radio * 0.8} cy={cy - radio * 0.8} r={6} fill={COLOR_TIPO_AVERIA[averia.tipo]} />
+                <text x={cx + radio * 0.8} y={cy - radio * 0.8 + 3} className="mapa__insignia-averia">
+                  {averia.tipo.replace("TIPO_", "")}
+                </text>
+              </g>
+            )}
 
-          {(enfocada || unidad.entregando) && (
-            <text x={cx} y={cy + 20} className="mapa__etiqueta-unidad">
-              {unidad.codigoUnidad}
-            </text>
-          )}
+            {conInsignia && (
+              <g className="mapa__insignia-grupo">
+                <rect x={cx - radio - 12} y={cy - radio - 7} width={20} height={13} rx={6.5} />
+                <text x={cx - radio - 2} y={cy - radio + 2.6}>
+                  +{grupo.length - 1}
+                </text>
+              </g>
+            )}
 
-          <title>
-            {`${unidad.codigoUnidad} · ${ETIQUETA_TIPO_UNIDAD[unidad.tipoUnidad]}\n` +
-              `Entregas ${unidad.entregasHechas}/${unidad.entregasTotales} · ` +
-              `${unidad.cargaRestante}/${unidad.cargaTotal} paquetes a bordo\n` +
-              `${describirSituacion(unidad, averiada, enMantenimiento)} · ${formatearTiempoSimulado(minutoActual)}`}
-          </title>
-        </g>
-      );
-    })}
-  </g>
-);
-
-function describirSituacion(unidad: PosicionUnidad, averiada: boolean, enMantenimiento: boolean): string {
-  if (averiada) {
-    return "Averiada";
-  }
-  if (unidad.entregando) {
-    return "Entregando al cliente";
-  }
-  if (!unidad.enAlmacen && !unidad.finalizada) {
-    return "En ruta";
-  }
-  if (enMantenimiento) {
-    return "En mantenimiento preventivo";
-  }
-  if (unidad.finalizada) {
-    return "Ruta completada";
-  }
-  return "En el almacén";
-}
+            {(enfocada || unidad.entregando) && (
+              <text x={cx} y={cy + radio + 12} className="mapa__etiqueta-unidad">
+                {unidad.codigoUnidad}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </g>
+  );
+};
 
 export default memo(CapaUnidades);
