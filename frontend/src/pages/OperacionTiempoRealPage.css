@@ -1,0 +1,327 @@
+/* Estilos específicos de la página de Operación en tiempo real (Día a Día). */
+
+.operacion-tr__barra {
+  justify-content: space-between;
+}
+
+.operacion-tr__controles-incidencias {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__boton-incidencia--activo {
+  background-color: var(--color-azul-suave);
+  border-color: var(--color-azul-accion);
+  color: var(--color-enlace);
+}
+
+.operacion-tr__insignia {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background-color: var(--color-semaforo-ambar);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.operacion-tr__insignia--roja {
+  background-color: var(--color-semaforo-rojo);
+}
+
+.operacion-tr__acciones-derecha {
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__selector-algoritmo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background-color: var(--color-fondo);
+  font-size: 12px;
+  color: var(--color-texto-secundario);
+}
+
+.operacion-tr__selector-algoritmo select {
+  border: none;
+  background: transparent;
+  color: var(--color-texto);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+@keyframes giro-continuo {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.operacion-tr__giro {
+  animation: giro-continuo 1s linear infinite;
+}
+
+.operacion-tr__gaveta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio);
+  background-color: var(--color-fondo);
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.operacion-tr__gaveta-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.operacion-tr__gaveta-cabecera > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.operacion-tr__cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-texto-tenue);
+  cursor: pointer;
+}
+
+.operacion-tr__cerrar:hover {
+  background-color: var(--color-superficie);
+  color: var(--color-texto);
+}
+
+.operacion-tr__gaveta-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__trazo-actual {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.operacion-tr__nodos-chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__nodo-chip {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background-color: var(--color-ambar-suave);
+  color: var(--color-semaforo-rojo);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.operacion-tr__controles-bloqueo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__campo-en-linea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  background-color: var(--color-superficie);
+  font-size: 12px;
+  color: var(--color-texto-secundario);
+}
+
+.operacion-tr__campo-en-linea select {
+  border: none;
+  background: transparent;
+  color: var(--color-texto);
+  font-size: 12px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+}
+
+.operacion-tr__personalizado-duracion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__submodo-toggle {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--color-superficie);
+}
+
+.operacion-tr__submodo-btn {
+  border: none;
+  background: transparent;
+  padding: 0 10px;
+  height: 100%;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--color-texto-secundario);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.operacion-tr__submodo-btn:hover {
+  color: var(--color-texto);
+}
+
+.operacion-tr__submodo-btn--activo {
+  background-color: var(--color-primario);
+  color: var(--color-texto-sobre-color);
+  font-weight: 600;
+}
+
+.operacion-tr__submodo-btn--activo:hover {
+  background-color: var(--color-primario-hover, var(--color-primario));
+  color: var(--color-texto-sobre-color);
+}
+
+.operacion-tr__input-numero {
+  width: 54px;
+  border: none;
+  background: transparent;
+  color: var(--color-texto);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+}
+
+.operacion-tr__input-hora {
+  border: none;
+  background: transparent;
+  color: var(--color-texto);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.operacion-tr__gaveta-manual {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px dashed var(--color-borde);
+  font-size: 12px;
+}
+
+.operacion-tr__coord {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--color-borde);
+  border-radius: 5px;
+  background-color: var(--color-superficie);
+  font-size: 11.5px;
+  color: var(--color-texto-tenue);
+}
+
+.operacion-tr__coord input {
+  width: 44px;
+  border: none;
+  background: transparent;
+  color: var(--color-texto);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+}
+
+.operacion-tr__lista-incidencias {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-borde);
+}
+
+.operacion-tr__chips-incidencias {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.operacion-tr__item-incidencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  background-color: var(--color-superficie);
+  font-size: 11.5px;
+}
+
+.operacion-tr__item-incidencia--averia {
+  border-color: var(--color-semaforo-rojo);
+  background-color: var(--color-rojo-suave);
+}
+
+.operacion-tr__item-incidencia button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-texto-tenue);
+  cursor: pointer;
+}
+
+.operacion-tr__item-incidencia button:hover {
+  color: var(--color-semaforo-rojo);
+}

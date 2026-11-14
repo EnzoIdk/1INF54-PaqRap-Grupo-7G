@@ -9,6 +9,7 @@ import {
 } from "../../services/experimentacionService";
 import { useSimulacionStore } from "../../store/simulacionStore";
 import { formatearSoles } from "../../utils/formatters";
+import { ahoraEnLima, minutoDelMes } from "../../utils/tiempoReal";
 import { fechaSimulada } from "../comunes/RelojSimulacion";
 import "./PanelesConsola.css";
 
@@ -30,6 +31,7 @@ const INTERVALO_MS = 10_000;
 const SimulacionesCompartidas = () => {
   const navegar = useNavigate();
   const registrarResultado = useSimulacionStore((estado) => estado.registrarResultado);
+  const registrarResultadoDiaADia = useSimulacionStore((estado) => estado.registrarResultadoDiaADia);
   const setModoSimulacion = useSimulacionStore((estado) => estado.setModoSimulacion);
   const [simulaciones, setSimulaciones] = useState<SimulacionCompartida[]>([]);
   const [estado, setEstado] = useState<EstadoPlanificador | null>(null);
@@ -60,9 +62,14 @@ const SimulacionesCompartidas = () => {
     setAbriendo(simulacion.id);
     try {
       const resultado = await experimentacionService.obtenerCompartida(simulacion.id);
-      setModoSimulacion(simulacion.modo === "DIA_A_DIA" ? "1D" : simulacion.modo);
-      registrarResultado(resultado);
-      navegar("/");
+      if (simulacion.modo === "DIA_A_DIA") {
+        registrarResultadoDiaADia(resultado, minutoDelMes(ahoraEnLima()));
+        navegar("/tiempo-real");
+      } else {
+        setModoSimulacion(simulacion.modo);
+        registrarResultado(resultado);
+        navegar("/");
+      }
     } catch {
       setError("No se pudo abrir esa simulación; puede que ya no esté disponible.");
       void actualizar();

@@ -277,9 +277,10 @@ public class ServicioExperimentacion {
             Almacen almEste = new Almacen("ALM-ESTE", TipoAlmacen.INTERMEDIO, almacenesBase.get(2).getUbicacion(), stockEste);
             List<Almacen> almacenesTurno = List.of(almCentral, almNO, almEste);
 
-            // Bloqueos vigentes en la ventana del turno
+            // Bloqueos vigentes en la ventana del turno y retorno de unidades
+            int horizonteTurno = turnoFin + ConstantesPaqrap.MINUTOS_DURACION_TURNO;
             List<Bloqueo> bloqueosTurno = bloqueosDelMes.stream()
-                    .filter(b -> b.getInicioMinuto() < turnoFin && b.getFinMinuto() > turnoInicio)
+                    .filter(b -> b.getInicioMinuto() < horizonteTurno && b.getFinMinuto() > turnoInicio)
                     .toList();
 
             ContextoPlanificacion contextoTurno = ContextoPlanificacion.crear(
@@ -572,9 +573,10 @@ public class ServicioExperimentacion {
             Almacen almEste = new Almacen("ALM-ESTE", TipoAlmacen.INTERMEDIO, almacenesBase.get(2).getUbicacion(), stockEste);
             List<Almacen> almacenesTurno = List.of(almCentral, almNO, almEste);
 
-            // Bloqueos vigentes en la ventana del turno
+            // Bloqueos vigentes en la ventana del turno y retorno de unidades
+            int horizonteTurno = turnoFin + ConstantesPaqrap.MINUTOS_DURACION_TURNO;
             List<Bloqueo> bloqueosTurno = bloqueosDelMes.stream()
-                    .filter(b -> b.getInicioMinuto() < turnoFin && b.getFinMinuto() > turnoInicio)
+                    .filter(b -> b.getInicioMinuto() < horizonteTurno && b.getFinMinuto() > turnoInicio)
                     .toList();
 
             ContextoPlanificacion contextoTurno = ContextoPlanificacion.crear(

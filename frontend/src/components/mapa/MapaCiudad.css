@@ -94,6 +94,10 @@
   cursor: grabbing;
 }
 
+.mapa--modo-bloqueo .mapa__lienzo {
+  cursor: crosshair;
+}
+
 .mapa__almacen {
   cursor: pointer;
 }

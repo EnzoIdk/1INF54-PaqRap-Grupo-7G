@@ -37,7 +37,7 @@ export function useExperimentacion() {
   const parametrosVigentes = useSimulacionStore((estado) => estado.parametrosVigentes);
   const setParametrosVigentes = useSimulacionStore((estado) => estado.setParametrosVigentes);
   const pedidosAdicionales = useSimulacionStore((estado) => estado.pedidosAdicionales);
-  const activarTiempoReal = useSimulacionStore((estado) => estado.activarTiempoReal);
+  const registrarResultadoDiaADia = useSimulacionStore((estado) => estado.registrarResultadoDiaADia);
 
   useEffect(() => {
     let vigente = true;
@@ -61,7 +61,7 @@ export function useExperimentacion() {
     iniciarCarga();
     try {
       const resultado = await experimentacionService.ejecutar({ ...parametros, pedidosAdicionales });
-      registrarResultado(resultado);
+      registrarResultado(resultado, parametros.segundoDeInicio ?? 0);
       return resultado;
     } catch (causa: unknown) {
       registrarError(describirError(causa));
@@ -73,7 +73,7 @@ export function useExperimentacion() {
     iniciarCarga();
     try {
       const resultado = await experimentacionService.ejecutarCincoDias({ ...parametros5D, pedidosAdicionales });
-      registrarResultado(resultado);
+      registrarResultado(resultado, parametros5D.segundoDeInicio ?? 0);
       return resultado;
     } catch (causa: unknown) {
       registrarError(describirError(causa));
@@ -85,7 +85,7 @@ export function useExperimentacion() {
     iniciarCarga();
     try {
       const resultado = await experimentacionService.ejecutarColapso({ ...parametrosColapso, pedidosAdicionales });
-      registrarResultado(resultado);
+      registrarResultado(resultado, parametrosColapso.segundoDeInicio ?? 0);
       return resultado;
     } catch (causa: unknown) {
       registrarError(describirError(causa));
@@ -95,11 +95,12 @@ export function useExperimentacion() {
 
   /**
    * Operación día a día (RF-44): resuelve el turno vigente según la hora de
-   * Lima, con el archivo de ventas del mes actual y los pedidos registrados,
-   * y deja el reloj siguiendo la hora real.
+   * Lima, con el archivo de ventas del mes actual, los bloqueos y averías
+   * registrados en tiempo real y los pedidos adicionales, y deja el reloj
+   * siguiendo la hora real.
    */
   const ejecutarDiaADia = useCallback(
-    async (algoritmo: AlgoritmoSolicitado) => {
+    async (algoritmo?: AlgoritmoSolicitado) => {
       const configuracion = configuracionDiaADia(useSimulacionStore.getState().conjuntos);
       if (!configuracion) {
         registrarError("No hay archivos de ventas cargados para operar día a día.");
@@ -108,26 +109,29 @@ export function useExperimentacion() {
       iniciarCarga();
       try {
         const actual = useSimulacionStore.getState();
+        const algEfectivo = algoritmo ?? actual.algoritmoDiaADia;
         const resultado = await experimentacionService.ejecutar({
           ...actual.parametros,
           archivoVentas: configuracion.archivoVentas,
           dia: configuracion.turno.dia,
           horaInicio: configuracion.turno.horaInicio,
+          minutoDeInicio: 0,
+          segundoDeInicio: 0,
           ventanaHoras: configuracion.turno.ventanaHoras,
           maximoPedidos: MAXIMO_PEDIDOS_DIA_A_DIA,
-          algoritmo,
-          averias: [],
+          algoritmo: algEfectivo,
+          averias: actual.averiasDiaADia,
           pedidosAdicionales: actual.pedidosAdicionales,
+          bloqueosAdicionales: actual.bloqueosDiaADia,
         }, "DIA_A_DIA");
-        registrarResultado(resultado);
-        activarTiempoReal(minutoDelMes(ahoraEnLima()));
+        registrarResultadoDiaADia(resultado, minutoDelMes(ahoraEnLima()));
         return resultado;
       } catch (causa: unknown) {
         registrarError(describirError(causa));
         return null;
       }
     },
-    [iniciarCarga, registrarResultado, registrarError, activarTiempoReal],
+    [iniciarCarga, registrarResultadoDiaADia, registrarError],
   );
 
   /** Graba en caliente los parámetros de flota y almacenes; solo un ADMIN puede hacerlo. */

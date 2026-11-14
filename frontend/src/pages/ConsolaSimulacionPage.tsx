@@ -10,9 +10,7 @@ import { CampoSelect, CampoTexto } from "../components/comunes/Campo";
 import { useExperimentacion } from "../hooks/useExperimentacion";
 import { useSimulacionStore, type ModoSimulacion } from "../store/simulacionStore";
 import type { AlgoritmoSolicitado, TipoAveria } from "../types/Experimentacion";
-import PanelDiaADia from "../components/consola/PanelDiaADia";
 import PanelPedidosAdicionales from "../components/consola/PanelPedidosAdicionales";
-import { ahoraEnLima } from "../utils/tiempoReal";
 import {
   formatearMilisegundos,
   formatearSoles,
@@ -36,9 +34,9 @@ const MESES = [
 ];
 
 const ALGORITMOS: { valor: AlgoritmoSolicitado; etiqueta: string }[] = [
-  { valor: "AMBOS", etiqueta: "Ambos (comparar I-ACO y AGA-ES-TW)" },
   { valor: "IACO", etiqueta: "Solo I-ACO" },
   { valor: "AGAESTW", etiqueta: "Solo AGA-ES-TW" },
+  { valor: "AMBOS", etiqueta: "Ambos (comparar I-ACO y AGA-ES-TW)" },
 ];
 
 const TIPOS_AVERIA: { valor: TipoAveria; etiqueta: string }[] = [
@@ -48,7 +46,6 @@ const TIPOS_AVERIA: { valor: TipoAveria; etiqueta: string }[] = [
 ];
 
 const OPCIONES_MODO: OpcionTab[] = [
-  { id: "DIA", etiqueta: "Día a día (tiempo real)", detalle: "Turno vigente · hora de Lima" },
   { id: "1D", etiqueta: "Simulación 1 día", detalle: "1 turno · 12 h" },
   { id: "5D", etiqueta: "Simulación 5 días", detalle: "15 turnos consecutivos · 120 h" },
   { id: "COLAPSO", etiqueta: "Simulación hasta el colapso", detalle: "Continuo hasta ruptura del servicio" },
@@ -99,12 +96,19 @@ const ConsolaSimulacionPage = () => {
     ejecutar,
     ejecutar5D,
     ejecutarColapso,
-    ejecutarDiaADia,
     parametrosVigentes,
   } = useExperimentacion();
 
-  const [algoritmoDia, setAlgoritmoDia] = useState<AlgoritmoSolicitado>("AMBOS");
-  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
+  const activarVistaSimulacion = useSimulacionStore((estado) => estado.activarVistaSimulacion);
+  const modoEfectivo: ModoSimulacion = modoSimulacion === "DIA" ? "1D" : modoSimulacion;
+
+  useEffect(() => {
+    activarVistaSimulacion();
+    if (modoSimulacion === "DIA") {
+      setModoSimulacion("1D");
+    }
+  }, [activarVistaSimulacion, modoSimulacion, setModoSimulacion]);
+
   const flotaVigente = parametrosVigentes?.flota;
   const capacidadMaxima = flotaVigente
     ? Math.max(
@@ -113,15 +117,16 @@ const ConsolaSimulacionPage = () => {
         Number(flotaVigente.capacidadBicicleta ?? 4),
       )
     : 24;
-  const ahora = ahoraEnLima();
   const referenciaPedidos =
-    modoSimulacion === "DIA"
-      ? { dia: ahora.dia, hora: ahora.hora, minuto: ahora.minuto }
-      : modoSimulacion === "5D"
-        ? { dia: parametros5D.diaInicio, hora: parametros5D.horaInicio, minuto: 0 }
-        : modoSimulacion === "COLAPSO"
-          ? { dia: parametrosColapso.diaInicio, hora: parametrosColapso.horaInicio ?? 7, minuto: 0 }
-          : { dia: parametros.dia, hora: parametros.horaInicio, minuto: 0 };
+    modoEfectivo === "5D"
+      ? { dia: parametros5D.diaInicio, hora: parametros5D.horaInicio, minuto: parametros5D.minutoDeInicio ?? 0 }
+      : modoEfectivo === "COLAPSO"
+        ? {
+            dia: parametrosColapso.diaInicio,
+            hora: parametrosColapso.horaInicio ?? 7,
+            minuto: parametrosColapso.minutoDeInicio ?? 0,
+          }
+        : { dia: parametros.dia, hora: parametros.horaInicio, minuto: parametros.minutoDeInicio ?? 0 };
 
   const actualizarParametros = useSimulacionStore((estado) => estado.actualizarParametros);
   const agregarAveria = useSimulacionStore((estado) => estado.agregarAveria);
@@ -191,11 +196,9 @@ const ConsolaSimulacionPage = () => {
 
   const handleEjecutar = async () => {
     let resultado = null;
-    if (modoSimulacion === "DIA") {
-      resultado = await ejecutarDiaADia(algoritmoDia);
-    } else if (modoSimulacion === "COLAPSO") {
+    if (modoEfectivo === "COLAPSO") {
       resultado = await ejecutarColapso();
-    } else if (modoSimulacion === "5D") {
+    } else if (modoEfectivo === "5D") {
       resultado = await ejecutar5D();
     } else {
       resultado = await ejecutar();
@@ -229,11 +232,9 @@ const ConsolaSimulacionPage = () => {
       <Encabezado
         titulo="Consola de Simulación"
         contexto={
-          modoSimulacion === "DIA"
-            ? "Operación día a día · turno vigente con la hora real de Lima · replanificación automática en cada cambio de turno"
-            : modoSimulacion === "COLAPSO"
+          modoEfectivo === "COLAPSO"
             ? "Simulación continua hasta el colapso logístico · detección de incumplimientos de plazos de entrega"
-            : modoSimulacion === "5D"
+            : modoEfectivo === "5D"
               ? "Simulación continua de 5 días (15 turnos consecutivos de 8 h) · recarga diaria a 23:59:59 · descanso para refrigerio"
               : "Experimentación numérica sobre los archivos de ventas, bloqueos y mantenimiento del cliente"
         }
@@ -255,20 +256,14 @@ const ConsolaSimulacionPage = () => {
             icono={<CirclePlay size={16} />}
           >
             {cargando
-              ? modoSimulacion === "DIA"
-                ? "Planificando el turno vigente…"
-                : modoSimulacion === "COLAPSO"
+              ? modoEfectivo === "COLAPSO"
                 ? "Simulando hasta el colapso…"
-                : modoSimulacion === "5D"
+                : modoEfectivo === "5D"
                   ? "Planificando 5 días (15 turnos)…"
                   : "Ejecutando…"
-              : modoSimulacion === "DIA"
-                ? tiempoReal
-                  ? "Replanificar el turno vigente"
-                  : "Iniciar operación día a día"
-                : modoSimulacion === "COLAPSO"
+              : modoEfectivo === "COLAPSO"
                 ? "Ejecutar simulación hasta el colapso"
-                : modoSimulacion === "5D"
+                : modoEfectivo === "5D"
                   ? "Ejecutar simulación 5 días"
                   : "Ejecutar planificación"}
           </Boton>
@@ -280,7 +275,7 @@ const ConsolaSimulacionPage = () => {
         <div className="consola__pestanas">
           <Tabs
             opciones={OPCIONES_MODO}
-            activa={modoSimulacion}
+            activa={modoEfectivo}
             onCambiar={(id) => setModoSimulacion(id as ModoSimulacion)}
           />
         </div>
@@ -294,10 +289,7 @@ const ConsolaSimulacionPage = () => {
           </div>
         )}
 
-        {modoSimulacion === "DIA" ? (
-          /* ============================================ DÍA A DÍA (RF-44) */
-          <PanelDiaADia algoritmo={algoritmoDia} onCambiarAlgoritmo={setAlgoritmoDia} />
-        ) : modoSimulacion === "1D" ? (
+        {modoEfectivo === "1D" ? (
           /* ======================================================== 1 DÍA */
           <>
             <section className="tarjeta">
@@ -333,14 +325,18 @@ const ConsolaSimulacionPage = () => {
                   ayuda="El plan de mantenimiento se aplica a este día"
                 />
 
-                <CampoSelect
+                <SelectorHoraInicio
                   etiqueta="Hora de inicio del turno"
-                  value={String(parametros.horaInicio)}
-                  onChange={(evento) => actualizarParametros({ horaInicio: Number(evento.target.value) })}
-                  opciones={Array.from({ length: 24 }, (_, hora) => ({
-                    valor: String(hora),
-                    etiqueta: `${String(hora).padStart(2, "0")}:00${[7, 15, 23].includes(hora) ? " · cambio de turno" : ""}`,
-                  }))}
+                  hora={parametros.horaInicio}
+                  minuto={parametros.minutoDeInicio ?? 0}
+                  segundo={parametros.segundoDeInicio ?? 0}
+                  personalizado={Boolean(parametros.horaPersonalizada)}
+                  opcionesPredefinidas={[
+                    { valor: "7", etiqueta: "07:00 · cambio de turno" },
+                    { valor: "15", etiqueta: "15:00 · cambio de turno" },
+                    { valor: "23", etiqueta: "23:00 · cambio de turno" },
+                  ]}
+                  onCambiar={(cambios) => actualizarParametros(cambios)}
                 />
 
                 <CampoTexto
@@ -513,7 +509,7 @@ const ConsolaSimulacionPage = () => {
               </div>
             </section>
           </>
-        ) : modoSimulacion === "5D" ? (
+        ) : modoEfectivo === "5D" ? (
           /* ======================================================== 5 DÍAS */
           <>
             <section className="tarjeta">
@@ -563,16 +559,19 @@ const ConsolaSimulacionPage = () => {
                   ayuda={`Simulará desde el día ${parametros5D.diaInicio} hasta el día ${parametros5D.diaInicio + 4}`}
                 />
 
-                <CampoSelect
+                <SelectorHoraInicio
                   etiqueta="Hora de inicio del primer turno"
-                  value={String(parametros5D.horaInicio)}
-                  onChange={(evento) => actualizarParametros5D({ horaInicio: Number(evento.target.value) })}
-                  opciones={[
+                  hora={parametros5D.horaInicio}
+                  minuto={parametros5D.minutoDeInicio ?? 0}
+                  segundo={parametros5D.segundoDeInicio ?? 0}
+                  personalizado={Boolean(parametros5D.horaPersonalizada)}
+                  opcionesPredefinidas={[
                     { valor: "7", etiqueta: "07:00 · Primer turno estándar (Recomendado)" },
                     { valor: "15", etiqueta: "15:00 · Segundo turno" },
                     { valor: "23", etiqueta: "23:00 · Tercer turno" },
                   ]}
-                  ayuda="Los 15 turnos se sucederán cada 8 horas a partir de esta hora"
+                  ayuda="Los 15 turnos se sucederán cada 8 horas a partir de este instante"
+                  onCambiar={(cambios) => actualizarParametros5D(cambios)}
                 />
 
                 <CampoTexto
@@ -810,16 +809,19 @@ const ConsolaSimulacionPage = () => {
                   ayuda={`La simulación continua comenzará en el día ${parametrosColapso.diaInicio} y correrá hasta el colapso`}
                 />
 
-                <CampoSelect
+                <SelectorHoraInicio
                   etiqueta="Hora de inicio del primer turno"
-                  value={String(parametrosColapso.horaInicio ?? 7)}
-                  onChange={(evento) => actualizarParametrosColapso({ horaInicio: Number(evento.target.value) })}
-                  opciones={[
+                  hora={parametrosColapso.horaInicio ?? 7}
+                  minuto={parametrosColapso.minutoDeInicio ?? 0}
+                  segundo={parametrosColapso.segundoDeInicio ?? 0}
+                  personalizado={Boolean(parametrosColapso.horaPersonalizada)}
+                  opcionesPredefinidas={[
                     { valor: "7", etiqueta: "07:00 · Primer turno estándar (Recomendado)" },
                     { valor: "15", etiqueta: "15:00 · Segundo turno" },
                     { valor: "23", etiqueta: "23:00 · Tercer turno" },
                   ]}
-                  ayuda="Los turnos se sucederán de forma continua cada 8 horas a partir de esta hora"
+                  ayuda="Los turnos se sucederán de forma continua cada 8 horas a partir de este instante"
+                  onCambiar={(cambios) => actualizarParametrosColapso(cambios)}
                 />
 
                 <CampoTexto
@@ -1010,16 +1012,11 @@ const ConsolaSimulacionPage = () => {
         )}
 
         <PanelPedidosAdicionales
-          key={`${modoSimulacion}-${referenciaPedidos.dia}-${referenciaPedidos.hora}`}
+          key={`${modoEfectivo}-${referenciaPedidos.dia}-${referenciaPedidos.hora}`}
           diaPorDefecto={referenciaPedidos.dia}
           horaPorDefecto={referenciaPedidos.hora}
           minutoPorDefecto={referenciaPedidos.minuto}
           capacidadMaxima={capacidadMaxima}
-          accionExtra={
-            modoSimulacion === "DIA" && tiempoReal
-              ? { etiqueta: "Replanificar con los pedidos registrados", onClick: handleEjecutar, deshabilitado: cargando }
-              : undefined
-          }
         />
 
         {escenario && (
@@ -1075,6 +1072,116 @@ const ConsolaSimulacionPage = () => {
         )}
       </div>
     </div>
+  );
+};
+
+interface SelectorHoraInicioProps {
+  etiqueta: string;
+  hora: number;
+  minuto?: number;
+  segundo?: number;
+  personalizado: boolean;
+  opcionesPredefinidas: { valor: string; etiqueta: string }[];
+  ayuda?: string;
+  onCambiar: (cambios: {
+    horaInicio: number;
+    minutoDeInicio: number;
+    segundoDeInicio: number;
+    horaPersonalizada: boolean;
+  }) => void;
+}
+
+const SelectorHoraInicio = ({
+  etiqueta,
+  hora,
+  personalizado,
+  opcionesPredefinidas,
+  ayuda,
+  onCambiar,
+}: SelectorHoraInicioProps) => {
+  const dos = (n: number) => String(Math.max(0, Math.floor(n))).padStart(2, "0");
+  const [valorTexto, setValorTexto] = useState(String(hora));
+
+  useEffect(() => {
+    setValorTexto(String(hora));
+  }, [hora]);
+
+  const manejarCambio = (val: string) => {
+    setValorTexto(val);
+    if (val.trim() === "") return;
+    const num = parseInt(val, 10);
+    if (!isNaN(num)) {
+      const h = Math.min(23, Math.max(0, num));
+      onCambiar({
+        horaInicio: h,
+        minutoDeInicio: 0,
+        segundoDeInicio: 0,
+        horaPersonalizada: true,
+      });
+    }
+  };
+
+  const manejarBlur = () => {
+    const num = parseInt(valorTexto, 10);
+    const h = isNaN(num) ? hora : Math.min(23, Math.max(0, num));
+    setValorTexto(String(h));
+    onCambiar({
+      horaInicio: h,
+      minutoDeInicio: 0,
+      segundoDeInicio: 0,
+      horaPersonalizada: true,
+    });
+  };
+
+  return (
+    <>
+      <CampoSelect
+        etiqueta={etiqueta}
+        value={personalizado ? "PERSONALIZADO" : String(hora)}
+        onChange={(evento) => {
+          if (evento.target.value === "PERSONALIZADO") {
+            onCambiar({
+              horaInicio: hora,
+              minutoDeInicio: 0,
+              segundoDeInicio: 0,
+              horaPersonalizada: true,
+            });
+          } else {
+            onCambiar({
+              horaInicio: Number(evento.target.value),
+              minutoDeInicio: 0,
+              segundoDeInicio: 0,
+              horaPersonalizada: false,
+            });
+          }
+        }}
+        opciones={[
+          ...opcionesPredefinidas,
+          { valor: "PERSONALIZADO", etiqueta: "Personalizado" },
+        ]}
+        ayuda={
+          personalizado
+            ? `Inicio configurado a las ${dos(hora)}:00:00`
+            : ayuda
+        }
+      />
+
+      {personalizado && (
+        <div className="consola__hora-personalizada">
+          <CampoTexto
+            etiqueta="Hora de inicio personalizada (0 a 23 h)"
+            type="number"
+            min={0}
+            max={23}
+            value={valorTexto}
+            onChange={(evento) => manejarCambio(evento.target.value)}
+            onBlur={manejarBlur}
+            placeholder="0 - 23"
+            ayuda={`Hora del día (ej. 8 para las 08:00, 14 para las 14:00). Inicia a las ${dos(hora)}:00:00`}
+          />
+        </div>
+      )}
+    </>
   );
 };
 

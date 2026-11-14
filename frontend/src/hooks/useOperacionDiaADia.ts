@@ -50,6 +50,9 @@ export function useOperacionDiaADia(): void {
 }
 
 function algoritmoDeLaCorrida(algoritmos: string[]): AlgoritmoSolicitado {
+  if (algoritmos.length === 0) {
+    return useSimulacionStore.getState().algoritmoDiaADia;
+  }
   if (algoritmos.length !== 1) {
     return "AMBOS";
   }

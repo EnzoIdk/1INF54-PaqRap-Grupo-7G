@@ -24,6 +24,7 @@ import { useEjecucionVisible, useExperimentacion } from "../hooks/useExperimenta
 import { calcularMinutoFinal, useSimulacionStore } from "../store/simulacionStore";
 import { formatearMotivoColapso, formatearSoles } from "../utils/formatters";
 import { averiasVigentes } from "../utils/averias";
+import { evitarBloqueosEnEjecucion } from "../utils/rutasSinBloqueos";
 import { nivelUnidad } from "../utils/semaforo";
 import type { AveriaSolicitada } from "../types/Experimentacion";
 import "./CentroControlPage.css";
@@ -70,10 +71,19 @@ const CentroControlPage = () => {
   const almacenEnfocado = useSimulacionStore((estado) => estado.almacenEnfocado);
   const setAlmacenEnfocado = useSimulacionStore((estado) => estado.setAlmacenEnfocado);
   const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
+  const activarVistaSimulacion = useSimulacionStore((estado) => estado.activarVistaSimulacion);
+
+  useEffect(() => {
+    activarVistaSimulacion();
+  }, [activarVistaSimulacion]);
 
   useRelojSimulacion();
 
-  const ejecucion = useEjecucionVisible();
+  const ejecucionBase = useEjecucionVisible();
+  const ejecucion = useMemo(
+    () => evitarBloqueosEnEjecucion(ejecucionBase, escenario?.bloqueos ?? []),
+    [ejecucionBase, escenario?.bloqueos],
+  );
   const minutoFinal = useSimulacionStore((estado) => calcularMinutoFinal(estado));
   const esCincoDias = escenario ? escenario.minutoFin - escenario.minutoInicio > 1440 : false;
   const modoEfectivo: "1D" | "5D" | "COLAPSO" =

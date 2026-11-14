@@ -12,6 +12,8 @@ interface RelojSimulacionProps {
   /** Año y mes del archivo de ventas: convierten el minuto en una fecha real. */
   anio?: number;
   mes?: number;
+  /** Oculta el bloque de hora simulada y deja únicamente el bloque de la hora real (Lima). */
+  soloHoraReal?: boolean;
 }
 
 const dos = (valor: number) => String(valor).padStart(2, "0");
@@ -20,6 +22,13 @@ const dos = (valor: number) => String(valor).padStart(2, "0");
 export function fechaSimulada(anio: number, mes: number, minuto: number): string {
   const fecha = new Date(Date.UTC(anio, mes - 1, 1) + Math.max(0, Math.floor(minuto)) * 60_000);
   return `${dos(fecha.getUTCDate())}/${dos(fecha.getUTCMonth() + 1)}/${fecha.getUTCFullYear()} ${dos(fecha.getUTCHours())}:${dos(fecha.getUTCMinutes())}`;
+}
+
+/** Fecha y hora (con segundos) que corresponde a un minuto de simulación del mes. */
+export function fechaSimuladaConSegundos(anio: number, mes: number, minuto: number): string {
+  const totalSegundos = Math.max(0, Math.round(minuto * 60));
+  const fecha = new Date(Date.UTC(anio, mes - 1, 1) + totalSegundos * 1000);
+  return `${dos(fecha.getUTCDate())}/${dos(fecha.getUTCMonth() + 1)}/${fecha.getUTCFullYear()} ${dos(fecha.getUTCHours())}:${dos(fecha.getUTCMinutes())}:${dos(fecha.getUTCSeconds())}`;
 }
 
 /** Duración en minutos como "2d 05h 30m". */
@@ -40,6 +49,7 @@ const RelojSimulacion = ({
   minutoInicio = 0,
   anio,
   mes,
+  soloHoraReal = false,
 }: RelojSimulacionProps) => {
   const [ahora, setAhora] = useState(() => ahoraEnLima());
 
@@ -48,20 +58,22 @@ const RelojSimulacion = ({
     return () => window.clearInterval(intervalo);
   }, []);
 
-  const simulado = anio && mes ? fechaSimulada(anio, mes, minutoSimulacionActual) : "—";
+  const simulado = anio && mes ? fechaSimuladaConSegundos(anio, mes, minutoSimulacionActual) : "—";
 
   return (
-    <div className="reloj" role="group" aria-label="Tiempos de la simulación">
-      <div className="reloj__bloque">
-        <CalendarClock size={16} aria-hidden className="reloj__icono" />
-        <span>
-          <span className="reloj__rotulo">Simulado</span>
-          <span className="reloj__valor cifra">{simulado}</span>
-          <span className="reloj__valor reloj__valor--chico cifra" title="Tiempo simulado transcurrido">
-            + {formatearDuracion(minutoSimulacionActual - minutoInicio)} simulados
+    <div className="reloj" role="group" aria-label={soloHoraReal ? "Hora real de la operación" : "Tiempos de la simulación"}>
+      {!soloHoraReal && (
+        <div className="reloj__bloque">
+          <CalendarClock size={16} aria-hidden className="reloj__icono" />
+          <span>
+            <span className="reloj__rotulo">Simulado</span>
+            <span className="reloj__valor cifra">{simulado}</span>
+            <span className="reloj__valor reloj__valor--chico cifra" title="Tiempo simulado transcurrido">
+              + {formatearDuracion(minutoSimulacionActual - minutoInicio)} simulados
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
+      )}
       <div className="reloj__bloque reloj__bloque--real">
         <Clock size={16} aria-hidden className="reloj__icono" />
         <span>

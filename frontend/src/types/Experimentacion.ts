@@ -170,6 +170,9 @@ export interface ParametrosEjecucion {
   archivoVentas: string;
   dia: number;
   horaInicio: number;
+  minutoDeInicio?: number;
+  segundoDeInicio?: number;
+  horaPersonalizada?: boolean;
   ventanaHoras: number;
   maximoPedidos: number;
   algoritmo: AlgoritmoSolicitado;
@@ -179,6 +182,7 @@ export interface ParametrosEjecucion {
   cantidadBicicletas?: number | null;
   averias?: AveriaSolicitada[];
   pedidosAdicionales?: PedidoAdicional[];
+  bloqueosAdicionales?: BloqueoDto[];
 }
 
 /** Pedido registrado por el usuario, a mano o desde un archivo (RF-01, RF-54). */
@@ -204,6 +208,9 @@ export interface ParametrosCincoDias {
   archivoVentas: string;
   diaInicio: number;
   horaInicio: number;
+  minutoDeInicio?: number;
+  segundoDeInicio?: number;
+  horaPersonalizada?: boolean;
   maximoPedidosPorTurno?: number | null;
   algoritmo: AlgoritmoSolicitado;
   semilla?: number | null;
@@ -227,6 +234,9 @@ export interface ParametrosColapso {
   archivoVentas: string;
   diaInicio: number;
   horaInicio?: number;
+  minutoDeInicio?: number;
+  segundoDeInicio?: number;
+  horaPersonalizada?: boolean;
   maximoPedidosPorTurno?: number | null;
   algoritmo: AlgoritmoSolicitado;
   semilla?: number | null;

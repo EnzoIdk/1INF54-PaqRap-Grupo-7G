@@ -205,3 +205,23 @@
 .panel-flota__envio--entregado {
   opacity: 0.55;
 }
+
+.panel-flota__averia-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-borde);
+}
+
+.panel-flota__averia-select {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  background-color: var(--color-superficie-alt, var(--color-superficie));
+  color: var(--color-texto);
+  font-size: 11px;
+}

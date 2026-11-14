@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownWideNarrow, ArrowUpWideNarrow, FileDown, Package, Search } from "lucide-react";
+import { ArrowDownWideNarrow, ArrowUpWideNarrow, FileDown, Package, Search, Wrench } from "lucide-react";
 import type { PosicionUnidad } from "../../hooks/usePosicionesFlota";
 import { useSimulacionStore } from "../../store/simulacionStore";
-import type { EscenarioDto, RutaDto, TipoUnidad } from "../../types/Experimentacion";
+import type { EscenarioDto, RutaDto, TipoAveria, TipoUnidad } from "../../types/Experimentacion";
 import { COLOR_TIPO_UNIDAD, ETIQUETA_TIPO_UNIDAD } from "../../utils/constants";
 import { formatearHoraDelDia, formatearTiempoSimulado } from "../../utils/formatters";
 import { descargarItinerario } from "../../utils/reportes";
@@ -30,6 +30,8 @@ interface PanelFlotaProps {
   minutoActual?: number;
   escenario?: EscenarioDto | null;
   umbrales?: UmbralesSemaforo;
+  /** Permite reportar una avería sobre una unidad directamente desde la lista (operación en tiempo real). */
+  onRegistrarAveria?: (codigoUnidad: string, tipo: TipoAveria) => void;
 }
 
 const TIPOS: TipoUnidad[] = ["AUTO", "MOTO", "BICICLETA"];
@@ -54,6 +56,7 @@ const PanelFlota = ({
   minutoActual,
   escenario = null,
   umbrales = UMBRALES_POR_DEFECTO,
+  onRegistrarAveria,
 }: PanelFlotaProps) => {
   // Compartidos con el mapa: ocultar un tipo o un nivel aquí también lo oculta allí (RF-59, D06).
   const tiposVisibles = useSimulacionStore((estado) => estado.tiposVisibles);
@@ -254,9 +257,13 @@ const PanelFlota = ({
                 </span>
                 {enfocada && (
                   <DetalleUnidad
+                    codigoUnidad={unidad.codigoUnidad}
+                    averiada={averiada}
+                    enMantenimiento={enMantenimiento}
                     ruta={rutaDeEnfocada}
                     minutoActual={minutoActual ?? 0}
                     onDescargar={() => descargarItinerario(unidad.codigoUnidad, rutas, escenario)}
+                    onRegistrarAveria={onRegistrarAveria}
                   />
                 )}
               </article>
@@ -270,18 +277,52 @@ const PanelFlota = ({
 
 /** Envíos y productos que lleva la unidad en su ruta vigente (rúbrica E04, E05). */
 const DetalleUnidad = ({
+  codigoUnidad,
+  averiada,
+  enMantenimiento,
   ruta,
   minutoActual,
   onDescargar,
+  onRegistrarAveria,
 }: {
+  codigoUnidad: string;
+  averiada: boolean;
+  enMantenimiento: boolean;
   ruta: RutaDto | null;
   minutoActual: number;
   onDescargar: () => void;
+  onRegistrarAveria?: (codigoUnidad: string, tipo: TipoAveria) => void;
 }) => {
+  const [tipoAveria, setTipoAveria] = useState<TipoAveria>("TIPO_1");
+
+  const bloqueAveria =
+    onRegistrarAveria && !averiada && !enMantenimiento ? (
+      <div className="panel-flota__averia-inline">
+        <select
+          className="panel-flota__averia-select"
+          value={tipoAveria}
+          onChange={(evento) => setTipoAveria(evento.target.value as TipoAveria)}
+          aria-label={`Tipo de avería para ${codigoUnidad}`}
+        >
+          <option value="TIPO_1">Tipo 1 · 1 h inmovilizada</option>
+          <option value="TIPO_2">Tipo 2 · resto del turno</option>
+          <option value="TIPO_3">Tipo 3 · 48 h fuera de servicio</option>
+        </select>
+        <Boton
+          variante="secundario"
+          icono={<Wrench size={12} />}
+          onClick={() => onRegistrarAveria(codigoUnidad, tipoAveria)}
+        >
+          Registrar avería
+        </Boton>
+      </div>
+    ) : null;
+
   if (!ruta) {
     return (
       <div className="panel-flota__detalle" onClick={(evento) => evento.stopPropagation()}>
         <span className="texto-tenue">La unidad no tiene envíos asignados en esta ejecución.</span>
+        {bloqueAveria}
       </div>
     );
   }
@@ -322,6 +363,7 @@ const DetalleUnidad = ({
           );
         })}
       </ul>
+      {bloqueAveria}
     </div>
   );
 };

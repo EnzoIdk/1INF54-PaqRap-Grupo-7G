@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
 import Navside from "./components/layout/Navside";
+import OperacionTiempoRealPage from "./pages/OperacionTiempoRealPage";
 import CentroControlPage from "./pages/CentroControlPage";
 import GestionPedidosPage from "./pages/GestionPedidosPage";
 import ConsolaSimulacionPage from "./pages/ConsolaSimulacionPage";
@@ -54,6 +55,7 @@ const AplicacionAutenticada = ({ esAdmin }: { esAdmin: boolean }) => {
       <Navside />
       <main className="aplicacion__contenido">
         <Routes>
+          <Route path="/tiempo-real" element={<OperacionTiempoRealPage />} />
           <Route path="/" element={<CentroControlPage />} />
           <Route path="/pedidos" element={<GestionPedidosPage />} />
           <Route path="/simulacion" element={<ConsolaSimulacionPage />} />

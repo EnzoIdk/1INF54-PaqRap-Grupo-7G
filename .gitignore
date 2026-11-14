@@ -34,3 +34,5 @@ salidas/
 
 # Otros
 .claude
+backend/src/test/java/pe/edu/pucp/paqrap/TestJackson.java
+backend/src/test/java/pe/edu/pucp/paqrap/experimentacion/DeserializacionParametrosTest.java

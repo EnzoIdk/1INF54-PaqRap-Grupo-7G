@@ -1,6 +1,7 @@
 import { memo } from "react";
 import type { BloqueoDto } from "../../types/Experimentacion";
 import type { EscalaMapa } from "../../utils/coordenadas";
+import { expandirNodosOrtogonales } from "../../utils/rutasSinBloqueos";
 
 interface CapaBloqueosProps {
   bloqueos: BloqueoDto[];
@@ -21,21 +22,24 @@ const CapaBloqueos = ({ bloqueos, escala, minutoActual }: CapaBloqueosProps) => 
   <g>
     {bloqueos
       .filter((bloqueo) => minutoActual >= bloqueo.inicioMinuto && minutoActual < bloqueo.finMinuto)
-      .map((bloqueo, indice) => (
-        <polyline
-          key={`${bloqueo.inicioMinuto}-${indice}`}
-          points={bloqueo.nodos.map(([x, y]) => `${escala.aX(x)},${escala.aY(y)}`).join(" ")}
-          fill="none"
-          stroke="var(--color-semaforo-rojo)"
-          strokeWidth={3}
-          strokeDasharray="6 4"
-          strokeLinecap="round"
-        >
-          <title>
-            {`Tramo bloqueado (${bloqueo.nodos.map(([x, y]) => `${x},${y}`).join(") - (")})`}
-          </title>
-        </polyline>
-      ))}
+      .map((bloqueo, indice) => {
+        const nodosOrtogonales = expandirNodosOrtogonales(bloqueo.nodos);
+        return (
+          <polyline
+            key={`${bloqueo.inicioMinuto}-${indice}`}
+            points={nodosOrtogonales.map(([x, y]) => `${escala.aX(x)},${escala.aY(y)}`).join(" ")}
+            fill="none"
+            stroke="var(--color-semaforo-rojo)"
+            strokeWidth={3}
+            strokeDasharray="6 4"
+            strokeLinecap="round"
+          >
+            <title>
+              {`Tramo bloqueado (${bloqueo.nodos.map(([x, y]) => `${x},${y}`).join(") - (")})`}
+            </title>
+          </polyline>
+        );
+      })}
   </g>
 );
 
