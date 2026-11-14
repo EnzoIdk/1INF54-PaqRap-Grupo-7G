@@ -26,6 +26,7 @@ const GestionPedidosPage = () => {
   const escenario = useSimulacionStore((estado) => estado.escenario);
   const minutoActual = useSimulacionStore((estado) => estado.minutoActual);
   const enfocarUnidad = useSimulacionStore((estado) => estado.enfocarUnidad);
+  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
   const ejecucion = useEjecucionVisible();
 
   const { pedidos } = usePosicionesFlota(ejecucion, minutoActual);
@@ -167,7 +168,7 @@ const GestionPedidosPage = () => {
             nombrePlural="pedidos"
             onSeleccionar={(pedido) => {
               enfocarUnidad(pedido.codigoUnidad);
-              navegar("/");
+              navegar(tiempoReal ? "/tiempo-real" : "/");
             }}
             mensajeVacio={
               escenario

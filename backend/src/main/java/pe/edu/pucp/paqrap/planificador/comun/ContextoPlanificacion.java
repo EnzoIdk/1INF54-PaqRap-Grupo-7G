@@ -71,7 +71,8 @@ public record ContextoPlanificacion(
      */
     public List<Averia> averiasDelTurno() {
         return averias.stream()
-                .filter(averia -> averia.getMinutoSimulacion() >= minutoPlanificacion)
+                .filter(averia -> averia.getMinutoSimulacion() >= minutoPlanificacion
+                        || averia.calcularMinutoDisponibilidad() > minutoPlanificacion)
                 .toList();
     }
 }

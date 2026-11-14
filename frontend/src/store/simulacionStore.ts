@@ -3,6 +3,7 @@ import type {
   AlgoritmoSolicitado,
   AveriaSolicitada,
   AveriaSolicitada5D,
+  BloqueoDto,
   ConjuntoDatos,
   EjecucionDto,
   EscenarioDto,
@@ -28,9 +29,12 @@ const PARAMETROS_INICIALES: ParametrosEjecucion = {
   archivoVentas: "ventas.202601.txt",
   dia: 1,
   horaInicio: 7,
+  minutoDeInicio: 0,
+  segundoDeInicio: 0,
+  horaPersonalizada: false,
   ventanaHoras: 12,
   maximoPedidos: 60,
-  algoritmo: "AMBOS",
+  algoritmo: "IACO",
   semilla: null,
   cantidadAutos: null,
   cantidadMotos: null,
@@ -42,8 +46,11 @@ const PARAMETROS_5D_INICIALES: ParametrosCincoDias = {
   archivoVentas: "ventas.202601.txt",
   diaInicio: 1,
   horaInicio: 7,
+  minutoDeInicio: 0,
+  segundoDeInicio: 0,
+  horaPersonalizada: false,
   maximoPedidosPorTurno: 60,
-  algoritmo: "AMBOS",
+  algoritmo: "IACO",
   semilla: null,
   cantidadAutos: null,
   cantidadMotos: null,
@@ -55,8 +62,11 @@ const PARAMETROS_COLAPSO_INICIALES: ParametrosColapso = {
   archivoVentas: "ventas.202601.txt",
   diaInicio: 1,
   horaInicio: 7,
+  minutoDeInicio: 0,
+  segundoDeInicio: 0,
+  horaPersonalizada: false,
   maximoPedidosPorTurno: 60,
-  algoritmo: "AMBOS",
+  algoritmo: "IACO",
   semilla: null,
   cantidadAutos: null,
   cantidadMotos: null,
@@ -86,6 +96,15 @@ interface SimulacionState {
   parametros5D: ParametrosCincoDias;
   parametrosColapso: ParametrosColapso;
 
+  // --- Operacion en tiempo real (Dia a Dia) ---
+  algoritmoDiaADia: AlgoritmoSolicitado;
+  averiasDiaADia: AveriaSolicitada[];
+  bloqueosDiaADia: BloqueoDto[];
+  corridaDiaADia: ExperimentacionResponse | null;
+  corridaSimulacion: ExperimentacionResponse | null;
+  algoritmoVisibleDiaADia: string | null;
+  segundosRealesDiaADia: number;
+
   // --- Resultado de la ultima corrida ---
   escenario: EscenarioDto | null;
   ejecuciones: EjecucionDto[];
@@ -95,6 +114,7 @@ interface SimulacionState {
 
   // --- Reproduccion del tiempo simulado ---
   minutoActual: number;
+  segundoInicioSimulacion: number;
   reproduciendo: boolean;
   minutosPorSegundo: number;
   segundosReales: number;
@@ -104,6 +124,17 @@ interface SimulacionState {
   setModoSimulacion: (modo: ModoSimulacion) => void;
   activarTiempoReal: (minutoActual: number) => void;
   sincronizarTiempoReal: (minutoActual: number) => void;
+  setAlgoritmoDiaADia: (algoritmo: AlgoritmoSolicitado) => void;
+  setAlgoritmoVisibleDiaADia: (algoritmo: string) => void;
+  agregarAveriaDiaADia: (averia: AveriaSolicitada) => void;
+  quitarAveriaDiaADia: (indice: number) => void;
+  limpiarAveriasDiaADia: () => void;
+  agregarBloqueoDiaADia: (bloqueo: BloqueoDto) => void;
+  quitarBloqueoDiaADia: (indice: number) => void;
+  limpiarBloqueosDiaADia: () => void;
+  registrarResultadoDiaADia: (resultado: ExperimentacionResponse, minutoActual: number) => void;
+  activarVistaDiaADia: (minutoActual: number) => void;
+  activarVistaSimulacion: () => void;
   agregarPedidosAdicionales: (pedidos: PedidoAdicional[]) => void;
   quitarPedidoAdicional: (indice: number) => void;
   limpiarPedidosAdicionales: () => void;
@@ -123,7 +154,7 @@ interface SimulacionState {
   quitarAveriaColapso: (indice: number) => void;
   setAlgoritmo: (algoritmo: AlgoritmoSolicitado) => void;
   iniciarCarga: () => void;
-  registrarResultado: (resultado: ExperimentacionResponse) => void;
+  registrarResultado: (resultado: ExperimentacionResponse, segundoInicio?: number) => void;
   registrarError: (mensaje: string) => void;
   setAlgoritmoVisible: (algoritmo: string) => void;
 
@@ -159,6 +190,14 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   parametros5D: PARAMETROS_5D_INICIALES,
   parametrosColapso: PARAMETROS_COLAPSO_INICIALES,
 
+  algoritmoDiaADia: "IACO",
+  averiasDiaADia: [],
+  bloqueosDiaADia: [],
+  corridaDiaADia: null,
+  corridaSimulacion: null,
+  algoritmoVisibleDiaADia: null,
+  segundosRealesDiaADia: 0,
+
   escenario: null,
   ejecuciones: [],
   algoritmoVisible: null,
@@ -166,6 +205,7 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
   error: null,
 
   minutoActual: 0,
+  segundoInicioSimulacion: 0,
   reproduciendo: false,
   minutosPorSegundo: VELOCIDADES_REPRODUCCION[2].minutosPorSegundo,
   segundosReales: 0,
@@ -182,15 +222,128 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
     }),
   sincronizarTiempoReal: (minutoActual) => {
     const estado = get();
-    if (!estado.tiempoReal || !estado.reproduciendo || !estado.escenario) {
+    if (!estado.tiempoReal) {
       return;
     }
-    const limite = calcularMinutoFinal(estado);
+    const escenarioRef = estado.corridaDiaADia?.escenario ?? estado.escenario;
+    const ejecucionesRef = estado.corridaDiaADia?.ejecuciones ?? estado.ejecuciones;
+    if (!escenarioRef) {
+      set({
+        minutoActual,
+        segundosReales: estado.segundosReales + 1,
+        segundosRealesDiaADia: estado.segundosRealesDiaADia + 1,
+      });
+      return;
+    }
+    const limite = calcularMinutoFinal({ escenario: escenarioRef, ejecuciones: ejecucionesRef });
     set({
-      minutoActual: Math.min(Math.max(minutoActual, estado.escenario.minutoInicio), limite),
+      minutoActual: Math.min(Math.max(minutoActual, escenarioRef.minutoInicio), limite),
       segundosReales: estado.segundosReales + 1,
+      segundosRealesDiaADia: estado.segundosRealesDiaADia + 1,
     });
   },
+  setAlgoritmoDiaADia: (algoritmoDiaADia) => set({ algoritmoDiaADia }),
+  setAlgoritmoVisibleDiaADia: (algoritmo) => set({ algoritmoVisibleDiaADia: algoritmo, algoritmoVisible: algoritmo }),
+  agregarAveriaDiaADia: (averia) =>
+    set((estado) => ({
+      averiasDiaADia: [
+        ...estado.averiasDiaADia.filter((a) => a.codigoUnidad !== averia.codigoUnidad),
+        averia,
+      ],
+    })),
+  quitarAveriaDiaADia: (indice) =>
+    set((estado) => ({
+      averiasDiaADia: estado.averiasDiaADia.filter((_, i) => i !== indice),
+    })),
+  limpiarAveriasDiaADia: () => set({ averiasDiaADia: [] }),
+  agregarBloqueoDiaADia: (bloqueo) =>
+    set((estado) => ({
+      bloqueosDiaADia: [...estado.bloqueosDiaADia, bloqueo],
+    })),
+  quitarBloqueoDiaADia: (indice) =>
+    set((estado) => ({
+      bloqueosDiaADia: estado.bloqueosDiaADia.filter((_, i) => i !== indice),
+    })),
+  limpiarBloqueosDiaADia: () => set({ bloqueosDiaADia: [] }),
+  registrarResultadoDiaADia: (resultado, minutoActual) =>
+    set((estado) => {
+      const algVisible =
+        estado.algoritmoVisibleDiaADia &&
+        resultado.ejecuciones.some((e) => e.algoritmo === estado.algoritmoVisibleDiaADia)
+          ? estado.algoritmoVisibleDiaADia
+          : (resultado.ejecuciones[0]?.algoritmo ?? null);
+      const limite = calcularMinutoFinal({
+        escenario: resultado.escenario,
+        ejecuciones: resultado.ejecuciones,
+      });
+      return {
+        cargando: false,
+        error: null,
+        corridaDiaADia: resultado,
+        algoritmoVisibleDiaADia: algVisible,
+        escenario: resultado.escenario,
+        ejecuciones: resultado.ejecuciones,
+        algoritmoVisible: algVisible,
+        minutoActual: Math.min(Math.max(minutoActual, resultado.escenario.minutoInicio), limite),
+        reproduciendo: true,
+        tiempoReal: true,
+        minutosPorSegundo: MINUTOS_POR_SEGUNDO_TIEMPO_REAL,
+      };
+    }),
+  activarVistaDiaADia: (minutoActual) =>
+    set((estado) => {
+      const corrida = estado.corridaDiaADia;
+      if (!corrida) {
+        return {
+          tiempoReal: true,
+          reproduciendo: true,
+          minutoActual,
+          minutosPorSegundo: MINUTOS_POR_SEGUNDO_TIEMPO_REAL,
+        };
+      }
+      const limite = calcularMinutoFinal({
+        escenario: corrida.escenario,
+        ejecuciones: corrida.ejecuciones,
+      });
+      const algVisible =
+        estado.algoritmoVisibleDiaADia ?? corrida.ejecuciones[0]?.algoritmo ?? null;
+      return {
+        tiempoReal: true,
+        reproduciendo: true,
+        escenario: corrida.escenario,
+        ejecuciones: corrida.ejecuciones,
+        algoritmoVisible: algVisible,
+        minutoActual: Math.min(Math.max(minutoActual, corrida.escenario.minutoInicio), limite),
+        minutosPorSegundo: MINUTOS_POR_SEGUNDO_TIEMPO_REAL,
+        segundosReales: estado.segundosRealesDiaADia,
+      };
+    }),
+  activarVistaSimulacion: () =>
+    set((estado) => {
+      if (!estado.tiempoReal) {
+        return {};
+      }
+      const corrida = estado.corridaSimulacion;
+      if (!corrida) {
+        return {
+          tiempoReal: false,
+          reproduciendo: false,
+          escenario: null,
+          ejecuciones: [],
+          algoritmoVisible: null,
+          segundosReales: 0,
+        };
+      }
+      return {
+        tiempoReal: false,
+        reproduciendo: false,
+        escenario: corrida.escenario,
+        ejecuciones: corrida.ejecuciones,
+        algoritmoVisible: corrida.ejecuciones[0]?.algoritmo ?? null,
+        minutoActual: corrida.escenario.minutoInicio + (estado.segundoInicioSimulacion ?? 0) / 60,
+        segundosReales: 0,
+      };
+    }),
   agregarPedidosAdicionales: (pedidos) =>
     set((estado) => ({ pedidosAdicionales: [...estado.pedidosAdicionales, ...pedidos] })),
   quitarPedidoAdicional: (indice) =>
@@ -283,19 +436,23 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
 
   iniciarCarga: () => set({ cargando: true, error: null }),
 
-  registrarResultado: (resultado) =>
+  registrarResultado: (resultado, segundoInicio = 0) => {
+    const segs = Math.max(0, Math.min(59, Math.floor(segundoInicio)));
     set({
       cargando: false,
       error: null,
+      corridaSimulacion: resultado,
       escenario: resultado.escenario,
       ejecuciones: resultado.ejecuciones,
       algoritmoVisible: resultado.ejecuciones[0]?.algoritmo ?? null,
-      minutoActual: resultado.escenario.minutoInicio,
+      segundoInicioSimulacion: segs,
+      minutoActual: resultado.escenario.minutoInicio + segs / 60,
       segundosReales: 0,
       reproduciendo: false,
       unidadEnfocada: null,
       tiempoReal: false,
-    }),
+    });
+  },
 
   registrarError: (mensaje) => set({ cargando: false, error: mensaje }),
 
@@ -334,9 +491,10 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
       return;
     }
     const enElFinal = estado.minutoActual >= calcularMinutoFinal(estado);
+    const inicioEfectivo = estado.escenario.minutoInicio + (estado.segundoInicioSimulacion ?? 0) / 60;
     set({
       reproduciendo: !estado.reproduciendo,
-      minutoActual: enElFinal ? estado.escenario.minutoInicio : estado.minutoActual,
+      minutoActual: enElFinal ? inicioEfectivo : estado.minutoActual,
       segundosReales: enElFinal ? 0 : estado.segundosReales,
     });
   },
@@ -345,13 +503,13 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
     set((estado) => ({
       reproduciendo: false,
       tiempoReal: false,
-      minutoActual: estado.escenario?.minutoInicio ?? 0,
+      minutoActual: (estado.escenario?.minutoInicio ?? 0) + (estado.segundoInicioSimulacion ?? 0) / 60,
       segundosReales: 0,
     })),
 
   reiniciar: () =>
     set((estado) => ({
-      minutoActual: estado.escenario?.minutoInicio ?? 0,
+      minutoActual: (estado.escenario?.minutoInicio ?? 0) + (estado.segundoInicioSimulacion ?? 0) / 60,
       segundosReales: 0,
     })),
 
@@ -363,6 +521,7 @@ export const useSimulacionStore = create<SimulacionState>((set, get) => ({
       parametros: { ...estado.parametros, averias: [] },
       parametros5D: { ...estado.parametros5D, averias: [] },
       parametrosColapso: { ...estado.parametrosColapso, averias: [] },
+      corridaSimulacion: null,
       escenario: null,
       ejecuciones: [],
       algoritmoVisible: null,

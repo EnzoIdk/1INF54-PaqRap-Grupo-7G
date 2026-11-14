@@ -33,6 +33,8 @@ public record ParametrosCincoDias(
         @NotBlank String archivoVentas,
         @Min(1) @Max(27) int diaInicio,
         @Min(0) @Max(23) Integer horaInicio,
+        @Min(0) @Max(59) Integer minutoDeInicio,
+        @Min(0) @Max(59) Integer segundoDeInicio,
         @Min(1) @Max(400) Integer maximoPedidosPorTurno,
         String algoritmo,
         Long semilla,
@@ -47,8 +49,17 @@ public record ParametrosCincoDias(
                                Integer maximoPedidosPorTurno, String algoritmo, Long semilla,
                                Integer cantidadAutos, Integer cantidadMotos, Integer cantidadBicicletas,
                                List<AveriaSolicitada5D> averias) {
-        this(archivoVentas, diaInicio, horaInicio, maximoPedidosPorTurno, algoritmo, semilla,
+        this(archivoVentas, diaInicio, horaInicio, 0, 0, maximoPedidosPorTurno, algoritmo, semilla,
                 cantidadAutos, cantidadMotos, cantidadBicicletas, averias, List.of());
+    }
+
+    /** Constructor con pedidos adicionales y sin minuto/segundo personalizados. */
+    public ParametrosCincoDias(String archivoVentas, int diaInicio, Integer horaInicio,
+                               Integer maximoPedidosPorTurno, String algoritmo, Long semilla,
+                               Integer cantidadAutos, Integer cantidadMotos, Integer cantidadBicicletas,
+                               List<AveriaSolicitada5D> averias, List<PedidoAdicional> pedidosAdicionales) {
+        this(archivoVentas, diaInicio, horaInicio, 0, 0, maximoPedidosPorTurno, algoritmo, semilla,
+                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, pedidosAdicionales);
     }
 
     public List<PedidoAdicional> pedidosAdicionalesSeguros() {
@@ -89,13 +100,22 @@ public record ParametrosCincoDias(
         return horaInicio != null ? horaInicio : 7;
     }
 
+    public int minutoDeInicioEfectivo() {
+        return minutoDeInicio != null ? Math.max(0, Math.min(59, minutoDeInicio)) : 0;
+    }
+
+    public int segundoDeInicioEfectivo() {
+        return segundoDeInicio != null ? Math.max(0, Math.min(59, segundoDeInicio)) : 0;
+    }
+
     public int maximoPedidosPorTurnoEfectivo() {
         return maximoPedidosPorTurno != null ? maximoPedidosPorTurno : 60;
     }
 
     public int minutoInicio() {
         return (diaInicio - 1) * ConstantesPaqrap.MINUTOS_POR_DIA
-                + horaInicioEfectiva() * ConstantesPaqrap.MINUTOS_POR_HORA;
+                + horaInicioEfectiva() * ConstantesPaqrap.MINUTOS_POR_HORA
+                + minutoDeInicioEfectivo();
     }
 
     public int minutoFin() {

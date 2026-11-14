@@ -33,6 +33,8 @@ public record ParametrosEjecucion(
         @NotBlank String archivoVentas,
         @Min(1) @Max(31) int dia,
         @Min(0) @Max(23) int horaInicio,
+        @Min(0) @Max(59) Integer minutoDeInicio,
+        @Min(0) @Max(59) Integer segundoDeInicio,
         @Min(1) @Max(24) int ventanaHoras,
         @Min(1) @Max(400) int maximoPedidos,
         String algoritmo,
@@ -41,18 +43,59 @@ public record ParametrosEjecucion(
         @Min(0) @Max(60) Integer cantidadMotos,
         @Min(0) @Max(60) Integer cantidadBicicletas,
         List<AveriaSolicitada> averias,
-        @Valid List<PedidoAdicional> pedidosAdicionales) {
+        @Valid List<PedidoAdicional> pedidosAdicionales,
+        List<BloqueoSolicitado> bloqueosAdicionales) {
 
-    /** Constructor sin pedidos adicionales, compatible con las llamadas previas. */
+    /** Constructor sin pedidos ni bloqueos adicionales, compatible con las llamadas previas. */
     public ParametrosEjecucion(String archivoVentas, int dia, int horaInicio, int ventanaHoras,
                                int maximoPedidos, String algoritmo, Long semilla, Integer cantidadAutos,
                                Integer cantidadMotos, Integer cantidadBicicletas, List<AveriaSolicitada> averias) {
-        this(archivoVentas, dia, horaInicio, ventanaHoras, maximoPedidos, algoritmo, semilla,
-                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, List.of());
+        this(archivoVentas, dia, horaInicio, 0, 0, ventanaHoras, maximoPedidos, algoritmo, semilla,
+                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, List.of(), List.of());
+    }
+
+    /** Constructor sin bloqueos adicionales, compatible con las llamadas previas. */
+    public ParametrosEjecucion(String archivoVentas, int dia, int horaInicio, int ventanaHoras,
+                               int maximoPedidos, String algoritmo, Long semilla, Integer cantidadAutos,
+                               Integer cantidadMotos, Integer cantidadBicicletas, List<AveriaSolicitada> averias,
+                               List<PedidoAdicional> pedidosAdicionales) {
+        this(archivoVentas, dia, horaInicio, 0, 0, ventanaHoras, maximoPedidos, algoritmo, semilla,
+                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, pedidosAdicionales, List.of());
+    }
+
+    /** Constructor con bloqueos adicionales y sin minuto/segundo personalizados. */
+    public ParametrosEjecucion(String archivoVentas, int dia, int horaInicio, int ventanaHoras,
+                               int maximoPedidos, String algoritmo, Long semilla, Integer cantidadAutos,
+                               Integer cantidadMotos, Integer cantidadBicicletas, List<AveriaSolicitada> averias,
+                               List<PedidoAdicional> pedidosAdicionales, List<BloqueoSolicitado> bloqueosAdicionales) {
+        this(archivoVentas, dia, horaInicio, 0, 0, ventanaHoras, maximoPedidos, algoritmo, semilla,
+                cantidadAutos, cantidadMotos, cantidadBicicletas, averias, pedidosAdicionales, bloqueosAdicionales);
+    }
+
+    public int minutoDeInicioEfectivo() {
+        return minutoDeInicio != null ? Math.max(0, Math.min(59, minutoDeInicio)) : 0;
+    }
+
+    public int segundoDeInicioEfectivo() {
+        return segundoDeInicio != null ? Math.max(0, Math.min(59, segundoDeInicio)) : 0;
     }
 
     public List<PedidoAdicional> pedidosAdicionalesSeguros() {
         return pedidosAdicionales == null ? List.of() : pedidosAdicionales;
+    }
+
+    public List<BloqueoSolicitado> bloqueosAdicionalesSeguros() {
+        return bloqueosAdicionales == null ? List.of() : bloqueosAdicionales;
+    }
+
+    /**
+     * Bloqueo registrado manualmente en el mapa durante la operación.
+     *
+     * @param inicioMinuto minuto de simulación en que inicia el bloqueo
+     * @param finMinuto minuto de simulación en que termina el bloqueo
+     * @param nodos secuencia de coordenadas [x, y] del tramo bloqueado
+     */
+    public record BloqueoSolicitado(int inicioMinuto, int finMinuto, List<List<Integer>> nodos) {
     }
 
     /**

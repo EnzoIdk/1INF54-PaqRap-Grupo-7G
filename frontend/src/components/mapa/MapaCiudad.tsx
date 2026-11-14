@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Crosshair, MapPinned, Maximize2, Minus, Plus } from "lucide-react";
-import type { AlmacenDto, BloqueoDto, RutaDto } from "../../types/Experimentacion";
+import type { AlmacenDto, BloqueoDto, NodoMapa, RutaDto } from "../../types/Experimentacion";
 import type { EstadoPedidoEnMapa, PosicionUnidad } from "../../hooks/usePosicionesFlota";
 import { useTamanoContenedor } from "../../hooks/useTamanoContenedor";
+import { ALTO_MAPA_KM, ANCHO_MAPA_KM } from "../../utils/constants";
 import { crearEscalaMapa, type EscalaMapa } from "../../utils/coordenadas";
 import type { AveriaVigente } from "../../utils/averias";
 import CapaAlmacenes from "./CapaAlmacenes";
@@ -30,6 +31,14 @@ interface MapaCiudadProps {
   minutoActual: number;
   umbralAmbarPorcentaje: number;
   umbralRojoPorcentaje: number;
+  /** Activa el modo interactivo para trazar bloqueos haciendo clic en la retícula. */
+  modoAgregarBloqueo?: boolean;
+  /** Nodos ya marcados del bloqueo en construcción. */
+  nodosBorradorBloqueo?: NodoMapa[];
+  /** Recibe el nodo [x, y] de la retícula donde el usuario hizo clic. */
+  onAgregarNodoBloqueo?: (nodo: NodoMapa) => void;
+  /** Oculta el aviso de mapa vacío cuando la vista opera en tiempo real. */
+  ocultarAvisoVacio?: boolean;
   /** Elementos flotantes sobre el mapa (leyenda, indicadores, avisos). */
   children?: ReactNode;
 }
@@ -78,6 +87,10 @@ const MapaCiudad = ({
   minutoActual,
   umbralAmbarPorcentaje,
   umbralRojoPorcentaje,
+  modoAgregarBloqueo = false,
+  nodosBorradorBloqueo = [],
+  onAgregarNodoBloqueo,
+  ocultarAvisoVacio = false,
   children,
 }: MapaCiudadProps) => {
   const [referencia, tamano] = useTamanoContenedor<HTMLDivElement>();
@@ -90,6 +103,7 @@ const MapaCiudad = ({
   const huboArrastreRef = useRef(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [sugerencia, setSugerencia] = useState<Sugerencia | null>(null);
+  const [nodoCursor, setNodoCursor] = useState<NodoMapa | null>(null);
   const ocultarRef = useRef<number | null>(null);
 
   const base = useMemo(
@@ -218,8 +232,44 @@ const MapaCiudad = ({
 
   const listo = tamano.ancho > 0 && tamano.alto > 0;
 
+  const aNodoReticula = useCallback(
+    (clientX: number, clientY: number): NodoMapa | null => {
+      const svg = svgRef.current;
+      if (!svg || escala.factor <= 0) {
+        return null;
+      }
+      const caja = svg.getBoundingClientRect();
+      const px = clientX - caja.left;
+      const py = clientY - caja.top;
+      const x = Math.round((px - escala.margenIzquierdo) / escala.factor);
+      const y = Math.round(ALTO_MAPA_KM - (py - escala.margenSuperior) / escala.factor);
+      if (x < 0 || x > ANCHO_MAPA_KM || y < 0 || y > ALTO_MAPA_KM) {
+        return null;
+      }
+      return [x, y];
+    },
+    [escala],
+  );
+
+  const puntosVistaPreviaBloqueo = useMemo(() => {
+    if (!modoAgregarBloqueo || !nodoCursor || nodosBorradorBloqueo.length === 0) {
+      return null;
+    }
+    const ultimo = nodosBorradorBloqueo[nodosBorradorBloqueo.length - 1];
+    const [ux, uy] = ultimo;
+    const [cx, cy] = nodoCursor;
+    if (ux === cx && uy === cy) {
+      return null;
+    }
+    const secuencia: NodoMapa[] = ux !== cx && uy !== cy ? [ultimo, [cx, uy], nodoCursor] : [ultimo, nodoCursor];
+    return secuencia.map(([x, y]) => `${escala.aX(x)},${escala.aY(y)}`).join(" ");
+  }, [modoAgregarBloqueo, nodoCursor, nodosBorradorBloqueo, escala]);
+
   return (
-    <div className={`mapa tarjeta ${vista.zoom > 1.01 ? "mapa--ampliado" : ""}`} ref={referencia}>
+    <div
+      className={`mapa tarjeta ${vista.zoom > 1.01 ? "mapa--ampliado" : ""} ${modoAgregarBloqueo ? "mapa--modo-bloqueo" : ""}`}
+      ref={referencia}
+    >
       {!listo ? null : (
         <svg
           ref={svgRef}
@@ -242,6 +292,9 @@ const MapaCiudad = ({
             };
           }}
           onPointerMove={(evento) => {
+            if (modoAgregarBloqueo && !arrastreRef.current?.movido) {
+              setNodoCursor(aNodoReticula(evento.clientX, evento.clientY));
+            }
             const arrastre = arrastreRef.current;
             if (!arrastre) {
               return;
@@ -261,6 +314,11 @@ const MapaCiudad = ({
               acotar({ zoom: actual.zoom, dx: arrastre.dx + desplazadoX, dy: arrastre.dy + desplazadoY }),
             );
           }}
+          onPointerLeave={() => {
+            if (modoAgregarBloqueo) {
+              setNodoCursor(null);
+            }
+          }}
           onPointerUp={(evento) => {
             const arrastre = arrastreRef.current;
             arrastreRef.current = null;
@@ -273,9 +331,20 @@ const MapaCiudad = ({
             if (huboArrastreRef.current) {
               evento.stopPropagation();
               huboArrastreRef.current = false;
+              return;
+            }
+            if (modoAgregarBloqueo && onAgregarNodoBloqueo) {
+              const nodo = aNodoReticula(evento.clientX, evento.clientY);
+              if (nodo) {
+                evento.stopPropagation();
+                onAgregarNodoBloqueo(nodo);
+              }
             }
           }}
           onClick={(evento) => {
+            if (modoAgregarBloqueo) {
+              return;
+            }
             if (evento.target === evento.currentTarget || (evento.target as Element).classList?.contains("mapa__fondo")) {
               onEnfocar(null);
               onSeleccionarAlmacen?.(null);
@@ -317,6 +386,68 @@ const MapaCiudad = ({
             onSobrevolar={sobrevolar}
             onDejarDeSobrevolar={programarOcultar}
           />
+          {(modoAgregarBloqueo || nodosBorradorBloqueo.length > 0) && (
+            <g className="mapa__capa-borrador-bloqueo" pointerEvents="none">
+              {nodosBorradorBloqueo.length >= 2 && (
+                <polyline
+                  points={nodosBorradorBloqueo.map(([x, y]) => `${escala.aX(x)},${escala.aY(y)}`).join(" ")}
+                  fill="none"
+                  stroke="var(--color-semaforo-rojo)"
+                  strokeWidth={3.5}
+                  strokeDasharray="6 4"
+                  strokeLinecap="round"
+                />
+              )}
+              {puntosVistaPreviaBloqueo && (
+                <polyline
+                  points={puntosVistaPreviaBloqueo}
+                  fill="none"
+                  stroke="var(--color-semaforo-ambar)"
+                  strokeWidth={2.5}
+                  strokeDasharray="4 4"
+                  strokeLinecap="round"
+                />
+              )}
+              {nodosBorradorBloqueo.map(([x, y], idx) => (
+                <g key={`borrador-nodo-${idx}-${x}-${y}`}>
+                  <circle
+                    cx={escala.aX(x)}
+                    cy={escala.aY(y)}
+                    r={5}
+                    fill="var(--color-semaforo-rojo)"
+                    stroke="var(--color-fondo)"
+                    strokeWidth={2}
+                  />
+                  <text
+                    x={escala.aX(x)}
+                    y={escala.aY(y) - 8}
+                    className="mapa__etiqueta-unidad"
+                  >
+                    {`(${x},${y})`}
+                  </text>
+                </g>
+              ))}
+              {modoAgregarBloqueo && nodoCursor && (
+                <g>
+                  <circle
+                    cx={escala.aX(nodoCursor[0])}
+                    cy={escala.aY(nodoCursor[1])}
+                    r={4.5}
+                    fill="var(--color-semaforo-ambar)"
+                    stroke="var(--color-fondo)"
+                    strokeWidth={1.5}
+                  />
+                  <text
+                    x={escala.aX(nodoCursor[0])}
+                    y={escala.aY(nodoCursor[1]) - 9}
+                    className="mapa__etiqueta-unidad"
+                  >
+                    {`(${nodoCursor[0]}, ${nodoCursor[1]})`}
+                  </text>
+                </g>
+              )}
+            </g>
+          )}
         </svg>
       )}
 
@@ -384,7 +515,7 @@ const MapaCiudad = ({
 
       {children}
 
-      {rutas.length === 0 && listo && (
+      {rutas.length === 0 && listo && !modoAgregarBloqueo && !ocultarAvisoVacio && (
         <div className="mapa__vacio">
           <MapPinned size={30} aria-hidden />
           <span className="estado-vacio__titulo">Todavía no hay un plan que mostrar</span>

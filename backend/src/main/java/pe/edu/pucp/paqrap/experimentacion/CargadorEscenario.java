@@ -87,9 +87,10 @@ public class CargadorEscenario {
         ResultadoCarga resumenBloqueos = new ResultadoCarga();
         if (conjunto.archivoBloqueos() != null) {
             LectorBloqueos.Resultado leidos = lectorBloqueos.leer(localizador.localizar(conjunto.archivoBloqueos()));
-            bloqueosDelMes = leidos.bloqueos();
+            bloqueosDelMes.addAll(leidos.bloqueos());
             resumenBloqueos = leidos.resumen();
         }
+        incorporarBloqueosAdicionales(bloqueosDelMes, parametros.bloqueosAdicionalesSeguros());
 
         List<MantenimientoProgramado> mantenimientos = new ArrayList<>();
         ResultadoCarga resumenMantenimiento = new ResultadoCarga();
@@ -101,13 +102,15 @@ public class CargadorEscenario {
         }
 
         int minutoInicio = (parametros.dia() - 1) * ConstantesPaqrap.MINUTOS_POR_DIA
-                + parametros.horaInicio() * ConstantesPaqrap.MINUTOS_POR_HORA;
+                + parametros.horaInicio() * ConstantesPaqrap.MINUTOS_POR_HORA
+                + parametros.minutoDeInicioEfectivo();
         int minutoFin = minutoInicio + parametros.ventanaHoras() * ConstantesPaqrap.MINUTOS_POR_HORA;
 
         List<Pedido> pedidosDelTurno = recortarAlTurno(
                 pedidosDelMes, minutoInicio, minutoFin, parametros.maximoPedidos());
+        int horizonteBloqueos = minutoFin + ConstantesPaqrap.MINUTOS_DURACION_TURNO;
         List<Bloqueo> bloqueosVigentes = bloqueosDelMes.stream()
-                .filter(bloqueo -> bloqueo.getInicioMinuto() < minutoFin && bloqueo.getFinMinuto() > minutoInicio)
+                .filter(bloqueo -> bloqueo.getInicioMinuto() < horizonteBloqueos && bloqueo.getFinMinuto() > minutoInicio)
                 .toList();
 
         List<Almacen> almacenes = construirAlmacenes();
@@ -159,8 +162,9 @@ public class CargadorEscenario {
                 .filter(pedido -> pedido.getMinutoSimulacion() >= minutoInicio && pedido.getMinutoSimulacion() < minutoFin)
                 .toList();
 
+        int horizonteBloqueos5D = minutoFin + ConstantesPaqrap.MINUTOS_DURACION_TURNO;
         List<Bloqueo> bloqueosVigentes = bloqueosDelMes.stream()
-                .filter(bloqueo -> bloqueo.getInicioMinuto() < minutoFin && bloqueo.getFinMinuto() > minutoInicio)
+                .filter(bloqueo -> bloqueo.getInicioMinuto() < horizonteBloqueos5D && bloqueo.getFinMinuto() > minutoInicio)
                 .toList();
 
         List<Almacen> almacenes = construirAlmacenes();
@@ -436,6 +440,31 @@ public class CargadorEscenario {
             averias.add(new Averia(unidad, TipoAveria.valueOf(solicitada.tipo()), solicitada.minutoSimulacion()));
         }
         return averias;
+    }
+
+    private void incorporarBloqueosAdicionales(
+            List<Bloqueo> bloqueosDelMes,
+            List<ParametrosEjecucion.BloqueoSolicitado> adicionales) {
+        if (adicionales == null || adicionales.isEmpty()) {
+            return;
+        }
+        for (ParametrosEjecucion.BloqueoSolicitado adicional : adicionales) {
+            if (adicional.nodos() == null || adicional.nodos().size() < 2
+                    || adicional.finMinuto() <= adicional.inicioMinuto()) {
+                continue;
+            }
+            List<Nodo> secuencia = new ArrayList<>();
+            for (List<Integer> par : adicional.nodos()) {
+                if (par != null && par.size() >= 2) {
+                    int x = Math.max(0, Math.min(ConstantesPaqrap.ANCHO_RETICULA_KM, par.get(0)));
+                    int y = Math.max(0, Math.min(ConstantesPaqrap.ALTO_RETICULA_KM, par.get(1)));
+                    secuencia.add(new Nodo(x, y));
+                }
+            }
+            if (secuencia.size() >= 2) {
+                bloqueosDelMes.add(new Bloqueo(adicional.inicioMinuto(), adicional.finMinuto(), secuencia));
+            }
+        }
     }
 
     public List<Averia> construirAverias5D(List<UnidadTransporte> flota, ParametrosCincoDias parametros) {

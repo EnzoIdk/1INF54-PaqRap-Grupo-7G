@@ -8,11 +8,16 @@ import type { AveriaSolicitada } from "../types/Experimentacion";
  */
 export function useAveriasDeLaCorrida(): AveriaSolicitada[] {
   const modoSimulacion = useSimulacionStore((estado) => estado.modoSimulacion);
+  const tiempoReal = useSimulacionStore((estado) => estado.tiempoReal);
+  const averiasDiaADia = useSimulacionStore((estado) => estado.averiasDiaADia);
   const parametros = useSimulacionStore((estado) => estado.parametros);
   const parametros5D = useSimulacionStore((estado) => estado.parametros5D);
   const parametrosColapso = useSimulacionStore((estado) => estado.parametrosColapso);
 
   return useMemo(() => {
+    if (tiempoReal || modoSimulacion === "DIA") {
+      return averiasDiaADia;
+    }
     if (modoSimulacion === "COLAPSO" || modoSimulacion === "5D") {
       const averias = modoSimulacion === "COLAPSO" ? parametrosColapso.averias : parametros5D.averias;
       return (averias ?? []).map((averia) => ({
@@ -21,9 +26,6 @@ export function useAveriasDeLaCorrida(): AveriaSolicitada[] {
         minutoSimulacion: (averia.dia - 1) * 1440 + averia.hora * 60,
       }));
     }
-    if (modoSimulacion === "DIA") {
-      return [];
-    }
     return parametros.averias ?? [];
-  }, [modoSimulacion, parametros.averias, parametros5D.averias, parametrosColapso.averias]);
+  }, [tiempoReal, modoSimulacion, averiasDiaADia, parametros.averias, parametros5D.averias, parametrosColapso.averias]);
 }

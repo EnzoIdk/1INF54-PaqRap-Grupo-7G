@@ -8,6 +8,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Play,
+  Radio,
   Settings,
   User,
   UserRoundCog,
@@ -17,6 +18,7 @@ import BotonTema from "../comunes/BotonTema";
 import "./Navside.css";
 
 const MODULOS = [
+  { ruta: "/tiempo-real", etiqueta: "Operación en tiempo real", Icono: Radio, exacto: false },
   { ruta: "/", etiqueta: "Centro de Control", Icono: Map, exacto: true },
   { ruta: "/pedidos", etiqueta: "Gestión de Pedidos", Icono: Package, exacto: false },
   { ruta: "/simulacion", etiqueta: "Consola de Simulación", Icono: Play, exacto: false },

@@ -39,6 +39,11 @@
   gap: 14px;
 }
 
+.consola__hora-personalizada {
+  display: flex;
+  flex-direction: column;
+}
+
 .consola__pestanas {
   display: flex;
   margin-bottom: 4px;
