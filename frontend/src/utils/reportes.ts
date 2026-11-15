@@ -128,6 +128,10 @@ export interface IndicadoresEjecucion {
   fueraDePlazo: number;
   reasignados: number;
   sinAtender: number;
+  /** Pedidos cuyo plazo expiró sin recibir asignación (fallas de servicio). */
+  vencidosSinAtender: number;
+  /** Pedidos en cola cuyo plazo vence en turnos posteriores al corte. */
+  enEspera: number;
   tasaCumplimiento: number;
   costoTotal: number;
   kmTotales: number;
@@ -200,9 +204,22 @@ export function calcularIndicadores(ejecucion: EjecucionDto): IndicadoresEjecuci
     fueraDePlazo: entregas - aTiempo,
     reasignados,
     sinAtender: ejecucion.pedidosSinAtender.length,
-    tasaCumplimiento: entregas + ejecucion.pedidosSinAtender.length > 0
-      ? aTiempo / (entregas + ejecucion.pedidosSinAtender.length)
-      : 0,
+    vencidosSinAtender:
+      ejecucion.metricas.pedidosVencidos ??
+      ejecucion.pedidosSinAtender.filter((p) => !p.fueraDeHorizonte).length,
+    enEspera:
+      ejecucion.metricas.pedidosEnEspera ??
+      ejecucion.pedidosSinAtender.filter((p) => Boolean(p.fueraDeHorizonte)).length,
+    tasaCumplimiento:
+      entregas +
+        (ejecucion.metricas.pedidosVencidos ??
+          ejecucion.pedidosSinAtender.filter((p) => !p.fueraDeHorizonte).length) >
+      0
+        ? aTiempo /
+          (entregas +
+            (ejecucion.metricas.pedidosVencidos ??
+              ejecucion.pedidosSinAtender.filter((p) => !p.fueraDeHorizonte).length))
+        : 0,
     costoTotal,
     kmTotales,
     costoPorKm: kmTotales > 0 ? costoTotal / kmTotales : 0,

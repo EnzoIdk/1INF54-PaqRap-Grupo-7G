@@ -71,21 +71,24 @@ const ReportesDesempeno = ({ escenario, ejecuciones }: ReportesDesempenoProps) =
 
 /* ---------------------------------------------------------------- RF-68 */
 const Cumplimiento = ({ datos }: { datos: IndicadoresEjecucion }) => {
-  const total = datos.aTiempo + datos.fueraDePlazo + datos.sinAtender;
-  const tramo = (valor: number) => `${total > 0 ? (valor / total) * 100 : 0}%`;
+  const totalEvaluado = datos.aTiempo + datos.fueraDePlazo + datos.vencidosSinAtender;
+  const tramo = (valor: number) => `${totalEvaluado > 0 ? (valor / totalEvaluado) * 100 : 0}%`;
   return (
     <div className="reportes__bloque">
       <h3 className="rotulo">Tasa de cumplimiento</h3>
       <p className="reportes__cifra-grande cifra">{(datos.tasaCumplimiento * 100).toFixed(1)} %</p>
-      <div className="reportes__barra-apilada" role="img" aria-label="Pedidos a tiempo, fuera de plazo y sin atender">
+      <div className="reportes__barra-apilada" role="img" aria-label="Pedidos a tiempo, fuera de plazo y vencidos sin atender">
         <span style={{ width: tramo(datos.aTiempo), background: "var(--color-semaforo-verde)" }} />
         <span style={{ width: tramo(datos.fueraDePlazo), background: "var(--color-semaforo-ambar)" }} />
-        <span style={{ width: tramo(datos.sinAtender), background: "var(--color-semaforo-rojo)" }} />
+        <span style={{ width: tramo(datos.vencidosSinAtender), background: "var(--color-semaforo-rojo)" }} />
       </div>
       <ul className="reportes__leyenda">
         <li><i style={{ background: "var(--color-semaforo-verde)" }} /> A tiempo: {datos.aTiempo}</li>
         <li><i style={{ background: "var(--color-semaforo-ambar)" }} /> Fuera de plazo: {datos.fueraDePlazo}</li>
-        <li><i style={{ background: "var(--color-semaforo-rojo)" }} /> Sin atender: {datos.sinAtender}</li>
+        <li><i style={{ background: "var(--color-semaforo-rojo)" }} /> Vencidos sin atender: {datos.vencidosSinAtender}</li>
+        {datos.enEspera > 0 && (
+          <li><i style={{ background: "var(--color-texto-tenue)" }} /> En cola (próximos turnos): {datos.enEspera}</li>
+        )}
         <li><i style={{ background: "var(--color-estado-reasignado)" }} /> Reasignados por avería: {datos.reasignados}</li>
       </ul>
     </div>

@@ -38,7 +38,7 @@ import { useEjecucionVisible, useExperimentacion } from "../hooks/useExperimenta
 import { useSimulacionStore } from "../store/simulacionStore";
 import { formatearHoraDelDia, formatearSoles, formatearTiempoSimulado } from "../utils/formatters";
 import { averiasVigentes } from "../utils/averias";
-import { evitarBloqueosEnEjecucion } from "../utils/rutasSinBloqueos";
+import { replanificarEjecucionEnTiempoReal } from "../utils/rutasSinBloqueos";
 import { nivelUnidad } from "../utils/semaforo";
 import { ALTO_MAPA_KM, ANCHO_MAPA_KM, ETIQUETA_TIPO_UNIDAD } from "../utils/constants";
 import { ahoraEnLima, minutoDelMes } from "../utils/tiempoReal";
@@ -152,9 +152,39 @@ const OperacionTiempoRealPage = () => {
     return [...base, ...extras];
   }, [escenario?.bloqueos, bloqueosDiaADia]);
 
+  const unidadesEnMantenimientoVigentes = useMemo(() => {
+    if (!escenario) return [];
+    if (escenario.mantenimientosProgramados && escenario.mantenimientosProgramados.length > 0) {
+      return escenario.mantenimientosProgramados
+        .filter((m) => minutoActual >= m.minutoInicio && minutoActual < m.minutoFin)
+        .map((m) => m.codigoUnidad);
+    }
+    const diaActual = Math.floor(minutoActual / 1440) + 1;
+    if (diaActual === escenario.dia) {
+      return escenario.unidadesEnMantenimiento ?? [];
+    }
+    return [];
+  }, [escenario, minutoActual]);
+
   const ejecucion = useMemo(
-    () => evitarBloqueosEnEjecucion(ejecucionBase, bloqueosCombinados),
-    [ejecucionBase, bloqueosCombinados],
+    () =>
+      replanificarEjecucionEnTiempoReal(ejecucionBase, {
+        bloqueosBase: escenario?.bloqueos ?? [],
+        bloqueosTiempoReal: bloqueosDiaADia,
+        averiasTiempoReal: averiasDiaADia,
+        flota: escenario?.flota ?? [],
+        almacenes: escenario?.almacenes ?? [],
+        unidadesEnMantenimiento: unidadesEnMantenimientoVigentes,
+      }),
+    [
+      ejecucionBase,
+      escenario?.bloqueos,
+      escenario?.flota,
+      escenario?.almacenes,
+      bloqueosDiaADia,
+      averiasDiaADia,
+      unidadesEnMantenimientoVigentes,
+    ],
   );
 
   const escenarioConIncidencias = useMemo(
@@ -171,20 +201,6 @@ const OperacionTiempoRealPage = () => {
     () => averiasActivas.map((averia) => averia.codigoUnidad),
     [averiasActivas],
   );
-
-  const unidadesEnMantenimientoVigentes = useMemo(() => {
-    if (!escenario) return [];
-    if (escenario.mantenimientosProgramados && escenario.mantenimientosProgramados.length > 0) {
-      return escenario.mantenimientosProgramados
-        .filter((m) => minutoActual >= m.minutoInicio && minutoActual < m.minutoFin)
-        .map((m) => m.codigoUnidad);
-    }
-    const diaActual = Math.floor(minutoActual / 1440) + 1;
-    if (diaActual === escenario.dia) {
-      return escenario.unidadesEnMantenimiento ?? [];
-    }
-    return [];
-  }, [escenario, minutoActual]);
 
   const unidadesInmovilizadas = useMemo(
     () => [...new Set([...unidadesAveriadas, ...unidadesEnMantenimientoVigentes])],
@@ -343,12 +359,16 @@ const OperacionTiempoRealPage = () => {
       nodos: nodosBorradorBloqueo,
     });
     setNodosBorradorBloqueo([]);
-    void ejecutarDiaADia();
+    if (!corridaDiaADia) {
+      void ejecutarDiaADia();
+    }
   };
 
   const eliminarBloqueoYReplanificar = (indice: number) => {
     quitarBloqueoDiaADia(indice);
-    void ejecutarDiaADia();
+    if (!corridaDiaADia) {
+      void ejecutarDiaADia();
+    }
   };
 
   const registrarAveriaYReplanificar = useCallback(
@@ -359,14 +379,18 @@ const OperacionTiempoRealPage = () => {
         tipo,
         minutoSimulacion: Math.floor(minutoActual),
       });
-      void ejecutarDiaADia();
+      if (!corridaDiaADia) {
+        void ejecutarDiaADia();
+      }
     },
-    [agregarAveriaDiaADia, ejecutarDiaADia, minutoActual],
+    [agregarAveriaDiaADia, corridaDiaADia, ejecutarDiaADia, minutoActual],
   );
 
   const eliminarAveriaYReplanificar = (indice: number) => {
     quitarAveriaDiaADia(indice);
-    void ejecutarDiaADia();
+    if (!corridaDiaADia) {
+      void ejecutarDiaADia();
+    }
   };
 
   const cambiarAlgoritmoDiaADia = (nuevoAlgoritmo: AlgoritmoSolicitado) => {
