@@ -109,6 +109,8 @@ export interface PedidoPendienteDto {
   plazoHoras: number;
   minutoRegistro: number;
   minutoLimite: number;
+  /** Si el plazo vence después del horizonte de simulación (en cola legítima para próximos turnos). */
+  fueraDeHorizonte?: boolean;
 }
 
 export interface RutaDto {
@@ -132,6 +134,8 @@ export interface RutaDto {
   minutoInicioAlimentacion?: number | null;
   minutoFinAlimentacion?: number | null;
   alimentacionEnVentana?: boolean;
+  /** Indica que la ruta quedó interrumpida en vía por una avería en tiempo real. */
+  truncadaPorAveria?: boolean;
 }
 
 export interface MetricasDto {
@@ -146,6 +150,10 @@ export interface MetricasDto {
   multas: number;
   fitness: number;
   duracionComputoMs: number;
+  /** Pedidos cuyo plazo venció sin asignación dentro del tiempo de la simulación. */
+  pedidosVencidos?: number;
+  /** Pedidos en cola cuyo plazo continúa vigente al finalizar la simulación. */
+  pedidosEnEspera?: number;
 }
 
 export interface EjecucionDto {

@@ -50,6 +50,8 @@ export interface EstadoPedidoEnMapa {
   estado: EstadoPedidoVisual;
   /** Llegó a su unidad por la reasignación de la carga de una unidad averiada (RF-43). */
   reasignado?: boolean;
+  /** El plazo vence después de la ventana de simulación (en cola legítima para turnos posteriores). */
+  fueraDeHorizonte?: boolean;
 }
 
 /**
@@ -160,7 +162,11 @@ export function usePosicionesFlota(
         minutoLimite: pedido.minutoLimite,
         minutoLlegada: null,
         codigoUnidad: null,
-        estado: minutoActual > pedido.minutoLimite ? "INCUMPLIDO" : "PENDIENTE",
+        fueraDeHorizonte: pedido.fueraDeHorizonte,
+        estado:
+          !pedido.fueraDeHorizonte && minutoActual > pedido.minutoLimite
+            ? "INCUMPLIDO"
+            : "PENDIENTE",
       });
     });
 
@@ -222,6 +228,19 @@ function calcularPosicion(ruta: RutaDto, minutoActual: number): PosicionUnidad {
   const ultimo = recorrido.length - 1;
   if (minutoActual >= minutosPorNodo[ultimo]) {
     const [x, y] = recorrido[ultimo];
+    if (ruta.truncadaPorAveria) {
+      return {
+        ...base,
+        x,
+        y,
+        rumbo: rumboDesde(recorrido, ultimo - 1),
+        enAlmacen: false,
+        finalizada: false,
+        entregando: false,
+        retornando: false,
+        indiceNodoActual: ultimo,
+      };
+    }
     // Una vez concluido el recorrido, la unidad permanece en el almacen de destino
     return { ...base, x, y, rumbo: rumboDesde(recorrido, ultimo - 1), enAlmacen: true, finalizada: true, entregando: false, retornando: false, indiceNodoActual: ultimo };
   }

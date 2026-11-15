@@ -181,6 +181,7 @@ public record ExperimentacionResponse(
      * @param plazoHoras plazo comprometido
      * @param minutoRegistro minuto en que llego el pedido
      * @param minutoLimite minuto en que vence el plazo
+     * @param fueraDeHorizonte si el plazo vence despues del fin de la simulacion (en cola legitima)
      */
     public record PedidoPendienteDto(
             String codigoPedido,
@@ -190,7 +191,14 @@ public record ExperimentacionResponse(
             int cantidadProducto,
             int plazoHoras,
             int minutoRegistro,
-            int minutoLimite) {
+            int minutoLimite,
+            boolean fueraDeHorizonte) {
+
+        public PedidoPendienteDto(
+                String codigoPedido, String clienteId, int posX, int posY,
+                int cantidadProducto, int plazoHoras, int minutoRegistro, int minutoLimite) {
+            this(codigoPedido, clienteId, posX, posY, cantidadProducto, plazoHoras, minutoRegistro, minutoLimite, false);
+        }
     }
 
     /**
@@ -205,6 +213,8 @@ public record ExperimentacionResponse(
      * @param multas castigos acumulados por plazo, capacidad y pedidos sin atender
      * @param fitness aptitud del plan: 1 / (1 + costo + multas)
      * @param duracionComputoMs tiempo que tardo el algoritmo
+     * @param pedidosVencidos pedidos cuyo plazo expiro sin ser atendidos (falla operativa real)
+     * @param pedidosEnEspera pedidos en cola legitima cuyo plazo vence despues del corte
      */
     public record MetricasDto(
             int pedidosDelTurno,
@@ -217,7 +227,19 @@ public record ExperimentacionResponse(
             double costoOperativoTotal,
             double multas,
             double fitness,
-            long duracionComputoMs) {
+            long duracionComputoMs,
+            int pedidosVencidos,
+            int pedidosEnEspera) {
+
+        public MetricasDto(
+                int pedidosDelTurno, int pedidosAtendidos, int pedidosSinAtender,
+                long entregasFueraDePlazo, int unidadesEnRuta, int unidadesDisponibles,
+                double distanciaTotalKm, double costoOperativoTotal, double multas,
+                double fitness, long duracionComputoMs) {
+            this(pedidosDelTurno, pedidosAtendidos, pedidosSinAtender, entregasFueraDePlazo,
+                 unidadesEnRuta, unidadesDisponibles, distanciaTotalKm, costoOperativoTotal,
+                 multas, fitness, duracionComputoMs, pedidosSinAtender, 0);
+        }
     }
 
     /**

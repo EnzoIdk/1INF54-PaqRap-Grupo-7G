@@ -72,6 +72,10 @@ const ReporteFinal = ({
     const paquetes = rutasIniciadas.reduce((total, ruta) => total + ruta.cargaTotal, 0);
     const capacidad = rutasIniciadas.reduce((total, ruta) => total + ruta.capacidad, 0);
     const averiasOcurridas = averias.filter((averia) => averia.minutoSimulacion <= corte);
+    const vencidosSinAtender = ejecucion.pedidosSinAtender.filter(
+      (p) => !p.fueraDeHorizonte && corte >= p.minutoLimite,
+    ).length;
+    const enEspera = ejecucion.pedidosSinAtender.length - vencidosSinAtender;
     return {
       totalPlan: paradas.length,
       entregadas: entregadas.length,
@@ -79,7 +83,14 @@ const ReporteFinal = ({
       fueraDePlazo: entregadas.length - aTiempo,
       enCamino,
       sinAtender: ejecucion.pedidosSinAtender.length,
-      cumplimiento: entregadas.length > 0 ? aTiempo / entregadas.length : 0,
+      vencidosSinAtender,
+      enEspera,
+      cumplimiento:
+        entregadas.length + vencidosSinAtender > 0
+          ? aTiempo / (entregadas.length + vencidosSinAtender)
+          : entregadas.length > 0
+            ? aTiempo / entregadas.length
+            : 0,
       unidadesUsadas: new Set(rutasIniciadas.map((ruta) => ruta.codigoUnidad)).size,
       utilizacion: capacidad > 0 ? paquetes / capacidad : 0,
       averias: averiasOcurridas,
@@ -141,7 +152,16 @@ const ReporteFinal = ({
             <Kpi rotulo="Entregados" valor={`${resumen.entregadas}/${resumen.totalPlan}`} detalle="pedidos del plan" />
             <Kpi rotulo="A tiempo" valor={porcentaje(resumen.cumplimiento)} detalle={`${resumen.aTiempo} a tiempo · ${resumen.fueraDePlazo} fuera de plazo`} />
             <Kpi rotulo="En camino" valor={String(resumen.enCamino)} detalle="pedidos aún en ruta al corte" />
-            <Kpi rotulo="Sin atender" valor={String(resumen.sinAtender)} detalle="sin unidad asignable" alerta={resumen.sinAtender > 0} />
+            <Kpi
+              rotulo="Vencidos sin atender"
+              valor={String(resumen.vencidosSinAtender)}
+              detalle={
+                resumen.enEspera > 0
+                  ? `+ ${resumen.enEspera} en cola para próximos turnos`
+                  : "plazo expirado sin unidad"
+              }
+              alerta={resumen.vencidosSinAtender > 0}
+            />
             <Kpi rotulo="Costo del plan" valor={formatearSoles(ejecucion.metricas.costoOperativoTotal)} detalle={formatearKm(ejecucion.metricas.distanciaTotalKm)} />
             <Kpi rotulo="Flota" valor={`${resumen.unidadesUsadas} UT`} detalle={`utilización ${porcentaje(resumen.utilizacion)}`} />
           </div>

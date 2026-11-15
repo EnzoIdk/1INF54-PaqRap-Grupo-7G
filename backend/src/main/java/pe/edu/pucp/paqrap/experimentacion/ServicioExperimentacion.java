@@ -337,14 +337,24 @@ public class ServicioExperimentacion {
             }
         }
 
+        int minutoFinHorizonte = minutoInicio + numTurnos * duracionTurno;
+
         // Al finalizar los 5 dias, los pedidos pendientes no atendidos pasan a no asignados
         for (Pedido rem : pedidosPendientes) {
             if (!pedidosNoAsignados.contains(rem)) {
                 pedidosNoAsignados.add(rem);
-                riesgosDeColapso.add(String.format(
-                        "Pedido %s sin asignar al finalizar la simulación de 5 días", rem.getCodigo()));
+                if (rem.getMinutoLimiteEntrega() <= minutoFinHorizonte) {
+                    riesgosDeColapso.add(String.format(
+                            "Pedido %s sin asignar al finalizar la simulación de 5 días habiendo vencido su plazo (%d h)",
+                            rem.getCodigo(), rem.getPlazoHoras()));
+                }
             }
         }
+
+        int pedidosVencidos = (int) pedidosNoAsignados.stream()
+                .filter(p -> p.getMinutoLimiteEntrega() <= minutoFinHorizonte)
+                .count();
+        int pedidosEnEspera = pedidosNoAsignados.size() - pedidosVencidos;
 
         double fitness = 1.0 / (1.0 + costoOperativoTotal + multasTotales);
         int unidadesConRuta = (int) todasLasRutas.stream()
@@ -363,7 +373,9 @@ public class ServicioExperimentacion {
                 costoOperativoTotal,
                 multasTotales,
                 fitness,
-                duracionComputoTotalMs);
+                duracionComputoTotalMs,
+                pedidosVencidos,
+                pedidosEnEspera);
 
         List<ExperimentacionResponse.RutaDto> rutasDto = todasLasRutas.stream()
                 .map(this::aRutaDto)
@@ -373,7 +385,7 @@ public class ServicioExperimentacion {
                 nombreAlgoritmo,
                 metricas,
                 rutasDto,
-                pedidosNoAsignados.stream().map(this::aPedidoPendienteDto).toList(),
+                pedidosNoAsignados.stream().map(p -> aPedidoPendienteDto(p, minutoFinHorizonte)).toList(),
                 riesgosDeColapso);
     }
 
@@ -664,6 +676,12 @@ public class ServicioExperimentacion {
             }
         }
 
+        int minutoFinHorizonte = colapsado && minutoColapso != null ? minutoColapso : escenario.minutoFin();
+        int pedidosVencidos = (int) pedidosNoAsignados.stream()
+                .filter(p -> p.getMinutoLimiteEntrega() <= minutoFinHorizonte)
+                .count();
+        int pedidosEnEspera = pedidosNoAsignados.size() - pedidosVencidos;
+
         double fitness = 1.0 / (1.0 + costoOperativoTotal + multasTotales);
         int unidadesConRuta = (int) todasLasRutas.stream()
                 .map(r -> r.getUnidadTransporte().getCodigo())
@@ -681,7 +699,9 @@ public class ServicioExperimentacion {
                 costoOperativoTotal,
                 multasTotales,
                 fitness,
-                duracionComputoTotalMs);
+                duracionComputoTotalMs,
+                pedidosVencidos,
+                pedidosEnEspera);
 
         List<ExperimentacionResponse.RutaDto> rutasDto = todasLasRutas.stream()
                 .map(this::aRutaDto)
@@ -691,7 +711,7 @@ public class ServicioExperimentacion {
                 nombreAlgoritmo,
                 metricas,
                 rutasDto,
-                pedidosNoAsignados.stream().map(this::aPedidoPendienteDto).toList(),
+                pedidosNoAsignados.stream().map(p -> aPedidoPendienteDto(p, minutoFinHorizonte)).toList(),
                 riesgosDeColapso,
                 colapsado,
                 minutoColapso,
@@ -844,6 +864,12 @@ public class ServicioExperimentacion {
                 .map(this::aRutaDto)
                 .toList();
 
+        int minutoFinHorizonte = escenario.minutoFin();
+        int pedidosVencidos = (int) plan.getPedidosNoAsignados().stream()
+                .filter(p -> p.getMinutoLimiteEntrega() <= minutoFinHorizonte)
+                .count();
+        int pedidosEnEspera = plan.getPedidosNoAsignados().size() - pedidosVencidos;
+
         ExperimentacionResponse.MetricasDto metricas = new ExperimentacionResponse.MetricasDto(
                 escenario.pedidosDelTurno().size(),
                 plan.getPedidosAtendidos(),
@@ -855,13 +881,15 @@ public class ServicioExperimentacion {
                 plan.getCostoOperativoTotal(),
                 plan.getMultas(),
                 plan.getFitness(),
-                plan.getDuracionComputoMs());
+                plan.getDuracionComputoMs(),
+                pedidosVencidos,
+                pedidosEnEspera);
 
         return new ExperimentacionResponse.EjecucionDto(
                 plan.getAlgoritmo(),
                 metricas,
                 rutas,
-                plan.getPedidosNoAsignados().stream().map(this::aPedidoPendienteDto).toList(),
+                plan.getPedidosNoAsignados().stream().map(p -> aPedidoPendienteDto(p, minutoFinHorizonte)).toList(),
                 plan.getRiesgosDeColapso());
     }
 
@@ -909,6 +937,11 @@ public class ServicioExperimentacion {
     }
 
     private ExperimentacionResponse.PedidoPendienteDto aPedidoPendienteDto(Pedido pedido) {
+        return aPedidoPendienteDto(pedido, Integer.MAX_VALUE);
+    }
+
+    private ExperimentacionResponse.PedidoPendienteDto aPedidoPendienteDto(Pedido pedido, int minutoFinHorizonte) {
+        boolean fueraDeHorizonte = pedido.getMinutoLimiteEntrega() > minutoFinHorizonte;
         return new ExperimentacionResponse.PedidoPendienteDto(
                 pedido.getCodigo(),
                 pedido.getClienteId(),
@@ -917,6 +950,7 @@ public class ServicioExperimentacion {
                 pedido.getCantidadProducto(),
                 pedido.getPlazoHoras(),
                 pedido.getMinutoSimulacion(),
-                pedido.getMinutoLimiteEntrega());
+                pedido.getMinutoLimiteEntrega(),
+                fueraDeHorizonte);
     }
 }

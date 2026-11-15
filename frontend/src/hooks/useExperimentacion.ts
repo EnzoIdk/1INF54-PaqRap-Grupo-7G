@@ -120,9 +120,9 @@ export function useExperimentacion() {
           ventanaHoras: configuracion.turno.ventanaHoras,
           maximoPedidos: MAXIMO_PEDIDOS_DIA_A_DIA,
           algoritmo: algEfectivo,
-          averias: actual.averiasDiaADia,
+          averias: [],
           pedidosAdicionales: actual.pedidosAdicionales,
-          bloqueosAdicionales: actual.bloqueosDiaADia,
+          bloqueosAdicionales: [],
         }, "DIA_A_DIA");
         registrarResultadoDiaADia(resultado, minutoDelMes(ahoraEnLima()));
         return resultado;

@@ -143,9 +143,11 @@ public class EnsambladorPlan {
         for (Pedido pedido : contexto.pedidos()) {
             if (!atendidos.contains(pedido)) {
                 plan.agregarPedidoNoAsignado(pedido);
-                plan.agregarRiesgoDeColapso(String.format(
-                        "Pedido %s (%d u, plazo %d h) sin unidad operativa con capacidad disponible",
-                        pedido.getCodigo(), pedido.getCantidadProducto(), pedido.getPlazoHoras()));
+                if (pedido.getMinutoLimiteEntrega() <= contexto.minutoPlanificacion() + ConstantesPaqrap.MINUTOS_DURACION_TURNO) {
+                    plan.agregarRiesgoDeColapso(String.format(
+                            "Pedido %s (%d u, plazo %d h) sin unidad operativa con capacidad disponible en el turno",
+                            pedido.getCodigo(), pedido.getCantidadProducto(), pedido.getPlazoHoras()));
+                }
             }
         }
         multas += plan.getPedidosNoAsignados().size() * parametrosPlanificador.penalidadPlazo();

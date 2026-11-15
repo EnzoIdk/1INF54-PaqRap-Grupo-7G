@@ -247,14 +247,20 @@ const AnalyticsPage = () => {
                   rotulo="Pedidos atendidos"
                   valor={`${ejecucion.metricas.pedidosAtendidos} / ${ejecucion.metricas.pedidosDelTurno}`}
                   detalle={
-                    ejecucion.metricas.pedidosSinAtender > 0
-                      ? `${ejecucion.metricas.pedidosSinAtender} sin unidad factible`
-                      : "Todos los pedidos del turno"
+                    (ejecucion.metricas.pedidosVencidos ?? 0) > 0
+                      ? `${ejecucion.metricas.pedidosVencidos} vencido(s) sin atender`
+                      : (ejecucion.metricas.pedidosEnEspera ?? 0) > 0
+                        ? `${ejecucion.metricas.pedidosEnEspera} en cola para próximos turnos`
+                        : ejecucion.metricas.pedidosSinAtender > 0
+                          ? `${ejecucion.metricas.pedidosSinAtender} sin unidad factible`
+                          : "Todos los pedidos atendidos"
                   }
                   color={
-                    ejecucion.metricas.pedidosSinAtender > 0
+                    (ejecucion.metricas.pedidosVencidos ?? 0) > 0
                       ? "var(--color-semaforo-rojo)"
-                      : "var(--color-semaforo-verde)"
+                      : (ejecucion.metricas.pedidosEnEspera ?? 0) > 0
+                        ? "var(--color-semaforo-ambar)"
+                        : "var(--color-semaforo-verde)"
                   }
                   icono={<Timer size={15} />}
                 />

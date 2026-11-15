@@ -67,7 +67,11 @@ const PanelSeguimientoPedidos = ({
               <article
                 key={pedido.codigoPedido}
                 className="panel-pedidos__tarjeta"
-                style={{ borderLeftColor: COLOR_POR_URGENCIA[restante.urgencia] }}
+                style={{
+                  borderLeftColor: pedido.fueraDeHorizonte
+                    ? "var(--color-texto-tenue)"
+                    : COLOR_POR_URGENCIA[restante.urgencia],
+                }}
                 onClick={() => onEnfocarUnidad(pedido.codigoUnidad)}
               >
                 <div className="panel-pedidos__fila">
@@ -76,8 +80,14 @@ const PanelSeguimientoPedidos = ({
                   <span className="cifra texto-secundario">{pedido.codigoUnidad ?? "—"}</span>
                 </div>
                 <div className="panel-pedidos__fila">
-                  <span className="texto-tenue">{entregado ? "Entregado" : "Restante"}</span>
-                  <span className={`cifra plazo--${restante.urgencia}`}>{restante.texto}</span>
+                  <span className="texto-tenue">
+                    {entregado ? "Entregado" : pedido.fueraDeHorizonte ? "Próx. turno" : "Restante"}
+                  </span>
+                  <span className={`cifra plazo--${pedido.fueraDeHorizonte ? "holgada" : restante.urgencia}`}>
+                    {pedido.fueraDeHorizonte
+                      ? `+${Math.max(1, Math.round((pedido.minutoLimite - minutoActual) / 60))} h`
+                      : restante.texto}
+                  </span>
                   <BadgeEstadoPedido estado={pedido.estado} />
                 </div>
               </article>
