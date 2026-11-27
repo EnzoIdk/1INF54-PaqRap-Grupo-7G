@@ -30,6 +30,16 @@ class ParametrosOperacionTest {
     }
 
     @Test
+    void permiteMasDeSesentaUnidadesPorTipoDeFlota() {
+        ParametrosOperacion parametros = new ParametrosOperacion(flota(25), almacen(0.33, 0.66));
+        ParametrosFlota flotaAmplia = new ParametrosFlota(40, 25, 12, 24, 8, 4, 8.0, 6.0, 3.0, 80, 120, 90);
+        parametros.actualizar(flotaAmplia, almacen(0.33, 0.66));
+        assertEquals(80, parametros.flota().cantidadAutos());
+        assertEquals(120, parametros.flota().cantidadMotos());
+        assertEquals(90, parametros.flota().cantidadBicicletas());
+    }
+
+    @Test
     void rechazaValoresFueraDeRangoSinCambiarNada() {
         ParametrosOperacion parametros = new ParametrosOperacion(flota(25), almacen(0.33, 0.66));
         assertThrows(ParametrosInvalidosException.class, () -> parametros.actualizar(flota(0), almacen(0.33, 0.66)));

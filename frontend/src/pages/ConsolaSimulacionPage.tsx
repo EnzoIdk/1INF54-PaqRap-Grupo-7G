@@ -52,7 +52,7 @@ const OPCIONES_MODO: OpcionTab[] = [
 ];
 
 /** Codigo de unidad TTNN: TA (auto), TM (moto) o TB (bicicleta) y un correlativo (Q&A 18). */
-const PATRON_CODIGO_UNIDAD = /^T[AMB]\d{2}$/;
+const PATRON_CODIGO_UNIDAD = /^T[AMB]\d{2,}$/;
 
 type ErroresAveria = { codigoUnidad?: string; hora?: string };
 
@@ -385,7 +385,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Autos (TA)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="10 por configuración"
                   value={parametros.cantidadAutos ?? ""}
                   onChange={(evento) =>
@@ -397,7 +397,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Motos (TM)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="15 por configuración"
                   value={parametros.cantidadMotos ?? ""}
                   onChange={(evento) =>
@@ -409,7 +409,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Bicicletas (TB)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="12 por configuración"
                   value={parametros.cantidadBicicletas ?? ""}
                   onChange={(evento) =>
@@ -612,7 +612,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Autos (TA)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="10 por configuración"
                   value={parametros5D.cantidadAutos ?? ""}
                   onChange={(evento) =>
@@ -624,7 +624,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Motos (TM)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="15 por configuración"
                   value={parametros5D.cantidadMotos ?? ""}
                   onChange={(evento) =>
@@ -636,7 +636,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Bicicletas (TB)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="12 por configuración"
                   value={parametros5D.cantidadBicicletas ?? ""}
                   onChange={(evento) =>
@@ -862,7 +862,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Autos (TA)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="10 por configuración"
                   value={parametrosColapso.cantidadAutos ?? ""}
                   onChange={(evento) =>
@@ -874,7 +874,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Motos (TM)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="15 por configuración"
                   value={parametrosColapso.cantidadMotos ?? ""}
                   onChange={(evento) =>
@@ -886,7 +886,7 @@ const ConsolaSimulacionPage = () => {
                   etiqueta="Bicicletas (TB)"
                   type="number"
                   min={0}
-                  max={60}
+                  max={1000}
                   placeholder="12 por configuración"
                   value={parametrosColapso.cantidadBicicletas ?? ""}
                   onChange={(evento) =>

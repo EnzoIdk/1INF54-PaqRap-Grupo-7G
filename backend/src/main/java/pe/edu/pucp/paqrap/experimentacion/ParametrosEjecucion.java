@@ -39,9 +39,9 @@ public record ParametrosEjecucion(
         @Min(1) @Max(400) int maximoPedidos,
         String algoritmo,
         Long semilla,
-        @Min(0) @Max(60) Integer cantidadAutos,
-        @Min(0) @Max(60) Integer cantidadMotos,
-        @Min(0) @Max(60) Integer cantidadBicicletas,
+        @Min(0) @Max(1000) Integer cantidadAutos,
+        @Min(0) @Max(1000) Integer cantidadMotos,
+        @Min(0) @Max(1000) Integer cantidadBicicletas,
         List<AveriaSolicitada> averias,
         @Valid List<PedidoAdicional> pedidosAdicionales,
         List<BloqueoSolicitado> bloqueosAdicionales) {
