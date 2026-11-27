@@ -67,9 +67,9 @@ public class ParametrosOperacion {
         enRango("costo por km del auto", f.costoKmAuto(), 0.01, 1000);
         enRango("costo por km de la moto", f.costoKmMoto(), 0.01, 1000);
         enRango("costo por km de la bicicleta", f.costoKmBicicleta(), 0.01, 1000);
-        enRango("cantidad de autos", f.cantidadAutos(), 0, 60);
-        enRango("cantidad de motos", f.cantidadMotos(), 0, 60);
-        enRango("cantidad de bicicletas", f.cantidadBicicletas(), 0, 60);
+        enRango("cantidad de autos", f.cantidadAutos(), 0, 1000);
+        enRango("cantidad de motos", f.cantidadMotos(), 0, 1000);
+        enRango("cantidad de bicicletas", f.cantidadBicicletas(), 0, 1000);
         if (f.cantidadAutos() + f.cantidadMotos() + f.cantidadBicicletas() == 0) {
             throw new ParametrosInvalidosException("La flota debe tener al menos una unidad");
         }

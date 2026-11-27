@@ -38,9 +38,9 @@ public record ParametrosCincoDias(
         @Min(1) @Max(400) Integer maximoPedidosPorTurno,
         String algoritmo,
         Long semilla,
-        @Min(0) @Max(60) Integer cantidadAutos,
-        @Min(0) @Max(60) Integer cantidadMotos,
-        @Min(0) @Max(60) Integer cantidadBicicletas,
+        @Min(0) @Max(1000) Integer cantidadAutos,
+        @Min(0) @Max(1000) Integer cantidadMotos,
+        @Min(0) @Max(1000) Integer cantidadBicicletas,
         List<AveriaSolicitada5D> averias,
         @Valid List<PedidoAdicional> pedidosAdicionales) {
 
